@@ -1,0 +1,95 @@
+/* Estilos gerais */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: none;
+}
+
+.card-header {
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    font-weight: 600;
+}
+
+/* Estilos do Dashboard */
+.card-title {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Estilo para tabelas */
+.table {
+    vertical-align: middle;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* Botões de ação na tabela */
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.25rem;
+}
+
+/* Animações */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
+
+/* Estilo para o formulário de relatório */
+.form-label {
+    font-weight: 500;
+}
+
+/* Customização dos cards do dashboard */
+.card .bg-success, .card .bg-info, .card .bg-warning, .card .bg-danger {
+    transition: transform 0.3s;
+}
+
+.card .bg-success:hover, .card .bg-info:hover, .card .bg-warning:hover, .card .bg-danger:hover {
+    transform: translateY(-5px);
+}
+
+/* Estilos para exportação */
+.export-button {
+    cursor: pointer;
+}
+
+/* Estilos para alertas de validação */
+.invalid-feedback {
+    display: block;
+    font-size: 0.8rem;
+}
+
+/* Estilos para gráficos */
+canvas {
+    max-height: 300px;
+}
