@@ -1,0 +1,34 @@
+{
+  "name": "controle-de-combustivel",
+  "version": "1.0.0",
+  "description": "Um sistema completo para gerenciamento e controle de abastecimento de combustível para frotas de caminhões, similar a uma planilha avançada de Excel, mas com funcionalidades interativas e relatórios dinâmicos.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "http-server -o",
+    "server": "node server.js",
+    "test-db": "node -e \"require('./src/js/db.js').testConnection().then(console.log)\"",
+    "migrate": "node -e \"require('./src/js/db.js').migrateFromLocalStorage()\"",
+    "check-db": "node scripts/test-db-connection.js",
+    "migrate-db": "node scripts/migrate-to-postgres.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexandreLiberatto/controle-de-combustivel.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlexandreLiberatto/controle-de-combustivel/issues"
+  },
+  "homepage": "https://github.com/AlexandreLiberatto/controle-de-combustivel#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

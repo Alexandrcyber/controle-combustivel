@@ -1,0 +1,18 @@
+{
+    "postgresql": {
+        "user": "postgres",
+        "host": "localhost",
+        "database": "controle_combustivel",
+        "password": "11janeiro",
+        "port": 5432
+    },
+    "neon": {
+        "enabled": false,
+        "user": "",
+        "host": "",
+        "database": "",
+        "password": "",
+        "port": 5432,
+        "ssl": true
+    }
+}

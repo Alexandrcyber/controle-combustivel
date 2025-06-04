@@ -1,354 +1,239 @@
-// Dados de exemplo para demonstração
-const dadosExemplo = {
-    caminhoes: [
-        {
-            id: 1,
-            placa: 'ABC-1234',
-            modelo: 'Volvo FH 460',
-            ano: 2020,
-            capacidade: 600,
-            motorista: 'João Silva'
-        },
-        {
-            id: 2,
-            placa: 'DEF-5678',
-            modelo: 'Scania R450',
-            ano: 2019,
-            capacidade: 550,
-            motorista: 'Carlos Oliveira'
-        },
-        {
-            id: 3,
-            placa: 'GHI-9012',
-            modelo: 'Mercedes-Benz Actros 2651',
-            ano: 2021,
-            capacidade: 650,
-            motorista: 'Pedro Santos'
-        },
-        {
-            id: 4,
-            placa: 'JKL-3456',
-            modelo: 'DAF XF 105',
-            ano: 2018,
-            capacidade: 580,
-            motorista: 'Rafael Pereira'
-        }
-    ],
-    abastecimentos: [
-        // Abastecimentos para o caminhão 1
-        {
-            id: 1,
-            data: '2025-04-02',
-            caminhaoId: 1,
-            motorista: 'João Silva',
-            kmInicial: 10000,
-            kmFinal: 10500,
-            litros: 180,
-            valorLitro: 5.79,
-            valorTotal: 1042.20,
-            posto: 'Posto Ipiranga',
-            observacoes: 'Abastecimento rotineiro'
-        },
-        {
-            id: 2,
-            data: '2025-04-15',
-            caminhaoId: 1,
-            motorista: 'João Silva',
-            kmInicial: 10500,
-            kmFinal: 11200,
-            litros: 230,
-            valorLitro: 5.82,
-            valorTotal: 1338.60,
-            posto: 'Posto Shell',
-            observacoes: 'Viagem longa para São Paulo'
-        },
-        {
-            id: 3,
-            data: '2025-05-03',
-            caminhaoId: 1,
-            motorista: 'João Silva',
-            kmInicial: 11200,
-            kmFinal: 11800,
-            litros: 210,
-            valorLitro: 5.75,
-            valorTotal: 1207.50,
-            posto: 'Posto Petrobras',
-            observacoes: ''
-        },
-        {
-            id: 4,
-            data: '2025-05-20',
-            caminhaoId: 1,
-            motorista: 'João Silva',
-            kmInicial: 11800,
-            kmFinal: 12300,
-            litros: 195,
-            valorLitro: 5.80,
-            valorTotal: 1131.00,
-            posto: 'Posto Ipiranga',
-            observacoes: 'Manutenção realizada'
-        },
-        
-        // Abastecimentos para o caminhão 2
-        {
-            id: 5,
-            data: '2025-04-05',
-            caminhaoId: 2,
-            motorista: 'Carlos Oliveira',
-            kmInicial: 15000,
-            kmFinal: 15600,
-            litros: 210,
-            valorLitro: 5.79,
-            valorTotal: 1215.90,
-            posto: 'Posto Shell',
-            observacoes: ''
-        },
-        {
-            id: 6,
-            data: '2025-04-18',
-            caminhaoId: 2,
-            motorista: 'Carlos Oliveira',
-            kmInicial: 15600,
-            kmFinal: 16200,
-            litros: 220,
-            valorLitro: 5.82,
-            valorTotal: 1280.40,
-            posto: 'Posto Petrobras',
-            observacoes: 'Rota alternativa devido a obras'
-        },
-        {
-            id: 7,
-            data: '2025-05-06',
-            caminhaoId: 2,
-            motorista: 'Carlos Oliveira',
-            kmInicial: 16200,
-            kmFinal: 16800,
-            litros: 215,
-            valorLitro: 5.75,
-            valorTotal: 1236.25,
-            posto: 'Posto Ipiranga',
-            observacoes: ''
-        },
-        {
-            id: 8,
-            data: '2025-05-24',
-            caminhaoId: 2,
-            motorista: 'Carlos Oliveira',
-            kmInicial: 16800,
-            kmFinal: 17400,
-            litros: 208,
-            valorLitro: 5.80,
-            valorTotal: 1206.40,
-            posto: 'Posto Shell',
-            observacoes: ''
-        },
-        
-        // Abastecimentos para o caminhão 3
-        {
-            id: 9,
-            data: '2025-04-03',
-            caminhaoId: 3,
-            motorista: 'Pedro Santos',
-            kmInicial: 5000,
-            kmFinal: 5600,
-            litros: 210,
-            valorLitro: 5.79,
-            valorTotal: 1215.90,
-            posto: 'Posto Petrobras',
-            observacoes: 'Primeiro abastecimento após revisão'
-        },
-        {
-            id: 10,
-            data: '2025-04-17',
-            caminhaoId: 3,
-            motorista: 'Pedro Santos',
-            kmInicial: 5600,
-            kmFinal: 6250,
-            litros: 240,
-            valorLitro: 5.82,
-            valorTotal: 1396.80,
-            posto: 'Posto Shell',
-            observacoes: ''
-        },
-        {
-            id: 11,
-            data: '2025-05-05',
-            caminhaoId: 3,
-            motorista: 'Pedro Santos',
-            kmInicial: 6250,
-            kmFinal: 6900,
-            litros: 230,
-            valorLitro: 5.75,
-            valorTotal: 1322.50,
-            posto: 'Posto Ipiranga',
-            observacoes: 'Tráfego intenso na rodovia'
-        },
-        {
-            id: 12,
-            data: '2025-05-22',
-            caminhaoId: 3,
-            motorista: 'Pedro Santos',
-            kmInicial: 6900,
-            kmFinal: 7500,
-            litros: 220,
-            valorLitro: 5.80,
-            valorTotal: 1276.00,
-            posto: 'Posto Petrobras',
-            observacoes: ''
-        },
-        
-        // Abastecimentos para o caminhão 4
-        {
-            id: 13,
-            data: '2025-04-08',
-            caminhaoId: 4,
-            motorista: 'Rafael Pereira',
-            kmInicial: 20000,
-            kmFinal: 20650,
-            litros: 215,
-            valorLitro: 5.79,
-            valorTotal: 1244.85,
-            posto: 'Posto Shell',
-            observacoes: ''
-        },
-        {
-            id: 14,
-            data: '2025-04-22',
-            caminhaoId: 4,
-            motorista: 'Rafael Pereira',
-            kmInicial: 20650,
-            kmFinal: 21300,
-            litros: 225,
-            valorLitro: 5.82,
-            valorTotal: 1309.50,
-            posto: 'Posto Ipiranga',
-            observacoes: 'Reabastecimento durante viagem longa'
-        },
-        {
-            id: 15,
-            data: '2025-05-10',
-            caminhaoId: 4,
-            motorista: 'Rafael Pereira',
-            kmInicial: 21300,
-            kmFinal: 21950,
-            litros: 220,
-            valorLitro: 5.75,
-            valorTotal: 1265.00,
-            posto: 'Posto Petrobras',
-            observacoes: ''
-        },
-        {
-            id: 16,
-            data: '2025-05-28',
-            caminhaoId: 4,
-            motorista: 'Rafael Pereira',
-            kmInicial: 21950,
-            kmFinal: 22600,
-            litros: 218,
-            valorLitro: 5.80,
-            valorTotal: 1264.40,
-            posto: 'Posto Shell',
-            observacoes: 'Problemas na estrada, desvio longo'
-        },
-        
-        // Abastecimentos do mês atual (junho/2025)
-        {
-            id: 17,
-            data: '2025-06-01',
-            caminhaoId: 1,
-            motorista: 'João Silva',
-            kmInicial: 12300,
-            kmFinal: 12950,
-            litros: 205,
-            valorLitro: 5.85,
-            valorTotal: 1199.25,
-            posto: 'Posto Petrobras',
-            observacoes: 'Início do mês'
-        },
-        {
-            id: 18,
-            data: '2025-06-01',
-            caminhaoId: 2,
-            motorista: 'Carlos Oliveira',
-            kmInicial: 17400,
-            kmFinal: 18050,
-            litros: 225,
-            valorLitro: 5.85,
-            valorTotal: 1316.25,
-            posto: 'Posto Shell',
-            observacoes: ''
-        },
-        {
-            id: 19,
-            data: '2025-06-02',
-            caminhaoId: 3,
-            motorista: 'Pedro Santos',
-            kmInicial: 7500,
-            kmFinal: 8150,
-            litros: 235,
-            valorLitro: 5.85,
-            valorTotal: 1374.75,
-            posto: 'Posto Ipiranga',
-            observacoes: ''
-        },
-        {
-            id: 20,
-            data: '2025-06-03',
-            caminhaoId: 4,
-            motorista: 'Rafael Pereira',
-            kmInicial: 22600,
-            kmFinal: 23250,
-            litros: 220,
-            valorLitro: 5.85,
-            valorTotal: 1287.00,
-            posto: 'Posto Petrobras',
-            observacoes: 'Abastecimento recente'
-        }
-    ]
-};
+// Arquivo de integração com API REST para PostgreSQL
 
-// Função para carregar dados de exemplo
-function carregarDadosExemplo() {
-    // Verificar se já existem dados salvos
-    const dadosSalvos = localStorage.getItem('caminhoes') || localStorage.getItem('abastecimentos');
-    
-    // Se não existirem dados, carregar os dados de exemplo
-    if (!dadosSalvos) {
-        localStorage.setItem('caminhoes', JSON.stringify(dadosExemplo.caminhoes));
-        localStorage.setItem('abastecimentos', JSON.stringify(dadosExemplo.abastecimentos));
+// URL base para as chamadas de API
+const API_BASE_URL = 'http://localhost:3000/api';
+
+// Função para verificar status da conexão com PostgreSQL
+async function verificarStatusConexao() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/status`);
+        const data = await response.json();
         
-        console.log('Dados de exemplo carregados com sucesso!');
-        
-        // Recarregar a página para atualizar a interface
-        window.location.reload();
+        if (response.ok) {
+            console.log('Status da conexão:', data.message);
+            return data.status === 'connected';
+        } else {
+            console.error('Erro ao verificar status:', data.message);
+            return false;
+        }
+    } catch (err) {
+        console.error('Erro na requisição de status:', err);
+        return false;
     }
 }
 
-// Adicionar evento para carregar dados de exemplo
-document.addEventListener('DOMContentLoaded', () => {
-    // Verificar se já existem dados
-    const dadosSalvos = localStorage.getItem('caminhoes') || localStorage.getItem('abastecimentos');
-    
-    // Se não existirem dados, perguntar se deseja carregar os dados de exemplo
-    if (!dadosSalvos) {
-        if (confirm('Deseja carregar dados de exemplo para demonstração?')) {
-            carregarDadosExemplo();
-        }
-    }
-    
-    // Adicionar botão para carregar dados de exemplo no rodapé
-    const footer = document.querySelector('footer .container');
-    if (footer) {
-        const loadDataBtn = document.createElement('button');
-        loadDataBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
-        loadDataBtn.textContent = 'Carregar Dados de Exemplo';
-        loadDataBtn.addEventListener('click', () => {
-            if (confirm('Isso substituirá quaisquer dados existentes. Deseja continuar?')) {
-                carregarDadosExemplo();
+// Função para inicializar banco de dados
+async function inicializarBancoDados() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/initialize`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             }
         });
         
-        footer.appendChild(document.createElement('br'));
-        footer.appendChild(loadDataBtn);
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('Banco de dados inicializado:', data.message);
+            return true;
+        } else {
+            console.error('Erro ao inicializar banco de dados:', data.message);
+            return false;
+        }
+    } catch (err) {
+        console.error('Erro na requisição de inicialização:', err);
+        return false;
     }
-});
+}
+
+// Função para migrar dados do localStorage para PostgreSQL
+async function migrarDadosLocalStorage(caminhoes, abastecimentos) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/migrate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ caminhoes, abastecimentos })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('Dados migrados com sucesso:', data.message);
+            return true;
+        } else {
+            console.error('Erro ao migrar dados:', data.message);
+            return false;
+        }
+    } catch (err) {
+        console.error('Erro na requisição de migração:', err);
+        return false;
+    }
+}
+
+// Função para buscar caminhões do PostgreSQL
+async function buscarCaminhoes() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/caminhoes`);
+        
+        if (response.ok) {
+            const caminhoes = await response.json();
+            return caminhoes;
+        } else {
+            console.error('Erro ao buscar caminhões');
+            return [];
+        }
+    } catch (err) {
+        console.error('Erro na requisição de caminhões:', err);
+        return [];
+    }
+}
+
+// Função para salvar caminhão no PostgreSQL
+async function salvarCaminhao(caminhao) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/caminhoes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(caminhao)
+        });
+        
+        if (response.ok) {
+            const caminhaoSalvo = await response.json();
+            return caminhaoSalvo;
+        } else {
+            const erro = await response.json();
+            console.error('Erro ao salvar caminhão:', erro.message);
+            throw new Error(erro.message);
+        }
+    } catch (err) {
+        console.error('Erro na requisição de salvar caminhão:', err);
+        throw err;
+    }
+}
+
+// Função para excluir caminhão do PostgreSQL
+async function excluirCaminhao(id) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/caminhoes/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            return true;
+        } else {
+            const erro = await response.json();
+            console.error('Erro ao excluir caminhão:', erro.message);
+            return false;
+        }
+    } catch (err) {
+        console.error('Erro na requisição de excluir caminhão:', err);
+        return false;
+    }
+}
+
+// Função para buscar abastecimentos do PostgreSQL
+async function buscarAbastecimentos() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/abastecimentos`);
+        
+        if (response.ok) {
+            const abastecimentos = await response.json();
+            return abastecimentos;
+        } else {
+            console.error('Erro ao buscar abastecimentos');
+            return [];
+        }
+    } catch (err) {
+        console.error('Erro na requisição de abastecimentos:', err);
+        return [];
+    }
+}
+
+// Função para salvar abastecimento no PostgreSQL
+async function salvarAbastecimento(abastecimento) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/abastecimentos`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(abastecimento)
+        });
+        
+        if (response.ok) {
+            const abastecimentoSalvo = await response.json();
+            return abastecimentoSalvo;
+        } else {
+            const erro = await response.json();
+            console.error('Erro ao salvar abastecimento:', erro.message);
+            throw new Error(erro.message);
+        }
+    } catch (err) {
+        console.error('Erro na requisição de salvar abastecimento:', err);
+        throw err;
+    }
+}
+
+// Função para excluir abastecimento do PostgreSQL
+async function excluirAbastecimento(id) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/abastecimentos/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            return true;
+        } else {
+            const erro = await response.json();
+            console.error('Erro ao excluir abastecimento:', erro.message);
+            return false;
+        }
+    } catch (err) {
+        console.error('Erro na requisição de excluir abastecimento:', err);
+        return false;
+    }
+}
+
+// Função para limpar todos os dados
+async function limparTodosDados() {
+    try {
+        // Primeiro excluir todos os abastecimentos
+        const responseAbastecimentos = await fetch(`${API_BASE_URL}/limpar-abastecimentos`, {
+            method: 'DELETE'
+        });
+        
+        // Depois excluir todos os caminhões
+        const responseCaminhoes = await fetch(`${API_BASE_URL}/limpar-caminhoes`, {
+            method: 'DELETE'
+        });
+        
+        if (responseAbastecimentos.ok && responseCaminhoes.ok) {
+            return true;
+        } else {
+            console.error('Erro ao limpar todos os dados');
+            return false;
+        }
+    } catch (err) {
+        console.error('Erro na requisição de limpar todos os dados:', err);
+        return false;
+    }
+}
+
+// Exportar funções para uso no aplicativo
+window.dbApi = {
+    verificarStatusConexao,
+    inicializarBancoDados,
+    migrarDadosLocalStorage,
+    buscarCaminhoes,
+    salvarCaminhao,
+    excluirCaminhao,
+    buscarAbastecimentos,
+    salvarAbastecimento,
+    excluirAbastecimento,
+    limparTodosDados
+};

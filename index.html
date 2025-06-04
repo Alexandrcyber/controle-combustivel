@@ -156,9 +156,9 @@
                     <div class="card-body">
                         <div class="table-responsive">                            <table class="table table-striped table-hover" id="abastecimentoTable">
                                 <thead>
-                                    <tr>
-                                        <th>Placa</th>
+                                    <tr>                                        <th>Placa</th>
                                         <th>Data</th>
+                                        <th>Período</th>
                                         <th>Modelo</th>
                                         <th>Motorista</th>
                                         <th>Km Inicial</th>
@@ -320,11 +320,16 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="abastecimentoForm">
-                        <input type="hidden" id="abastecimentoId">
-                        <div class="mb-3">
-                            <label for="dataAbastecimento" class="form-label">Data</label>
-                            <input type="date" class="form-control" id="dataAbastecimento" required>
+                    <form id="abastecimentoForm">                        <input type="hidden" id="abastecimentoId">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="periodoInicio" class="form-label">Período - Início</label>
+                                <input type="date" class="form-control" id="periodoInicio" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="periodoFim" class="form-label">Período - Fim</label>
+                                <input type="date" class="form-control" id="periodoFim" required>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="caminhaoAbastecimento" class="form-label">Caminhão</label>
