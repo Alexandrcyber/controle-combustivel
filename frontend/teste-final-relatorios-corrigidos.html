@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final - Relatórios Funcionando</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="alert alert-success">
+            <h4>✅ RELATÓRIOS CORRIGIDOS!</h4>
+            <p>As funções auxiliares que estavam faltando foram implementadas:</p>
+            <ul>
+                <li><code>calcularTotaisGerais()</code> - Para calcular totais consolidados</li>
+                <li><code>formatDate()</code> - Para formatação de datas no padrão brasileiro</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>🧪 Teste dos Relatórios</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="dataInicio" class="form-label">Data Início</label>
+                        <input type="date" class="form-control" id="dataInicio" value="2025-06-01">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dataFim" class="form-label">Data Fim</label>
+                        <input type="date" class="form-control" id="dataFim" value="2025-06-07">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="caminhaoSelect" class="form-label">Caminhão</label>
+                    <select class="form-select" id="caminhaoSelect">
+                        <option value="todos">Todos os caminhões</option>
+                    </select>
+                </div>
+                <button type="button" class="btn btn-primary" id="gerarRelatorio">Gerar Relatório de Consumo</button>
+                <button type="button" class="btn btn-danger ms-2" id="exportarPdfCompleto">Exportar PDF Completo</button>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📊 Resultados</h5>
+            </div>
+            <div class="card-body">
+                <div id="relatorioResultados" style="min-height: 200px;">
+                    <p class="text-center text-muted">Clique em "Gerar Relatório" para ver os resultados.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados de teste com formato correto
+        window.caminhoes = [
+            {
+                "id": "1749118873977lmrpqoo1b",
+                "placa": "TST-8888",
+                "modelo": "Scania R450",
+                "ano": 2024
+            }
+        ];
+        
+        window.abastecimentos = [
+            {
+                "id": "test1",
+                "caminhao_id": "1749118873977lmrpqoo1b",
+                "data": "2025-06-01",
+                "litros": 50,
+                "valor_total": 300.00,
+                "valor_litro": 6.00,
+                "km_inicial": 1000,
+                "km_final": 1200,
+                "posto": "Posto Teste 1",
+                "motorista": "João Silva"
+            },
+            {
+                "id": "test2",
+                "caminhao_id": "1749118873977lmrpqoo1b",
+                "data": "2025-06-03",
+                "litros": 45,
+                "valor_total": 270.00,
+                "valor_litro": 6.00,
+                "km_inicial": 1200,
+                "km_final": 1380,
+                "posto": "Posto Teste 2",
+                "motorista": "Maria Santos"
+            }
+        ];
+        
+        console.log('✅ Dados de teste carregados');
+    </script>
+    
+    <!-- Carregar scripts na ordem correta -->
+    <script src="src/js/api.js"></script>
+    <script src="src/js/alerts.js"></script>
+    <script src="src/js/data.js"></script>
+    <script src="src/js/relatorios.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Configurando event listeners...');
+            
+            document.getElementById('gerarRelatorio').addEventListener('click', () => {
+                console.log('🎯 Testando gerarRelatorioConsumo...');
+                gerarRelatorioConsumo();
+            });
+            
+            document.getElementById('exportarPdfCompleto').addEventListener('click', () => {
+                console.log('🎯 Testando exportarPdfCompleto...');
+                exportarPdfCompleto();
+            });
+            
+            console.log('✅ Event listeners configurados');
+        });
+    </script>
+</body>
+</html>

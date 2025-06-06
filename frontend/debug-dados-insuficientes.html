@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug - Dados Insuficientes</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+        }
+        .debug-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .log-area {
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 DEBUG - Dados Insuficientes</h1>
+            <p>Investigação do problema de validação de dados</p>
+        </div>
+        
+        <div class="content">
+            <div class="debug-section">
+                <h3>🎯 Testes de Diagnóstico</h3>
+                <button class="btn btn-primary" onclick="verificarDadosGlobais()">
+                    📊 Verificar Dados Globais
+                </button>
+                <button class="btn btn-success" onclick="testarObterDados()">
+                    🔍 Testar obterDadosDoRelatorio()
+                </button>
+                <button class="btn btn-danger" onclick="testarPdfComDadosFixos()">
+                    📄 Testar PDF com Dados Fixos
+                </button>
+            </div>
+
+            <div class="debug-section">
+                <h3>⚙️ Configurar Datas de Teste</h3>
+                <label>Data Início: <input type="date" id="dataInicio" value="2025-05-01"></label>
+                <label>Data Fim: <input type="date" id="dataFim" value="2025-06-06"></label>
+                <label>Caminhão: 
+                    <select id="caminhaoSelect">
+                        <option value="todos">Todos os caminhões</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="log-area" id="logArea">
+                <div>[SISTEMA] Debug iniciado - investigando problema de dados insuficientes...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carregamento necessário -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/alerts.js"></script>
+    <script src="src/js/relatorios.js"></script>
+    
+    <script>
+        const logArea = document.getElementById('logArea');
+
+        function log(message, type = 'INFO') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                'INFO': '#00ff00',
+                'SUCCESS': '#00ff88',
+                'ERROR': '#ff6b6b',
+                'WARNING': '#ffeb3b',
+                'DEBUG': '#00bfff'
+            };
+            
+            const color = colors[type] || colors['INFO'];
+            logArea.innerHTML += `<div style="color: ${color}">[${timestamp}] [${type}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        async function verificarDadosGlobais() {
+            log('Verificando dados globais do sistema...', 'INFO');
+
+            try {
+                // Verificar se os dados estão carregados
+                log(`window.caminhoes: ${window.caminhoes ? window.caminhoes.length : 'undefined'}`, 'DEBUG');
+                log(`window.abastecimentos: ${window.abastecimentos ? window.abastecimentos.length : 'undefined'}`, 'DEBUG');
+
+                // Se não estão carregados, tentar carregar
+                if (!window.caminhoes || !window.abastecimentos) {
+                    log('Dados não carregados, fazendo chamadas para API...', 'WARNING');
+                    
+                    const [caminhoesResp, abastecimentosResp] = await Promise.all([
+                        fetch('/api/caminhoes'),
+                        fetch('/api/abastecimentos')
+                    ]);
+
+                    window.caminhoes = await caminhoesResp.json();
+                    window.abastecimentos = await abastecimentosResp.json();
+
+                    log(`Dados carregados da API:`, 'SUCCESS');
+                    log(`- Caminhões: ${window.caminhoes.length}`, 'SUCCESS');
+                    log(`- Abastecimentos: ${window.abastecimentos.length}`, 'SUCCESS');
+
+                    // Preencher select de caminhões
+                    const select = document.getElementById('caminhaoSelect');
+                    window.caminhoes.forEach(c => {
+                        const option = document.createElement('option');
+                        option.value = c.id;
+                        option.textContent = `${c.placa} - ${c.modelo}`;
+                        select.appendChild(option);
+                    });
+                }
+
+                // Mostrar amostras dos dados
+                if (window.caminhoes.length > 0) {
+                    log(`Exemplo de caminhão: ${JSON.stringify(window.caminhoes[0])}`, 'DEBUG');
+                }
+                
+                if (window.abastecimentos.length > 0) {
+                    log(`Exemplo de abastecimento: ${JSON.stringify(window.abastecimentos[0])}`, 'DEBUG');
+                }
+
+            } catch (error) {
+                log(`Erro ao verificar dados: ${error.message}`, 'ERROR');
+            }
+        }
+
+        async function testarObterDados() {
+            log('Testando função obterDadosDoRelatorio()...', 'INFO');
+
+            try {
+                // Garantir que dados estão carregados
+                await verificarDadosGlobais();
+
+                // Testar a função
+                if (typeof obterDadosDoRelatorio === 'function') {
+                    log('Função obterDadosDoRelatorio encontrada', 'SUCCESS');
+                    
+                    const resultado = obterDadosDoRelatorio();
+                    log(`Resultado da função: ${JSON.stringify(resultado, null, 2)}`, 'DEBUG');
+                    
+                    if (resultado && resultado.valid) {
+                        log('✅ Dados válidos encontrados!', 'SUCCESS');
+                        log(`- Período: ${resultado.periodo.inicio} a ${resultado.periodo.fim}`, 'INFO');
+                        log(`- Caminhões: ${Object.keys(resultado.dadosPorCaminhao).length}`, 'INFO');
+                        log(`- Abastecimentos: ${resultado.abastecimentos.length}`, 'INFO');
+                    } else {
+                        log(`❌ Dados inválidos: ${resultado ? resultado.message : 'Função retornou null'}`, 'ERROR');
+                    }
+                } else {
+                    log('❌ Função obterDadosDoRelatorio não encontrada!', 'ERROR');
+                }
+
+            } catch (error) {
+                log(`Erro no teste: ${error.message}`, 'ERROR');
+                console.error('Erro detalhado:', error);
+            }
+        }
+
+        async function testarPdfComDadosFixos() {
+            log('Testando geração de PDF com dados fixos...', 'INFO');
+
+            try {
+                // Garantir dados
+                await verificarDadosGlobais();
+
+                // Configurar datas nos campos
+                const dataInicio = document.getElementById('dataInicio').value;
+                const dataFim = document.getElementById('dataFim').value;
+                
+                log(`Usando datas: ${dataInicio} a ${dataFim}`, 'INFO');
+
+                // Testar função PDF
+                if (typeof exportarPdfCompleto === 'function') {
+                    log('Executando exportarPdfCompleto()...', 'INFO');
+                    await exportarPdfCompleto();
+                    log('✅ PDF gerado com sucesso!', 'SUCCESS');
+                } else {
+                    log('❌ Função exportarPdfCompleto não encontrada!', 'ERROR');
+                }
+
+            } catch (error) {
+                log(`Erro na geração do PDF: ${error.message}`, 'ERROR');
+                console.error('Erro detalhado:', error);
+            }
+        }
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            log('Página carregada, iniciando verificações...', 'INFO');
+            setTimeout(verificarDadosGlobais, 1000);
+        });
+    </script>
+</body>
+</html>

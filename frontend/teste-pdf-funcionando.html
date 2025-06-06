@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste PDF - Funcionando</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Project files -->
+    <script src="src/js/alerts.js"></script>
+    <script src="src/js/relatorios.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Final - Geração de PDF</h1>
+        
+        <div id="status-backend" class="status-section status-info">
+            ⏳ Verificando status do backend...
+        </div>
+        
+        <div id="status-api" class="status-section status-info">
+            ⏳ Verificando APIs...
+        </div>
+        
+        <div id="status-pdf" class="status-section status-info">
+            ⏳ Sistema PDF pronto para teste...
+        </div>
+        
+        <h2>🧪 Testes Disponíveis</h2>
+        
+        <button id="btn-test-backend" class="test-button">
+            1. Testar Backend
+        </button>
+        
+        <button id="btn-test-data" class="test-button">
+            2. Testar Dados
+        </button>
+        
+        <button id="btn-test-validation" class="test-button">
+            3. Testar Validação
+        </button>
+        
+        <button id="btn-test-pdf" class="test-button">
+            4. Gerar PDF Completo
+        </button>
+        
+        <button id="btn-clear-log" class="test-button" style="background: #6c757d;">
+            Limpar Log
+        </button>
+        
+        <h2>📋 Log de Execução</h2>
+        <div id="log-area" class="log-area"></div>
+    </div>
+
+    <script>
+        // Sistema de log
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            const timestamp = new Date().toLocaleTimeString();
+            const icons = {
+                info: 'ℹ️',
+                success: '✅',
+                error: '❌',
+                warning: '⚠️'
+            };
+            
+            logArea.textContent += `[${timestamp}] ${icons[type]} ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        // Função para atualizar status
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status-section status-${status}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️'
+            };
+            
+            element.textContent = `${icons[status]} ${message}`;
+        }
+        
+        // Teste 1: Backend
+        async function testBackend() {
+            log('Iniciando teste do backend...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/health');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Backend OK: ${JSON.stringify(data)}`, 'success');
+                    updateStatus('status-backend', 'success', 'Backend funcionando na porta 3001');
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                log(`Erro no backend: ${error.message}`, 'error');
+                updateStatus('status-backend', 'error', 'Backend não está respondendo');
+                return false;
+            }
+        }
+        
+        // Teste 2: Dados
+        async function testData() {
+            log('Iniciando teste de dados...', 'info');
+            
+            try {
+                const [caminhoesRes, abastecimentosRes] = await Promise.all([
+                    fetch('http://localhost:3001/api/caminhoes'),
+                    fetch('http://localhost:3001/api/abastecimentos')
+                ]);
+                
+                if (caminhoesRes.ok && abastecimentosRes.ok) {
+                    const caminhoes = await caminhoesRes.json();
+                    const abastecimentos = await abastecimentosRes.json();
+                    
+                    log(`Caminhões encontrados: ${caminhoes.length}`, 'success');
+                    log(`Abastecimentos encontrados: ${abastecimentos.length}`, 'success');
+                    
+                    updateStatus('status-api', 'success', 
+                        `APIs OK: ${caminhoes.length} caminhões, ${abastecimentos.length} abastecimentos`);
+                    return { caminhoes, abastecimentos };
+                } else {
+                    throw new Error('Erro ao buscar dados');
+                }
+            } catch (error) {
+                log(`Erro nos dados: ${error.message}`, 'error');
+                updateStatus('status-api', 'error', 'Erro ao carregar dados');
+                return null;
+            }
+        }
+        
+        // Teste 3: Validação
+        async function testValidation() {
+            log('Iniciando teste de validação...', 'info');
+            
+            try {
+                // Simular a função de validação do sistema
+                if (typeof obterDadosDoRelatorio === 'function') {
+                    const dados = await obterDadosDoRelatorio();
+                    
+                    log(`Dados obtidos: ${JSON.stringify(dados, null, 2)}`, 'info');
+                    
+                    if (dados && dados.valid) {
+                        log('Validação OK - Dados suficientes para PDF', 'success');
+                        return dados;
+                    } else {
+                        log(`Validação FALHOU: ${dados.message || 'Dados insuficientes'}`, 'warning');
+                        return null;
+                    }
+                } else {
+                    throw new Error('Função obterDadosDoRelatorio não encontrada');
+                }
+            } catch (error) {
+                log(`Erro na validação: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Teste 4: PDF Completo
+        async function testPDF() {
+            log('Iniciando teste de geração de PDF...', 'info');
+            
+            try {
+                if (typeof exportarPdfCompleto === 'function') {
+                    log('Chamando exportarPdfCompleto()...', 'info');
+                    
+                    // Chamar a função real de exportação
+                    await exportarPdfCompleto();
+                    
+                    log('Função exportarPdfCompleto() executada com sucesso!', 'success');
+                    updateStatus('status-pdf', 'success', 'PDF gerado com sucesso!');
+                    
+                } else {
+                    throw new Error('Função exportarPdfCompleto não encontrada');
+                }
+            } catch (error) {
+                log(`Erro na geração do PDF: ${error.message}`, 'error');
+                updateStatus('status-pdf', 'error', 'Erro na geração do PDF');
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('btn-test-backend').addEventListener('click', testBackend);
+        document.getElementById('btn-test-data').addEventListener('click', testData);
+        document.getElementById('btn-test-validation').addEventListener('click', testValidation);
+        document.getElementById('btn-test-pdf').addEventListener('click', testPDF);
+        
+        document.getElementById('btn-clear-log').addEventListener('click', () => {
+            document.getElementById('log-area').textContent = '';
+            log('Log limpo', 'info');
+        });
+        
+        // Teste automático inicial
+        window.addEventListener('load', async () => {
+            log('=== TESTE AUTOMÁTICO INICIAL ===', 'info');
+            
+            const backendOk = await testBackend();
+            
+            if (backendOk) {
+                await testData();
+                log('Sistema pronto para testes manuais!', 'success');
+            } else {
+                log('Backend não está funcionando. Verifique se o servidor está rodando na porta 3001.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

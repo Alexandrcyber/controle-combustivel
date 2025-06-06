@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Dados Globais</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teste de Dados Globais</h1>
+    
+    <button onclick="testarDados()">Testar Carregamento de Dados</button>
+    <button onclick="testarValidacao()">Testar Validação</button>
+    <button onclick="simularPDF()">Simular Geração PDF</button>
+    
+    <div id="resultados"></div>
+
+    <script>
+        // Função para mostrar resultados
+        function mostrarResultado(titulo, conteudo, tipo = 'info') {
+            const div = document.getElementById('resultados');
+            div.innerHTML += `
+                <div class="test-result ${tipo}">
+                    <h3>${titulo}</h3>
+                    <pre>${conteudo}</pre>
+                </div>
+            `;
+        }
+        
+        // Carregar dados da API
+        async function carregarDados() {
+            try {
+                const [caminhoesRes, abastecimentosRes] = await Promise.all([
+                    fetch('http://localhost:3001/api/caminhoes'),
+                    fetch('http://localhost:3001/api/abastecimentos')
+                ]);
+                
+                if (caminhoesRes.ok && abastecimentosRes.ok) {
+                    window.caminhoes = await caminhoesRes.json();
+                    window.abastecimentos = await abastecimentosRes.json();
+                    
+                    mostrarResultado('✅ Dados carregados', 
+                        `Caminhões: ${window.caminhoes.length}
+Abastecimentos: ${window.abastecimentos.length}`, 
+                        'success');
+                    
+                    return true;
+                } else {
+                    throw new Error('Erro nas requisições');
+                }
+            } catch (error) {
+                mostrarResultado('❌ Erro ao carregar dados', error.message, 'error');
+                return false;
+            }
+        }
+        
+        // Testar dados
+        async function testarDados() {
+            document.getElementById('resultados').innerHTML = '';
+            
+            // 1. Testar se variáveis globais existem
+            mostrarResultado('1. Variáveis Globais Atuais', 
+                `window.caminhoes: ${window.caminhoes ? window.caminhoes.length + ' itens' : 'undefined'}
+window.abastecimentos: ${window.abastecimentos ? window.abastecimentos.length + ' itens' : 'undefined'}`,
+                window.caminhoes && window.abastecimentos ? 'success' : 'error');
+            
+            // 2. Carregar dados da API
+            await carregarDados();
+            
+            // 3. Mostrar amostra dos dados
+            if (window.caminhoes && window.caminhoes.length > 0) {
+                mostrarResultado('📋 Amostra de Caminhão', 
+                    JSON.stringify(window.caminhoes[0], null, 2), 'info');
+            }
+            
+            if (window.abastecimentos && window.abastecimentos.length > 0) {
+                mostrarResultado('⛽ Amostra de Abastecimento', 
+                    JSON.stringify(window.abastecimentos[0], null, 2), 'info');
+            }
+        }
+        
+        // Simular função de validação
+        function obterDadosDoRelatorio() {
+            try {
+                // Obter dados do período selecionado (últimos 30 dias)
+                const hoje = new Date();
+                const trintaDiasAtras = new Date();
+                trintaDiasAtras.setDate(hoje.getDate() - 30);
+                
+                const dataInicio = trintaDiasAtras.toISOString().split('T')[0];
+                const dataFim = hoje.toISOString().split('T')[0];
+                
+                // Acessar dados globais
+                const dadosCaminhoes = window.caminhoes || [];
+                let dadosAbastecimentos = window.abastecimentos || [];
+                
+                console.log('📊 Dados disponíveis:', {
+                    caminhoes: dadosCaminhoes.length,
+                    abastecimentos: dadosAbastecimentos.length,
+                    periodo: { inicio: dataInicio, fim: dataFim }
+                });
+                
+                // Verificar se há dados básicos
+                if (dadosCaminhoes.length === 0) {
+                    return {
+                        valid: false,
+                        message: 'Não há caminhões cadastrados no sistema.'
+                    };
+                }
+                
+                if (dadosAbastecimentos.length === 0) {
+                    return {
+                        valid: false,
+                        message: 'Não há abastecimentos cadastrados no sistema.'
+                    };
+                }
+                
+                // Filtrar por período
+                let abastecimentosFiltrados = dadosAbastecimentos.filter(a => {
+                    const dataAbast = a.data.split('T')[0];
+                    return dataAbast >= dataInicio && dataAbast <= dataFim;
+                });
+                
+                if (abastecimentosFiltrados.length === 0) {
+                    return {
+                        valid: false,
+                        message: 'Não foram encontrados abastecimentos no período (últimos 30 dias).'
+                    };
+                }
+                
+                return {
+                    valid: true,
+                    periodo: { inicio: dataInicio, fim: dataFim },
+                    dadosCaminhoes: dadosCaminhoes,
+                    abastecimentos: abastecimentosFiltrados
+                };
+                
+            } catch (error) {
+                console.error('Erro ao obter dados do relatório:', error);
+                return {
+                    valid: false,
+                    message: `Erro ao processar dados: ${error.message}`
+                };
+            }
+        }
+        
+        // Testar validação
+        async function testarValidacao() {
+            // Garantir que os dados estejam carregados
+            if (!window.caminhoes || !window.abastecimentos) {
+                await carregarDados();
+            }
+            
+            const resultado = obterDadosDoRelatorio();
+            
+            mostrarResultado('🔍 Resultado da Validação', 
+                JSON.stringify(resultado, null, 2), 
+                resultado.valid ? 'success' : 'error');
+        }
+        
+        // Simular geração de PDF
+        async function simularPDF() {
+            // Garantir que os dados estejam carregados
+            if (!window.caminhoes || !window.abastecimentos) {
+                await carregarDados();
+            }
+            
+            const dados = obterDadosDoRelatorio();
+            
+            if (!dados.valid) {
+                mostrarResultado('❌ PDF não pode ser gerado', dados.message, 'error');
+                return;
+            }
+            
+            mostrarResultado('✅ PDF pode ser gerado', 
+                `Dados válidos encontrados:
+- Período: ${dados.periodo.inicio} até ${dados.periodo.fim}
+- Caminhões: ${dados.dadosCaminhoes.length}
+- Abastecimentos: ${dados.abastecimentos.length}`, 
+                'success');
+        }
+        
+        // Carregar dados automaticamente ao abrir a página
+        window.addEventListener('load', () => {
+            testarDados();
+        });
+    </script>
+</body>
+</html>

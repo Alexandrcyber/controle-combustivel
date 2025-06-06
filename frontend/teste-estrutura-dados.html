@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Teste Específico - Correção Dados PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #2980b9; }
+        .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Teste Específico - Correção Dados PDF</h1>
+        <p>Validando a estrutura de dados corrigida</p>
+    </div>
+
+    <div class="panel">
+        <h3>🧪 Teste de Correção</h3>
+        <button class="btn" onclick="executarTeste()">▶️ Executar Teste</button>
+        <button class="btn" onclick="limparResultado()">🗑️ Limpar</button>
+    </div>
+
+    <div class="panel">
+        <h3>📋 Resultados</h3>
+        <div id="resultado"></div>
+    </div>
+
+    <script src="src/js/app.js"></script>
+    <script src="src/js/relatorios.js"></script>
+
+    <script>
+        // Dados mockados para teste
+        const dadosMock = {
+            caminhoes: [
+                { id: '1', placa: 'ABC-1234', modelo: 'Mercedes', motorista: 'João' },
+                { id: '2', placa: 'DEF-5678', modelo: 'Volvo', motorista: 'Pedro' }
+            ],
+            abastecimentos: [
+                {
+                    id: '1',
+                    caminhao_id: '1',
+                    data: '2024-01-15',
+                    km_inicial: 1000,
+                    km_final: 1500,
+                    litros: 150,
+                    valor_total: 900,
+                    motorista: 'João',
+                    posto: 'Shell'
+                },
+                {
+                    id: '2',
+                    caminhao_id: '2',
+                    data: '2024-01-16',
+                    km_inicial: 2000,
+                    km_final: 2400,
+                    litros: 120,
+                    valor_total: 720,
+                    motorista: 'Pedro',
+                    posto: 'Ipiranga'
+                }
+            ]
+        };
+
+        function executarTeste() {
+            try {
+                const resultadoDiv = document.getElementById('resultado');
+                let html = '<h4>🔍 Executando Teste de Correção...</h4>';
+
+                // Configurar dados mockados
+                window.caminhoes = dadosMock.caminhoes;
+                window.abastecimentos = dadosMock.abastecimentos;
+
+                html += '<div class="info">✅ Dados mockados configurados</div>';
+
+                // Testar função obterDadosDoRelatorio
+                if (typeof obterDadosDoRelatorio !== 'function') {
+                    throw new Error('Função obterDadosDoRelatorio não encontrada');
+                }
+
+                html += '<div class="info">✅ Função obterDadosDoRelatorio encontrada</div>';
+
+                // Executar função
+                const dados = obterDadosDoRelatorio();
+                
+                if (!dados.valid) {
+                    html += `<div class="error">❌ Dados inválidos: ${dados.message}</div>`;
+                    resultadoDiv.innerHTML = html;
+                    return;
+                }
+
+                html += '<div class="success">✅ Dados obtidos com sucesso</div>';
+
+                // Verificar estrutura corrigida
+                const verificacoes = [
+                    { prop: 'totais', esperado: 'object' },
+                    { prop: 'totais.gasto', esperado: 'number' },
+                    { prop: 'totais.consumo', esperado: 'number' },
+                    { prop: 'totais.distancia', esperado: 'number' },
+                    { prop: 'medias', esperado: 'object' },
+                    { prop: 'medias.consumo', esperado: 'number' },
+                    { prop: 'medias.custoPorKm', esperado: 'number' },
+                    { prop: 'totalCaminhoes', esperado: 'number' },
+                    { prop: 'totalAbastecimentos', esperado: 'number' },
+                    { prop: 'dadosPorCaminhao', esperado: 'object' }
+                ];
+
+                html += '<h5>🔍 Verificações de Estrutura:</h5>';
+                let todasOK = true;
+
+                verificacoes.forEach(({ prop, esperado }) => {
+                    const valor = prop.split('.').reduce((obj, key) => obj?.[key], dados);
+                    const tipo = Array.isArray(valor) ? 'array' : typeof valor;
+                    
+                    if (tipo === esperado || (esperado === 'number' && !isNaN(valor))) {
+                        html += `<div class="success">✅ ${prop}: ${tipo} (valor: ${JSON.stringify(valor)})</div>`;
+                    } else {
+                        html += `<div class="error">❌ ${prop}: esperado ${esperado}, recebido ${tipo} (valor: ${JSON.stringify(valor)})</div>`;
+                        todasOK = false;
+                    }
+                });
+
+                // Mostrar dados estruturados
+                if (todasOK) {
+                    html += '<h5>📊 Dados Estruturados:</h5>';
+                    html += `<pre>${JSON.stringify({
+                        periodo: dados.periodo,
+                        totalCaminhoes: dados.totalCaminhoes,
+                        totalAbastecimentos: dados.totalAbastecimentos,
+                        totais: dados.totais,
+                        medias: dados.medias,
+                        caminhoes_processados: Object.keys(dados.dadosPorCaminhao)
+                    }, null, 2)}</pre>`;
+
+                    html += '<div class="success">🎉 <strong>CORREÇÃO VALIDADA COM SUCESSO!</strong><br>Todas as propriedades necessárias estão presentes e com os tipos corretos.</div>';
+                } else {
+                    html += '<div class="error">❌ <strong>AINDA HÁ PROBLEMAS NA ESTRUTURA</strong><br>Algumas propriedades estão ausentes ou com tipos incorretos.</div>';
+                }
+
+                resultadoDiv.innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('resultado').innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro no Teste</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Stack:</strong> ${error.stack}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function limparResultado() {
+            document.getElementById('resultado').innerHTML = '';
+        }
+
+        // Executar teste automaticamente
+        window.onload = function() {
+            setTimeout(executarTeste, 1000);
+        };
+    </script>
+</body>
+</html>

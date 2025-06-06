@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Final - PDF Completo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4CAF50;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .status-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .status-card.success { border-color: #28a745; background: #d4edda; }
+        .status-card.error { border-color: #dc3545; background: #f8d7da; }
+        .status-card.info { border-color: #17a2b8; background: #d1ecf1; }
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: white;
+        }
+        .btn-info {
+            background: linear-gradient(45deg, #17a2b8, #117a8b);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 TESTE FINAL - PDF COMPLETO</h1>
+            <p>Validação completa da funcionalidade de PDF com 9 páginas</p>
+        </div>
+
+        <!-- Status dos Serviços -->
+        <h2>📊 Status dos Serviços</h2>
+        <div class="status-grid">
+            <div class="status-card" id="backend-status">
+                <h3>🔧 Backend</h3>
+                <p id="backend-text">Verificando...</p>
+            </div>
+            <div class="status-card" id="frontend-status">
+                <h3>🌐 Frontend</h3>
+                <p id="frontend-text">Verificando...</p>
+            </div>
+            <div class="status-card" id="data-status">
+                <h3>📊 Dados</h3>
+                <p id="data-text">Verificando...</p>
+            </div>
+        </div>
+
+        <!-- Testes de Funcionalidade -->
+        <h2>🧪 Testes de Funcionalidade</h2>
+        <div class="test-buttons">
+            <button class="btn btn-primary" onclick="testarConexaoCompleta()">
+                🔍 Testar Conexão Completa
+            </button>
+            <button class="btn btn-success" onclick="testarPdfCompleto()">
+                📄 Gerar PDF Completo (9 páginas)
+            </button>
+            <button class="btn btn-info" onclick="testarDadosDoRelatorio()">
+                📊 Testar Dados do Relatório
+            </button>
+            <button class="btn btn-warning" onclick="testarFuncoesAuxiliares()">
+                🛠️ Testar Funções Auxiliares
+            </button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+
+        <!-- Log de Atividades -->
+        <div class="log" id="log">
+            <div>🚀 Sistema de teste inicializado...</div>
+            <div>⏳ Aguardando comandos...</div>
+        </div>
+    </div>
+
+    <script src="src/js/relatorios.js"></script>
+    <script>
+        let logElement = document.getElementById('log');
+        let progressElement = document.getElementById('progress');
+        let currentProgress = 0;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#00ff00',
+                success: '#00ff88',
+                error: '#ff6b6b',
+                warning: '#ffeb3b'
+            };
+            
+            logElement.innerHTML += `<div style="color: ${colors[type]}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateProgress(percent) {
+            currentProgress = Math.min(100, Math.max(0, percent));
+            progressElement.style.width = currentProgress + '%';
+        }
+
+        // Verificação inicial dos serviços
+        async function verificarServicos() {
+            log('🔍 Verificando status dos serviços...', 'info');
+            updateProgress(10);
+
+            try {
+                // Testar backend
+                const backendResponse = await fetch('/api/health');
+                if (backendResponse.ok) {
+                    document.getElementById('backend-status').classList.add('success');
+                    document.getElementById('backend-text').textContent = '✅ Online';
+                    log('✅ Backend: Conectado', 'success');
+                } else {
+                    throw new Error('Backend não respondeu');
+                }
+                updateProgress(30);
+
+                // Testar dados
+                const dadosResponse = await fetch('/api/abastecimentos');
+                const dados = await dadosResponse.json();
+                
+                document.getElementById('data-status').classList.add('success');
+                document.getElementById('data-text').textContent = `✅ ${dados.length} registros`;
+                log(`✅ Dados: ${dados.length} registros encontrados`, 'success');
+                updateProgress(50);
+
+                document.getElementById('frontend-status').classList.add('success');
+                document.getElementById('frontend-text').textContent = '✅ Online';
+                log('✅ Frontend: Conectado', 'success');
+                updateProgress(70);
+
+            } catch (error) {
+                log(`❌ Erro ao verificar serviços: ${error.message}`, 'error');
+                document.getElementById('backend-status').classList.add('error');
+                document.getElementById('backend-text').textContent = '❌ Offline';
+            }
+        }
+
+        async function testarConexaoCompleta() {
+            log('🔍 Iniciando teste de conexão completa...', 'info');
+            updateProgress(0);
+
+            try {
+                // Testar todas as APIs necessárias
+                const endpoints = [
+                    '/api/health',
+                    '/api/abastecimentos',
+                    '/api/caminhoes',
+                    '/api/info'
+                ];
+
+                for (let i = 0; i < endpoints.length; i++) {
+                    const endpoint = endpoints[i];
+                    log(`📡 Testando ${endpoint}...`, 'info');
+                    
+                    const response = await fetch(endpoint);
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✅ ${endpoint}: OK (${JSON.stringify(data).length} bytes)`, 'success');
+                    } else {
+                        throw new Error(`${endpoint} retornou status ${response.status}`);
+                    }
+                    updateProgress((i + 1) * 25);
+                }
+
+                log('🎉 Teste de conexão completa APROVADO!', 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Conexão OK!',
+                    text: 'Todos os endpoints estão funcionando corretamente'
+                });
+
+            } catch (error) {
+                log(`❌ Falha no teste de conexão: ${error.message}`, 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro de Conexão',
+                    text: error.message
+                });
+            }
+        }
+
+        async function testarPdfCompleto() {
+            log('📄 Iniciando geração de PDF completo...', 'info');
+            updateProgress(0);
+
+            try {
+                if (typeof exportarPdfCompleto === 'undefined') {
+                    throw new Error('Função exportarPdfCompleto não encontrada!');
+                }
+
+                log('🔍 Função encontrada, executando...', 'info');
+                updateProgress(20);
+
+                // Executar a função
+                await exportarPdfCompleto();
+                
+                log('✅ PDF completo gerado com sucesso!', 'success');
+                updateProgress(100);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'PDF Gerado!',
+                    text: 'O PDF completo de 9 páginas foi gerado com sucesso',
+                    confirmButtonText: 'Excelente!'
+                });
+
+            } catch (error) {
+                log(`❌ Erro na geração do PDF: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro na Geração',
+                    text: `Erro: ${error.message}`,
+                    footer: 'Verifique o console para mais detalhes'
+                });
+            }
+        }
+
+        async function testarDadosDoRelatorio() {
+            log('📊 Testando obtenção de dados do relatório...', 'info');
+            updateProgress(0);
+
+            try {
+                if (typeof obterDadosDoRelatorio === 'undefined') {
+                    throw new Error('Função obterDadosDoRelatorio não encontrada!');
+                }
+
+                log('🔍 Obtendo dados...', 'info');
+                updateProgress(30);
+
+                const dados = await obterDadosDoRelatorio();
+                
+                log(`✅ Dados obtidos: ${JSON.stringify(dados, null, 2)}`, 'success');
+                updateProgress(100);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Dados OK!',
+                    html: `
+                        <strong>Caminhões:</strong> ${dados.caminhoes?.length || 0}<br>
+                        <strong>Abastecimentos:</strong> ${dados.abastecimentos?.length || 0}<br>
+                        <strong>Dados por Caminhão:</strong> ${Object.keys(dados.dadosPorCaminhao || {}).length}
+                    `
+                });
+
+            } catch (error) {
+                log(`❌ Erro ao obter dados: ${error.message}`, 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro nos Dados',
+                    text: error.message
+                });
+            }
+        }
+
+        async function testarFuncoesAuxiliares() {
+            log('🛠️ Testando funções auxiliares do PDF...', 'info');
+            updateProgress(0);
+
+            const funcoes = [
+                'criarAnaliseDetalhadaPdf',
+                'criarAnaliseCustosPdf', 
+                'criarIndicadoresPdf',
+                'criarAnalisePreditivaPdf',
+                'criarDadosDetalhadosPdf',
+                'criarSimuladorCenariosPdf',
+                'criarManutencaoPreventivaPdf',
+                'calcularTotaisGerais',
+                'formatDate'
+            ];
+
+            let funcionando = 0;
+            
+            for (let i = 0; i < funcoes.length; i++) {
+                const nomeFuncao = funcoes[i];
+                log(`🔍 Testando ${nomeFuncao}...`, 'info');
+                
+                if (typeof window[nomeFuncao] === 'function') {
+                    log(`✅ ${nomeFuncao}: Encontrada`, 'success');
+                    funcionando++;
+                } else {
+                    log(`❌ ${nomeFuncao}: Não encontrada`, 'error');
+                }
+                
+                updateProgress((i + 1) * (100 / funcoes.length));
+            }
+
+            const resultado = `${funcionando}/${funcoes.length} funções encontradas`;
+            log(`📊 Resultado: ${resultado}`, funcionando === funcoes.length ? 'success' : 'warning');
+
+            Swal.fire({
+                icon: funcionando === funcoes.length ? 'success' : 'warning',
+                title: 'Teste de Funções',
+                text: resultado,
+                html: `
+                    <strong>Funções OK:</strong> ${funcionando}<br>
+                    <strong>Total:</strong> ${funcoes.length}<br>
+                    <strong>Status:</strong> ${funcionando === funcoes.length ? '✅ Completo' : '⚠️ Incompleto'}
+                `
+            });
+        }
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            log('🎯 Página carregada, iniciando verificações...', 'info');
+            setTimeout(verificarServicos, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Direto - PDF Completo</title>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <h1>Teste Direto da Funcionalidade PDF Completo</h1>
+    <button id="testar">Gerar PDF Completo</button>
+    <div id="log"></div>
+
+    <script>
+        // Mock das funções de alerta
+        window.AlertInfo = {
+            loading: (titulo, msg) => console.log(`Loading: ${titulo} - ${msg}`)
+        };
+        window.AlertUtils = {
+            close: () => console.log('Alert fechado')
+        };
+        window.AlertWarning = {
+            show: (titulo, msg) => console.log(`Warning: ${titulo} - ${msg}`)
+        };
+        window.AlertToast = {
+            success: (msg) => console.log(`Success: ${msg}`)
+        };
+        window.AlertError = {
+            show: (titulo, msg) => console.log(`Error: ${titulo} - ${msg}`)
+        };
+
+        // Dados de teste simples
+        window.caminhoes = [
+            {"placa": "TST-8888", "modelo": "Scania R450", "ano": 2024, "id": "1"}
+        ];
+        window.abastecimentos = [
+            {"id": "1", "caminhaoId": "1", "data": "2025-06-01", "litros": 50, "valorTotal": 300, "valorLitro": 6, "odometro": 1000, "posto": "Posto Teste"}
+        ];
+    </script>
+    
+    <!-- Carregar funções de relatório -->
+    <script src="src/js/relatorios.js"></script>
+    
+    <script>
+        document.getElementById('testar').addEventListener('click', () => {
+            try {
+                console.log('🚀 Iniciando teste do PDF...');
+                exportarPdfCompleto();
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                document.getElementById('log').innerHTML = `<p style="color: red;">Erro: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
