@@ -79,30 +79,48 @@ async function buscarAbastecimentoPorId(req, res) {
 // Criar novo abastecimento
 async function criarAbastecimento(req, res) {
     try {
+        // Extrair campos do corpo, aceitando snake_case e camelCase e campo 'odometro'
         const {
             data,
             periodo_inicio,
             periodo_fim,
-            caminhao_id,
+            caminhao_id: cam_id,
+            caminhaoId,
             motorista,
-            km_inicial,
-            km_final,
+            km_inicial: kmIni,
+            kmInicial,
+            km_final: kmFin,
+            kmFinal,
             litros,
-            valor_litro,
-            valor_total,
+            valor_litro: valLitro,
+            valorLitro,
+            valor_total: valTotal,
+            valorTotal,
             posto,
-            observacoes
+            observacoes,
+            odometro
         } = req.body;
         
+        // Mapear para variáveis finais
+        const caminhaoIdVal = cam_id || caminhaoId;
+        const kmInicialVal = kmIni != null ? kmIni : (kmInicial != null ? kmInicial : null);
+        const kmFinalVal = kmFin != null ? kmFin : (kmFinal != null ? kmFinal : null);
+        const litrosVal = litros;
+        const valorLitroVal = valLitro != null ? valLitro : valorLitro;
+        const valorTotalVal = valTotal != null ? valTotal : valorTotal;
+        // Se não veio km_inicial e veio odometro, usar odometro para final
+        const kmIniFinal = kmInicialVal != null ? kmInicialVal : (odometro != null ? odometro : null);
+        const kmFinFinal = kmFinalVal != null ? kmFinalVal : (odometro != null ? odometro : null);
+        
         // Validações básicas
-        if (!data || !caminhao_id || !motorista || !litros || !valor_litro) {
+        if (!data || !caminhaoIdVal || !motorista || !litrosVal || !valorLitroVal) {
             return res.status(400).json({ 
                 error: 'Data, caminhão, motorista, litros e valor por litro são obrigatórios' 
             });
         }
         
         // Verificar se o caminhão existe
-        const caminhaoResult = await pool.query('SELECT id FROM caminhoes WHERE id = $1', [caminhao_id]);
+        const caminhaoResult = await pool.query('SELECT id FROM caminhoes WHERE id = $1', [caminhaoIdVal]);
         if (caminhaoResult.rows.length === 0) {
             return res.status(400).json({ error: 'Caminhão não encontrado' });
         }
@@ -115,8 +133,21 @@ async function criarAbastecimento(req, res) {
              km_inicial, km_final, litros, valor_litro, valor_total, posto, observacoes)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *
-        `, [id, data, periodo_inicio, periodo_fim, caminhao_id, motorista, 
-            km_inicial, km_final, litros, valor_litro, valor_total, posto, observacoes]);
+        `, [
+            id,
+            data,
+            periodo_inicio,
+            periodo_fim,
+            caminhaoIdVal,
+            motorista,
+            kmIniFinal,
+            kmFinFinal,
+            litrosVal,
+            valorLitroVal,
+            valorTotalVal,
+            posto,
+            observacoes
+        ]);
         
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -129,20 +160,37 @@ async function criarAbastecimento(req, res) {
 async function atualizarAbastecimento(req, res) {
     try {
         const { id } = req.params;
+        
+        // Extrair e mapear campos assim como na criação
         const {
             data,
             periodo_inicio,
             periodo_fim,
-            caminhao_id,
+            caminhao_id: cam_id,
+            caminhaoId,
             motorista,
-            km_inicial,
-            km_final,
+            km_inicial: kmIni,
+            kmInicial,
+            km_final: kmFin,
+            kmFinal,
             litros,
-            valor_litro,
-            valor_total,
+            valor_litro: valLitro,
+            valorLitro,
+            valor_total: valTotal,
+            valorTotal,
             posto,
-            observacoes
+            observacoes,
+            odometro
         } = req.body;
+        
+        const caminhaoIdVal = cam_id || caminhaoId;
+        const kmInicialVal = kmIni != null ? kmIni : (kmInicial != null ? kmInicial : null);
+        const kmFinalVal = kmFin != null ? kmFin : (kmFinal != null ? kmFinal : null);
+        const litrosVal = litros;
+        const valorLitroVal = valLitro != null ? valLitro : valorLitro;
+        const valorTotalVal = valTotal != null ? valTotal : valorTotal;
+        const kmIniFinal = kmInicialVal != null ? kmInicialVal : (odometro != null ? odometro : null);
+        const kmFinFinal = kmFinalVal != null ? kmFinalVal : (odometro != null ? odometro : null);
         
         // Verificar se o abastecimento existe
         const existeResult = await pool.query('SELECT id FROM abastecimentos WHERE id = $1', [id]);
@@ -151,8 +199,8 @@ async function atualizarAbastecimento(req, res) {
         }
         
         // Verificar se o caminhão existe (se foi alterado)
-        if (caminhao_id) {
-            const caminhaoResult = await pool.query('SELECT id FROM caminhoes WHERE id = $1', [caminhao_id]);
+        if (caminhaoIdVal) {
+            const caminhaoResult = await pool.query('SELECT id FROM caminhoes WHERE id = $1', [caminhaoIdVal]);
             if (caminhaoResult.rows.length === 0) {
                 return res.status(400).json({ error: 'Caminhão não encontrado' });
             }
@@ -166,8 +214,21 @@ async function atualizarAbastecimento(req, res) {
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
             RETURNING *
-        `, [id, data, periodo_inicio, periodo_fim, caminhao_id, motorista,
-            km_inicial, km_final, litros, valor_litro, valor_total, posto, observacoes]);
+        `, [
+            id,
+            data,
+            periodo_inicio,
+            periodo_fim,
+            caminhaoIdVal,
+            motorista,
+            kmIniFinal,
+            kmFinFinal,
+            litrosVal,
+            valorLitroVal,
+            valorTotalVal,
+            posto,
+            observacoes
+        ]);
         
         res.json(result.rows[0]);
     } catch (error) {

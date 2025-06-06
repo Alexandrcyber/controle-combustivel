@@ -45,9 +45,8 @@ function initCharts() {
                 },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return `${context.raw.toFixed(2)} km/l`;
-                        }
+                        title: (items) => `Caminhão: ${items[0].label}`,
+                        label: (item) => `Média: ${item.parsed.y.toFixed(2)} km/l`
                     }
                 }
             },
@@ -113,27 +112,42 @@ function updateCharts() {
 
 // Atualizar gráfico de consumo por caminhão
 function updateConsumoPorCaminhaoChart() {
+    // Ler filtros de data do dashboard
+    const dataInicio = document.getElementById('dashboardDataInicio').value;
+    const dataFim = document.getElementById('dashboardDataFim').value;
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim + 'T23:59:59');
+
+    // Filtrar abastecimentos pelo período
+    const abastecimentosFiltrados = abastecimentos.filter(a => {
+        const dt = new Date(a.data);
+        return dt >= inicio && dt <= fim;
+    });
+
+    // Definir caminhões a exibir: todos ou específico
+    const selecionado = document.getElementById('dashboardCaminhaoSelect').value;
+    const listaCaminhoes = selecionado === 'todos'
+        ? caminhoes
+        : caminhoes.filter(c => c.id === selecionado);
+
     const labels = [];
     const consumoData = [];
-    
-    // Calcular consumo médio para cada caminhão
-    caminhoes.forEach(caminhao => {
-        const abastecimentosCaminhao = abastecimentos.filter(a => a.caminhaoId === caminhao.id);
+
+    // Calcular consumo médio para cada caminhão da lista
+    listaCaminhoes.forEach(caminhao => {
+        const abastecCaminhao = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhao.id);
         let totalKm = 0;
         let totalLitros = 0;
-        
-        abastecimentosCaminhao.forEach(a => {
+        abastecCaminhao.forEach(a => {
             totalKm += (a.kmFinal - a.kmInicial);
             totalLitros += parseFloat(a.litros);
         });
-        
         if (totalLitros > 0) {
-            const mediaConsumo = totalKm / totalLitros;
             labels.push(`${caminhao.placa}`);
-            consumoData.push(mediaConsumo);
+            consumoData.push((totalKm / totalLitros).toFixed(2));
         }
     });
-    
+
     // Atualizar dados do gráfico
     consumoPorCaminhaoChart.data.labels = labels;
     consumoPorCaminhaoChart.data.datasets[0].data = consumoData;
@@ -142,34 +156,32 @@ function updateConsumoPorCaminhaoChart() {
 
 // Atualizar gráfico de gastos mensais
 function updateGastosMensaisChart() {
-    // Definir período de 6 meses para análise
-    const hoje = new Date();
+    // Ler filtros de data do dashboard
+    const dataInicio = document.getElementById('dashboardDataInicio').value;
+    const dataFim = document.getElementById('dashboardDataFim').value;
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim + 'T23:59:59');
+
+    // Construir lista de meses entre início e fim
     const meses = [];
     const gastosData = [];
-    
-    for (let i = 5; i >= 0; i--) {
-        const data = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-        const mesAno = `${data.toLocaleString('pt-BR', { month: 'short' })}/${data.getFullYear().toString().substr(2)}`;
-        meses.push(mesAno);
-        
-        // Filtrar abastecimentos para o mês
-        const primeiroDiaMes = new Date(data.getFullYear(), data.getMonth(), 1);
-        const ultimoDiaMes = new Date(data.getFullYear(), data.getMonth() + 1, 0);
-        
-        const abastecimentosMes = abastecimentos.filter(a => {
-            const dataAbastecimento = new Date(a.data);
-            return dataAbastecimento >= primeiroDiaMes && dataAbastecimento <= ultimoDiaMes;
-        });
-        
-        // Calcular gastos totais para o mês
-        let gastoMes = 0;
-        abastecimentosMes.forEach(a => {
-            gastoMes += a.valorTotal;
-        });
-        
+    let cursor = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
+    while (cursor <= fim) {
+        const mesAnoLabel = `${cursor.toLocaleString('pt-BR', { month: 'short' })}/${cursor.getFullYear().toString().substr(2)}`;
+        meses.push(mesAnoLabel);
+        // calcular gasto no mês
+        const primeiroDiaMes = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        const ultimoDiaMes = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59);
+        const gastoMes = abastecimentos
+            .filter(a => {
+                const dt = new Date(a.data);
+                return dt >= primeiroDiaMes && dt <= ultimoDiaMes;
+            })
+            .reduce((sum, a) => sum + parseFloat(a.valorTotal), 0);
         gastosData.push(gastoMes);
+        cursor.setMonth(cursor.getMonth() + 1);
     }
-    
+
     // Atualizar dados do gráfico
     gastosMensaisChart.data.labels = meses;
     gastosMensaisChart.data.datasets[0].data = gastosData;

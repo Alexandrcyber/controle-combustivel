@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Interface Relatórios</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover { background-color: #0056b3; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+        .report-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste de Interface - Sistema de Relatórios</h1>
+        
+        <div class="test-section info">
+            <h3>📊 Status do Sistema</h3>
+            <p><strong>Backend:</strong> <span id="backend-status">Verificando...</span></p>
+            <p><strong>Dados Globais:</strong> <span id="global-status">Verificando...</span></p>
+            <p><strong>Local Storage:</strong> <span id="storage-status">Verificando...</span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🚛 Dados de Caminhões</h3>
+            <button onclick="testarCaminhoes()">Testar Carregamento de Caminhões</button>
+            <div id="caminhoes-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>⛽ Dados de Abastecimentos</h3>
+            <button onclick="testarAbastecimentos()">Testar Carregamento de Abastecimentos</button>
+            <div id="abastecimentos-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📈 Teste de Relatório Completo</h3>
+            <button onclick="gerarRelatorioTeste()">Gerar Relatório de Teste</button>
+            <div id="relatorio-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 Sincronização de Dados</h3>
+            <button onclick="forcarRecarregamento()">Forçar Recarregamento dos Dados</button>
+            <button onclick="limparStorage()">Limpar Local Storage</button>
+            <div id="sync-result"></div>
+        </div>
+
+        <div id="relatorio-display" class="report-container" style="display: none;">
+            <h3>📋 Relatório Gerado</h3>
+            <div id="relatorio-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar status inicial
+        window.onload = function() {
+            verificarBackend();
+            verificarDadosGlobais();
+            verificarLocalStorage();
+        };
+
+        async function verificarBackend() {
+            try {
+                const response = await fetch('http://localhost:3001/api/caminhoes');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('backend-status').innerHTML = `<span style="color: green;">✅ Online (${data.length} caminhões)</span>`;
+                } else {
+                    document.getElementById('backend-status').innerHTML = '<span style="color: red;">❌ Erro na resposta</span>';
+                }
+            } catch (error) {
+                document.getElementById('backend-status').innerHTML = '<span style="color: red;">❌ Offline</span>';
+            }
+        }
+
+        function verificarDadosGlobais() {
+            const caminhoes = window.caminhoes || [];
+            const abastecimentos = window.abastecimentos || [];
+            document.getElementById('global-status').innerHTML = 
+                `<span style="color: ${caminhoes.length > 0 ? 'green' : 'orange'};">
+                    ${caminhoes.length} caminhões, ${abastecimentos.length} abastecimentos
+                </span>`;
+        }
+
+        function verificarLocalStorage() {
+            const caminhoes = JSON.parse(localStorage.getItem('caminhoes') || '[]');
+            const abastecimentos = JSON.parse(localStorage.getItem('abastecimentos') || '[]');
+            document.getElementById('storage-status').innerHTML = 
+                `<span style="color: ${caminhoes.length > 0 ? 'green' : 'orange'};">
+                    ${caminhoes.length} caminhões, ${abastecimentos.length} abastecimentos
+                </span>`;
+        }
+
+        async function testarCaminhoes() {
+            const resultDiv = document.getElementById('caminhoes-result');
+            try {
+                const response = await fetch('http://localhost:3001/api/caminhoes');
+                const caminhoes = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Caminhões carregados com sucesso!</h4>
+                        <p><strong>Total:</strong> ${caminhoes.length}</p>
+                        <pre>${JSON.stringify(caminhoes, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro ao carregar caminhões</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testarAbastecimentos() {
+            const resultDiv = document.getElementById('abastecimentos-result');
+            try {
+                const response = await fetch('http://localhost:3001/api/abastecimentos');
+                const abastecimentos = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Abastecimentos carregados com sucesso!</h4>
+                        <p><strong>Total:</strong> ${abastecimentos.length}</p>
+                        <pre>${JSON.stringify(abastecimentos, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro ao carregar abastecimentos</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function gerarRelatorioTeste() {
+            const resultDiv = document.getElementById('relatorio-result');
+            const displayDiv = document.getElementById('relatorio-display');
+            const contentDiv = document.getElementById('relatorio-content');
+            
+            try {
+                // Carregar dados frescos da API
+                const [caminhoes, abastecimentos] = await Promise.all([
+                    fetch('http://localhost:3001/api/caminhoes').then(r => r.json()),
+                    fetch('http://localhost:3001/api/abastecimentos').then(r => r.json())
+                ]);
+
+                if (abastecimentos.length === 0) {
+                    throw new Error('Nenhum abastecimento encontrado');
+                }
+
+                // Calcular estatísticas
+                const totalGasto = abastecimentos.reduce((total, a) => total + parseFloat(a.valor_total || 0), 0);
+                const totalLitros = abastecimentos.reduce((total, a) => total + parseFloat(a.litros || 0), 0);
+                const mediaPreco = totalLitros > 0 ? totalGasto / totalLitros : 0;
+
+                // Gerar relatório por caminhão
+                const relatorioMensal = {};
+                
+                abastecimentos.forEach(abast => {
+                    const caminhaoNome = caminhoes.find(c => c.id === abast.caminhao_id)?.nome || `Caminhão ${abast.caminhao_id}`;
+                    const mes = new Date(abast.data).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    
+                    if (!relatorioMensal[mes]) {
+                        relatorioMensal[mes] = {};
+                    }
+                    
+                    if (!relatorioMensal[mes][caminhaoNome]) {
+                        relatorioMensal[mes][caminhaoNome] = {
+                            abastecimentos: 0,
+                            totalGasto: 0,
+                            totalLitros: 0,
+                            kmPercorrida: 0
+                        };
+                    }
+                    
+                    relatorioMensal[mes][caminhaoNome].abastecimentos++;
+                    relatorioMensal[mes][caminhaoNome].totalGasto += parseFloat(abast.valor_total || 0);
+                    relatorioMensal[mes][caminhaoNome].totalLitros += parseFloat(abast.litros || 0);
+                    relatorioMensal[mes][caminhaoNome].kmPercorrida += parseFloat(abast.km_final || 0) - parseFloat(abast.km_inicial || 0);
+                });
+
+                let relatorioHTML = `
+                    <h4>📊 Resumo Geral</h4>
+                    <ul>
+                        <li><strong>Total de Abastecimentos:</strong> ${abastecimentos.length}</li>
+                        <li><strong>Total Gasto:</strong> R$ ${totalGasto.toFixed(2)}</li>
+                        <li><strong>Total de Litros:</strong> ${totalLitros.toFixed(2)} L</li>
+                        <li><strong>Preço Médio por Litro:</strong> R$ ${mediaPreco.toFixed(2)}</li>
+                    </ul>
+                    <h4>📅 Relatório Mensal</h4>
+                `;
+
+                for (const [mes, caminhoes] of Object.entries(relatorioMensal)) {
+                    relatorioHTML += `<h5>${mes}</h5><ul>`;
+                    for (const [caminhao, dados] of Object.entries(caminhoes)) {
+                        relatorioHTML += `
+                            <li><strong>${caminhao}:</strong> 
+                                ${dados.abastecimentos} abastecimentos, 
+                                R$ ${dados.totalGasto.toFixed(2)}, 
+                                ${dados.totalLitros.toFixed(2)}L, 
+                                ${dados.kmPercorrida.toFixed(0)} km
+                            </li>
+                        `;
+                    }
+                    relatorioHTML += '</ul>';
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Relatório gerado com sucesso!</h4>
+                        <p>Dados processados sem erros de campo.</p>
+                    </div>
+                `;
+                
+                contentDiv.innerHTML = relatorioHTML;
+                displayDiv.style.display = 'block';
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro ao gerar relatório</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Stack:</strong> ${error.stack}</p>
+                    </div>
+                `;
+                displayDiv.style.display = 'none';
+            }
+        }
+
+        async function forcarRecarregamento() {
+            const resultDiv = document.getElementById('sync-result');
+            try {
+                // Simular a função loadDataFromLocalStorage
+                const [caminhoes, abastecimentos] = await Promise.all([
+                    fetch('http://localhost:3001/api/caminhoes').then(r => r.json()),
+                    fetch('http://localhost:3001/api/abastecimentos').then(r => r.json())
+                ]);
+
+                // Atualizar localStorage
+                localStorage.setItem('caminhoes', JSON.stringify(caminhoes));
+                localStorage.setItem('abastecimentos', JSON.stringify(abastecimentos));
+
+                // Atualizar variáveis globais
+                window.caminhoes = caminhoes;
+                window.abastecimentos = abastecimentos;
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Dados recarregados com sucesso!</h4>
+                        <p><strong>Caminhões:</strong> ${caminhoes.length}</p>
+                        <p><strong>Abastecimentos:</strong> ${abastecimentos.length}</p>
+                    </div>
+                `;
+
+                // Atualizar status
+                verificarDadosGlobais();
+                verificarLocalStorage();
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erro ao recarregar dados</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function limparStorage() {
+            localStorage.removeItem('caminhoes');
+            localStorage.removeItem('abastecimentos');
+            window.caminhoes = [];
+            window.abastecimentos = [];
+            
+            document.getElementById('sync-result').innerHTML = `
+                <div class="info">
+                    <h4>🔄 Local Storage limpo</h4>
+                    <p>Todos os dados foram removidos do armazenamento local.</p>
+                </div>
+            `;
+            
+            verificarDadosGlobais();
+            verificarLocalStorage();
+        }
+    </script>
+</body>
+</html>

@@ -2,14 +2,37 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 // Configuração da conexão com PostgreSQL
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
-});
+// Suporte para Neon (PostgreSQL cloud) usando DATABASE_URL ou configurações individuais
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+    // Usar DATABASE_URL para Neon ou outros provedores cloud
+    poolConfig = {
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    };
+} else {
+    // Usar configurações individuais para desenvolvimento local
+    poolConfig = {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+    };
+}
+
+const pool = new Pool(poolConfig);
+
+// Log da configuração (sem mostrar credenciais)
+if (process.env.NODE_ENV === 'development') {
+    console.log('🔗 Configuração do banco:', {
+        host: poolConfig.host || 'CONNECTION_STRING',
+        database: poolConfig.database || 'FROM_URL',
+        ssl: poolConfig.ssl !== false
+    });
+}
 
 // Versão atual do schema do banco
 const SCHEMA_VERSION = '1.0.0';

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "test1",
+    "caminhaoId": "1749118873977lmrpqoo1b",
+    "data": "2025-06-01",
+    "litros": 50,
+    "valorTotal": 300.00,
+    "valorLitro": 6.00,
+    "odometro": 1000,
+    "posto": "Posto Teste 1"
+  },
+  {
+    "id": "test2",
+    "caminhaoId": "1749118873977lmrpqoo1b",
+    "data": "2025-06-03",
+    "litros": 45,
+    "valorTotal": 270.00,
+    "valorLitro": 6.00,
+    "odometro": 1200,
+    "posto": "Posto Teste 2"
+  },
+  {
+    "id": "test3",
+    "caminhaoId": "1749118873977lmrpqoo1b",
+    "data": "2025-06-05",
+    "litros": 48,
+    "valorTotal": 288.00,
+    "valorLitro": 6.00,
+    "odometro": 1450,
+    "posto": "Posto Teste 3"
+  }
+]

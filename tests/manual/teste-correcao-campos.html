@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Correção de Relatórios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #console {
+            background-color: #1e1e1e;
+            color: #dcdcdc;
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Teste de Correção de Relatórios</h1>
+        
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Console</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearConsole()">Limpar</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="console"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Teste de Acesso a Campos</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testarAcessoCampos()">Executar Teste</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Resultados do Teste</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="resultados"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simular console.log para exibir no elemento console
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        
+        function addToConsole(message, type = 'log') {
+            const consoleElement = document.getElementById('console');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            if (typeof message === 'object') {
+                message = JSON.stringify(message, null, 2);
+            }
+            
+            const colors = {
+                log: '#dcdcdc',
+                error: '#ff6b6b',
+                success: '#00ff00'
+            };
+            
+            logEntry.innerHTML = `<span style="color: ${colors[type] || colors.log}">[${type.toUpperCase()}] ${message}</span>`;
+            consoleElement.appendChild(logEntry);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+        }
+        
+        console.log = function(message) {
+            originalConsoleLog.apply(console, arguments);
+            addToConsole(message, 'log');
+        };
+        
+        console.error = function(message) {
+            originalConsoleError.apply(console, arguments);
+            addToConsole(message, 'error');
+        };
+        
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '';
+        }
+        
+        // Função para acessar campos independente do formato (snake_case ou camelCase)
+        function getField(obj, snakeCase, camelCase) {
+            return obj[snakeCase] !== undefined ? obj[snakeCase] : obj[camelCase];
+        }
+
+        // Função para acessar campos numéricos independente do formato (snake_case ou camelCase)
+        function getNumField(obj, snakeCase, camelCase, defaultValue = 0) {
+            const value = obj[snakeCase] !== undefined ? obj[snakeCase] : obj[camelCase];
+            return parseFloat(value || defaultValue);
+        }
+        
+        // Função para testar acesso a campos
+        async function testarAcessoCampos() {
+            console.log('🔄 Iniciando teste de acesso a campos...');
+            const resultadosElement = document.getElementById('resultados');
+            resultadosElement.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Buscando dados...</p></div>';
+            
+            try {
+                // Buscar dados de abastecimentos da API
+                const response = await fetch('http://localhost:3001/api/abastecimentos');
+                const abastecimentos = await response.json();
+                
+                console.log(`✅ Dados recebidos: ${abastecimentos.length} abastecimentos`);
+                
+                if (abastecimentos.length === 0) {
+                    resultadosElement.innerHTML = '<div class="alert alert-warning">Nenhum abastecimento encontrado.</div>';
+                    return;
+                }
+                
+                // Pegar o primeiro abastecimento para teste
+                const a = abastecimentos[0];
+                console.log('📊 Exemplo de abastecimento:', a);
+                
+                // Testar acesso a campos com nossa função auxiliar
+                const kmInicial = getNumField(a, 'km_inicial', 'kmInicial');
+                const kmFinal = getNumField(a, 'km_final', 'kmFinal');
+                const litros = getNumField(a, 'litros', 'litros');
+                const valorTotal = getNumField(a, 'valor_total', 'valorTotal');
+                
+                const distancia = kmFinal - kmInicial;
+                const consumo = litros > 0 ? (distancia / litros).toFixed(2) : 'N/A';
+                const custoKm = distancia > 0 ? (valorTotal / distancia).toFixed(2) : 'N/A';
+                
+                console.log(`📏 Cálculos: KM ${kmInicial} → ${kmFinal} = ${distancia}km, ${litros}L, R$${valorTotal}`);
+                console.log(`📈 Consumo: ${consumo} km/L, Custo por km: R$${custoKm}`);
+                
+                // Verificar acesso direto vs. nossa função
+                const kmInicialDireto = parseFloat(a.km_inicial || 0);
+                const kmFinalDireto = parseFloat(a.km_final || 0);
+                const diferencaKmInicial = kmInicial !== kmInicialDireto;
+                const diferencaKmFinal = kmFinal !== kmFinalDireto;
+                
+                // Exibir resultados em uma tabela
+                let html = `
+                    <h4 class="mb-3">Resultados do Teste de Acesso a Campos</h4>
+                    
+                    <div class="table-responsive mb-4">
+                        <table class="table table-striped table-bordered">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Valor (snake_case)</th>
+                                    <th>Valor (camelCase)</th>
+                                    <th>getNumField()</th>
+                                    <th>parseFloat()</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>km_inicial / kmInicial</td>
+                                    <td>${a.km_inicial || 'undefined'}</td>
+                                    <td>${a.kmInicial || 'undefined'}</td>
+                                    <td>${kmInicial}</td>
+                                    <td>${kmInicialDireto}</td>
+                                    <td>${diferencaKmInicial ? '<span class="text-danger">Diferente</span>' : '<span class="text-success">Igual</span>'}</td>
+                                </tr>
+                                <tr>
+                                    <td>km_final / kmFinal</td>
+                                    <td>${a.km_final || 'undefined'}</td>
+                                    <td>${a.kmFinal || 'undefined'}</td>
+                                    <td>${kmFinal}</td>
+                                    <td>${kmFinalDireto}</td>
+                                    <td>${diferencaKmFinal ? '<span class="text-danger">Diferente</span>' : '<span class="text-success">Igual</span>'}</td>
+                                </tr>
+                                <tr>
+                                    <td>litros</td>
+                                    <td>${a.litros || 'undefined'}</td>
+                                    <td>${a.litros || 'undefined'}</td>
+                                    <td>${litros}</td>
+                                    <td>${parseFloat(a.litros || 0)}</td>
+                                    <td>${litros !== parseFloat(a.litros || 0) ? '<span class="text-danger">Diferente</span>' : '<span class="text-success">Igual</span>'}</td>
+                                </tr>
+                                <tr>
+                                    <td>valor_total / valorTotal</td>
+                                    <td>${a.valor_total || 'undefined'}</td>
+                                    <td>${a.valorTotal || 'undefined'}</td>
+                                    <td>${valorTotal}</td>
+                                    <td>${parseFloat(a.valor_total || 0)}</td>
+                                    <td>${valorTotal !== parseFloat(a.valor_total || 0) ? '<span class="text-danger">Diferente</span>' : '<span class="text-success">Igual</span>'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h4 class="mb-3">Cálculos Derivados</h4>
+                    
+                    <div class="table-responsive mb-4">
+                        <table class="table table-striped table-bordered">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Cálculo</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Distância (km)</td>
+                                    <td>${distancia}</td>
+                                </tr>
+                                <tr>
+                                    <td>Consumo Médio (km/l)</td>
+                                    <td>${consumo}</td>
+                                </tr>
+                                <tr>
+                                    <td>Custo por km (R$)</td>
+                                    <td>${custoKm}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="alert ${(diferencaKmInicial || diferencaKmFinal) ? 'alert-warning' : 'alert-success'}">
+                        <h5>${(diferencaKmInicial || diferencaKmFinal) ? '⚠️ Diferenças encontradas!' : '✅ Teste concluído com sucesso!'}</h5>
+                        <p>${(diferencaKmInicial || diferencaKmFinal) ? 'Existem diferenças nos valores obtidos usando acesso direto vs. nossa função auxiliar.' : 'A função getNumField() está funcionando corretamente para todos os campos testados.'}</p>
+                    </div>
+                `;
+                
+                resultadosElement.innerHTML = html;
+                addToConsole(`${(diferencaKmInicial || diferencaKmFinal) ? '⚠️ Diferenças encontradas!' : '✅ Teste concluído com sucesso!'}`, (diferencaKmInicial || diferencaKmFinal) ? 'error' : 'success');
+            } catch (error) {
+                console.error('❌ Erro ao buscar dados:', error);
+                resultadosElement.innerHTML = `<div class="alert alert-danger">Erro ao buscar dados: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

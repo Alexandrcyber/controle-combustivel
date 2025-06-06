@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+
+// Importar configurações centralizadas
+const config = require('../config');
 
 const { testConnection, initDatabase } = require('./database');
 const { runMigrations } = require('./migrations');
@@ -10,14 +13,19 @@ const caminhoesRoutes = require('./routes/caminhoes');
 const abastecimentosRoutes = require('./routes/abastecimentos');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.backend.port;
 
-// Configurar CORS
+console.log(`[BACKEND] Iniciando servidor em modo: ${config.environment}`);
+console.log(`[BACKEND] Porta configurada: ${PORT}`);
+
+// Configurar CORS usando configurações centralizadas
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: config.cors.origin,
     credentials: true,
     optionsSuccessStatus: 200
 };
+
+console.log(`[BACKEND] CORS configurado para origins: ${config.cors.origin.join(', ')}`);
 
 // Middlewares
 app.use(cors(corsOptions));
@@ -25,7 +33,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware de log para desenvolvimento
-if (process.env.NODE_ENV === 'development') {
+if (config.debug) {
     app.use((req, res, next) => {
         console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
         next();

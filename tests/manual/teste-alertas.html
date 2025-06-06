@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Alertas Personalizados</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">🚨 Teste de Alertas Personalizados</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>✅ Alertas de Sucesso</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-success me-2 mb-2" onclick="testarSucessoSimples()">Sucesso Simples</button>
+                        <button class="btn btn-success me-2 mb-2" onclick="testarSucessoConfirmacao()">Sucesso com Confirmação</button>
+                        <button class="btn btn-success me-2 mb-2" onclick="testarSucessoDetalhado()">Sucesso Detalhado</button>
+                        <button class="btn btn-success me-2 mb-2" onclick="testarToastSucesso()">Toast Sucesso</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>❌ Alertas de Erro</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-danger me-2 mb-2" onclick="testarErroSimples()">Erro Simples</button>
+                        <button class="btn btn-danger me-2 mb-2" onclick="testarErroValidacao()">Erro de Validação</button>
+                        <button class="btn btn-danger me-2 mb-2" onclick="testarErroApi()">Erro de API</button>
+                        <button class="btn btn-danger me-2 mb-2" onclick="testarToastErro()">Toast Erro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>⚠️ Alertas de Aviso</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-warning me-2 mb-2" onclick="testarAvisoSimples()">Aviso Simples</button>
+                        <button class="btn btn-warning me-2 mb-2" onclick="testarAvisoSemDados()">Sem Dados</button>
+                        <button class="btn btn-warning me-2 mb-2" onclick="testarToastAviso()">Toast Aviso</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>ℹ️ Alertas de Informação</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-info me-2 mb-2" onclick="testarInfoSimples()">Info Simples</button>
+                        <button class="btn btn-info me-2 mb-2" onclick="testarInfoLoading()">Loading</button>
+                        <button class="btn btn-info me-2 mb-2" onclick="testarToastInfo()">Toast Info</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>❓ Alertas de Confirmação</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary me-2 mb-2" onclick="testarConfirmacaoSimples()">Sim/Não</button>
+                        <button class="btn btn-primary me-2 mb-2" onclick="testarConfirmacaoExclusao()">Confirmar Exclusão</button>
+                        <button class="btn btn-primary me-2 mb-2" onclick="testarConfirmacaoLimpeza()">Limpar Dados</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="src/js/alerts.js"></script>
+    
+    <script>
+        // Funções de teste para alertas de sucesso
+        function testarSucessoSimples() {
+            AlertSuccess.show('Operação Realizada!', 'Dados salvos com sucesso.');
+        }
+        
+        function testarSucessoConfirmacao() {
+            AlertSuccess.confirm('Cadastro Finalizado!', 'O caminhão foi cadastrado no sistema.');
+        }
+        
+        function testarSucessoDetalhado() {
+            AlertSuccess.detailed('Teste da API Passou!', 'Caminhão ABC-1234 foi criado no banco de dados.');
+        }
+        
+        function testarToastSucesso() {
+            AlertToast.success('Caminhão cadastrado com sucesso!');
+        }
+        
+        // Funções de teste para alertas de erro
+        function testarErroSimples() {
+            AlertError.show('Erro Inesperado', 'Algo deu errado durante a operação.');
+        }
+        
+        function testarErroValidacao() {
+            AlertError.validation('Por favor, preencha todos os campos obrigatórios.');
+        }
+        
+        function testarErroApi() {
+            const erro = new Error('Falha na conexão com o servidor');
+            AlertError.api(erro);
+        }
+        
+        function testarToastErro() {
+            AlertToast.error('Falha ao conectar com a API');
+        }
+        
+        // Funções de teste para alertas de aviso
+        function testarAvisoSimples() {
+            AlertWarning.show('Atenção', 'Esta ação não pode ser desfeita.');
+        }
+        
+        function testarAvisoSemDados() {
+            AlertWarning.noData('Nenhum abastecimento encontrado no período selecionado.');
+        }
+        
+        function testarToastAviso() {
+            AlertToast.warning('Verifique os dados antes de continuar');
+        }
+        
+        // Funções de teste para alertas de informação
+        function testarInfoSimples() {
+            AlertInfo.show('Sistema Atualizado', 'A versão 2.0 foi instalada com sucesso.');
+        }
+        
+        function testarInfoLoading() {
+            AlertInfo.loading('Processando Relatório...', 'Aguarde enquanto geramos os dados...');
+            
+            // Simular processamento
+            setTimeout(() => {
+                AlertUtils.close();
+                AlertToast.success('Relatório gerado com sucesso!');
+            }, 3000);
+        }
+        
+        function testarToastInfo() {
+            AlertToast.info('Relatório será gerado em segundo plano');
+        }
+        
+        // Funções de teste para alertas de confirmação
+        async function testarConfirmacaoSimples() {
+            const result = await AlertConfirm.yesNo('Continuar?', 'Deseja prosseguir com a operação?');
+            
+            if (result.isConfirmed) {
+                AlertToast.success('Operação confirmada!');
+            } else {
+                AlertToast.info('Operação cancelada');
+            }
+        }
+        
+        async function testarConfirmacaoExclusao() {
+            const result = await AlertConfirm.delete('caminhão ABC-1234');
+            
+            if (result.isConfirmed) {
+                AlertToast.success('Item excluído com sucesso!');
+            } else {
+                AlertToast.info('Exclusão cancelada');
+            }
+        }
+        
+        async function testarConfirmacaoLimpeza() {
+            const result = await AlertConfirm.clearData();
+            
+            if (result.isConfirmed) {
+                AlertToast.success('Todos os dados foram removidos!');
+            } else {
+                AlertToast.info('Operação cancelada');
+            }
+        }
+    </script>
+</body>
+</html>

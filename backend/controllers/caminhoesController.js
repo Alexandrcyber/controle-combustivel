@@ -57,8 +57,7 @@ async function criarCaminhao(req, res) {
             RETURNING *
         `, [id, placa, modelo, ano || null, capacidade || null, motorista || null, status, observacoes || null]);
         
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
+        res.status(201).json(result.rows[0]);    } catch (error) {
         console.error('Erro ao criar caminhão:', error);
         
         // Verificar se é erro de duplicata de placa
@@ -66,7 +65,12 @@ async function criarCaminhao(req, res) {
             return res.status(400).json({ error: 'Já existe um caminhão com esta placa' });
         }
         
-        res.status(500).json({ error: 'Erro interno do servidor' });
+        // Fornecer uma mensagem de erro mais detalhada para ajudar na depuração
+        res.status(500).json({ 
+            error: 'Erro interno do servidor', 
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : null
+        });
     }
 }
 
@@ -90,8 +94,7 @@ async function atualizarCaminhao(req, res) {
             RETURNING *
         `, [id, placa, modelo, ano, capacidade, motorista, status, observacoes]);
         
-        res.json(result.rows[0]);
-    } catch (error) {
+        res.json(result.rows[0]);    } catch (error) {
         console.error('Erro ao atualizar caminhão:', error);
         
         // Verificar se é erro de duplicata de placa
@@ -99,7 +102,12 @@ async function atualizarCaminhao(req, res) {
             return res.status(400).json({ error: 'Já existe um caminhão com esta placa' });
         }
         
-        res.status(500).json({ error: 'Erro interno do servidor' });
+        // Fornecer uma mensagem de erro mais detalhada para ajudar na depuração
+        res.status(500).json({ 
+            error: 'Erro interno do servidor', 
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : null
+        });
     }
 }
 

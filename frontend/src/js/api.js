@@ -1,10 +1,14 @@
 // Configuração da API
 const API_CONFIG = {
-    baseURL: 'http://localhost:3001/api',
+    // Obter URL base de variável global ou usar fallback
+    baseURL: window.API_BASE_URL || 'http://localhost:3001/api',
     headers: {
         'Content-Type': 'application/json'
     }
 };
+
+// Imprimir a URL da API para depuração
+console.log('[API] URL base da API configurada para:', API_CONFIG.baseURL);
 
 // API para comunicação com o backend
 window.apiClient = {
@@ -20,16 +24,24 @@ window.apiClient = {
                 }
             };
 
+            // Log detalhado para depuração
+            console.log(`[API REQUEST] ${options.method || 'GET'} ${url}`, 
+                        options.body ? JSON.parse(options.body) : '');
+
             const response = await fetch(url, config);
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Erro HTTP: ${response.status}`);
+                const errorMessage = errorData.error || `Erro HTTP: ${response.status}`;
+                console.error(`[API ERROR] ${errorMessage}`, errorData);
+                throw new Error(errorMessage);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log(`[API RESPONSE]`, data);
+            return data;
         } catch (error) {
-            console.error('Erro na requisição:', error);
+            console.error('Erro na requisição:', error.message);
             throw error;
         }
     },
@@ -42,18 +54,21 @@ window.apiClient = {
 
         async buscarPorId(id) {
             return await apiClient.request(`/caminhoes/${id}`);
-        },
-
-        async salvar(caminhao) {
+        },        async salvar(caminhao) {
+            console.log('[apiClient.caminhoes] Salvando caminhão:', caminhao);
+            
             if (caminhao.id && caminhao.id !== 'novo') {
                 // Atualizar existente
+                console.log(`[apiClient.caminhoes] Atualizando caminhão existente ID=${caminhao.id}`);
                 return await apiClient.request(`/caminhoes/${caminhao.id}`, {
                     method: 'PUT',
                     body: JSON.stringify(caminhao)
                 });
             } else {
                 // Criar novo
+                console.log('[apiClient.caminhoes] Criando novo caminhão');
                 const { id, ...caminhaoSemId } = caminhao;
+                console.log('[apiClient.caminhoes] Dados enviados:', caminhaoSemId);
                 return await apiClient.request('/caminhoes', {
                     method: 'POST',
                     body: JSON.stringify(caminhaoSemId)
@@ -69,34 +84,105 @@ window.apiClient = {
     },
 
     // CRUD para Abastecimentos
-    abastecimentos: {
-        async buscarTodos() {
-            return await apiClient.request('/abastecimentos');
-        },
-
-        async buscarPorId(id) {
-            return await apiClient.request(`/abastecimentos/${id}`);
+    abastecimentos: {        async buscarTodos() {
+            console.log('[apiClient.abastecimentos] Buscando todos os abastecimentos');
+            const result = await apiClient.request('/abastecimentos');
+            
+            // Mapear campos do backend (snake_case) para frontend (camelCase)
+            const mapearCamposParaFrontend = (abastecimentos) => {
+                return abastecimentos.map(abastecimento => {
+                    const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = abastecimento;
+                    return {
+                        ...resto,
+                        ...(caminhao_id && { caminhaoId: caminhao_id }),
+                        ...(periodo_inicio && { periodoInicio: periodo_inicio }),
+                        ...(periodo_fim && { periodoFim: periodo_fim }),
+                        ...(km_inicial !== undefined && { kmInicial: km_inicial }),
+                        ...(km_final !== undefined && { kmFinal: km_final }),
+                        ...(valor_litro !== undefined && { valorLitro: valor_litro }),
+                        ...(valor_total !== undefined && { valorTotal: valor_total })
+                    };
+                });
+            };
+            
+            return mapearCamposParaFrontend(result);
+        },        async buscarPorId(id) {
+            console.log('[apiClient.abastecimentos] Buscando abastecimento por ID:', id);
+            const result = await apiClient.request(`/abastecimentos/${id}`);
+            
+            // Mapear campos do backend (snake_case) para frontend (camelCase)
+            const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = result;
+            return {
+                ...resto,
+                ...(caminhao_id && { caminhaoId: caminhao_id }),
+                ...(periodo_inicio && { periodoInicio: periodo_inicio }),
+                ...(periodo_fim && { periodoFim: periodo_fim }),
+                ...(km_inicial !== undefined && { kmInicial: km_inicial }),
+                ...(km_final !== undefined && { kmFinal: km_final }),
+                ...(valor_litro !== undefined && { valorLitro: valor_litro }),
+                ...(valor_total !== undefined && { valorTotal: valor_total })
+            };
         },
 
         async buscarPorCaminhao(caminhaoId) {
             return await apiClient.request(`/abastecimentos?caminhao_id=${caminhaoId}`);
-        },
-
-        async salvar(abastecimento) {
+        },        async salvar(abastecimento) {
+            console.log('[apiClient.abastecimentos] Salvando abastecimento:', abastecimento);
+            
+            // Mapear campos do frontend (camelCase) para backend (snake_case)
+            const mapearCampos = (obj) => {
+                const { id, caminhaoId, periodoInicio, periodoFim, kmInicial, kmFinal, valorLitro, valorTotal, ...resto } = obj;
+                return {
+                    ...resto,
+                    ...(caminhaoId && { caminhao_id: caminhaoId }),
+                    ...(periodoInicio && { periodo_inicio: periodoInicio }),
+                    ...(periodoFim && { periodo_fim: periodoFim }),
+                    ...(kmInicial !== undefined && { km_inicial: kmInicial }),
+                    ...(kmFinal !== undefined && { km_final: kmFinal }),
+                    ...(valorLitro !== undefined && { valor_litro: valorLitro }),
+                    ...(valorTotal !== undefined && { valor_total: valorTotal })
+                };
+            };
+            
+            // Mapear campos do backend (snake_case) para frontend (camelCase)
+            const mapearResposta = (obj) => {
+                const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = obj;
+                return {
+                    ...resto,
+                    ...(caminhao_id && { caminhaoId: caminhao_id }),
+                    ...(periodo_inicio && { periodoInicio: periodo_inicio }),
+                    ...(periodo_fim && { periodoFim: periodo_fim }),
+                    ...(km_inicial !== undefined && { kmInicial: km_inicial }),
+                    ...(km_final !== undefined && { kmFinal: km_final }),
+                    ...(valor_litro !== undefined && { valorLitro: valor_litro }),
+                    ...(valor_total !== undefined && { valorTotal: valor_total })
+                };
+            };
+            
+            let result;
             if (abastecimento.id && abastecimento.id !== 'novo') {
                 // Atualizar existente
-                return await apiClient.request(`/abastecimentos/${abastecimento.id}`, {
+                console.log(`[apiClient.abastecimentos] Atualizando abastecimento existente ID=${abastecimento.id}`);
+                const dadosMapeados = mapearCampos(abastecimento);
+                console.log('[apiClient.abastecimentos] Dados mapeados para backend:', dadosMapeados);
+                result = await apiClient.request(`/abastecimentos/${abastecimento.id}`, {
                     method: 'PUT',
-                    body: JSON.stringify(abastecimento)
+                    body: JSON.stringify(dadosMapeados)
                 });
             } else {
                 // Criar novo
+                console.log('[apiClient.abastecimentos] Criando novo abastecimento');
                 const { id, ...abastecimentoSemId } = abastecimento;
-                return await apiClient.request('/abastecimentos', {
+                const dadosMapeados = mapearCampos(abastecimentoSemId);
+                console.log('[apiClient.abastecimentos] Dados mapeados para backend:', dadosMapeados);
+                result = await apiClient.request('/abastecimentos', {
                     method: 'POST',
-                    body: JSON.stringify(abastecimentoSemId)
+                    body: JSON.stringify(dadosMapeados)
                 });
             }
+            
+            // Mapear resposta de volta para formato do frontend
+            return mapearResposta(result);
         },
 
         async excluir(id) {
@@ -104,11 +190,12 @@ window.apiClient = {
                 method: 'DELETE'
             });
         }
-    },
-
-    // Funções de utilidade
+    },    // Funções de utilidade
     async health() {
-        return await apiClient.request('/health');
+        console.log('[apiClient] Verificando health da API...');
+        const resultado = await apiClient.request('/health');
+        console.log('[apiClient] Resultado do health check:', resultado);
+        return resultado;
     },
 
     async info() {
@@ -131,10 +218,9 @@ window.dbApi = {
             console.error('Erro ao buscar caminhões:', error);
             return [];
         }
-    },
-
-    async salvarCaminhao(caminhao) {
+    },    async salvarCaminhao(caminhao) {
         try {
+            console.log('[dbApi] Salvando caminhão:', caminhao);
             return await window.apiClient.caminhoes.salvar(caminhao);
         } catch (error) {
             console.error('Erro ao salvar caminhão:', error);
@@ -159,10 +245,9 @@ window.dbApi = {
             console.error('Erro ao buscar abastecimentos:', error);
             return [];
         }
-    },
-
-    async salvarAbastecimento(abastecimento) {
+    },    async salvarAbastecimento(abastecimento) {
         try {
+            console.log('[dbApi] Salvando abastecimento:', abastecimento);
             return await window.apiClient.abastecimentos.salvar(abastecimento);
         } catch (error) {
             console.error('Erro ao salvar abastecimento:', error);
@@ -201,15 +286,15 @@ window.dbApi = {
             console.error('Erro ao limpar dados:', error);
             throw error;
         }
-    },
-
-    // Função para verificar conexão com a API
+    },    // Função para verificar conexão com a API
     async testarConexao() {
         try {
-            await window.apiClient.health();
-            return true;
+            console.log('[dbApi] Testando conexão com a API...');
+            const resultado = await window.apiClient.health();
+            console.log('[dbApi] Resultado do teste de conexão:', resultado);
+            return resultado;
         } catch (error) {
-            console.error('Erro na conexão com a API:', error);
+            console.error('[dbApi] Erro na conexão com a API:', error);
             return false;
         }
     }

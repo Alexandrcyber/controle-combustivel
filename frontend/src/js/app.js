@@ -3,12 +3,19 @@ let caminhoes = [];
 let abastecimentos = [];
 let currentSection = 'dashboardSection';
 
+// Disponibilizar dados globalmente para os relatórios
+window.caminhoes = caminhoes;
+window.abastecimentos = abastecimentos;
+
 // Inicialização da aplicação
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Usando localStorage para armazenamento de dados');
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('Iniciando aplicação do Controle de Combustível');
     
-    // Carregar dados do localStorage
-    loadDataFromLocalStorage();
+    // Verificar conexão com a API
+    verificarStatusAPI();
+    
+    // Carregar dados do backend ou localStorage
+    await loadDataFromLocalStorage();
     
     // Configurar navegação
     setupNavigation();
@@ -21,12 +28,130 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAbastecimentos();
     updateDashboard();
     populateCaminhaoSelects();
+
+    // Definir filtros padrão do dashboard para mês atual
+    const hoje = new Date();
+    const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+    const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
+    document.getElementById('dashboardDataInicio').value = primeiroDia;
+    document.getElementById('dashboardDataFim').value = ultimoDia;
+    // Evento para atualizar dashboard
+    document.getElementById('atualizarDashboard').addEventListener('click', e => {
+        e.preventDefault();
+        updateDashboard();
+    });
+    
+    // Após inicialização, exibir dashboard automaticamente
+    if (currentSection === 'dashboardSection') {
+        updateDashboard();
+    }
+    
+    console.log('Aplicação inicializada com sucesso');
 });
 
+// Variáveis globais para controle de status da API
+let isFirstConnection = true;
+
+// Verificar status da API
+async function verificarStatusAPI() {
+    try {
+        console.log('[APP] Verificando conexão com a API...');
+        
+        // Mostrar loading se não for a primeira verificação e a API estava desconectada
+        if (!isFirstConnection && window.apiWasDisconnected) {
+            AlertInfo.show(
+                'Conectando...',
+                'Tentando conectar com o servidor...',
+                false, // sem botão OK
+                0 // sem timeout
+            );
+        }
+        
+        const conexao = await window.dbApi.testarConexao();
+        
+        // Fechar alerta de loading se estiver aberto
+        if (!isFirstConnection && AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
+        
+        if (conexao) {
+            console.log('[APP] API conectada com sucesso');
+            
+            // Mostrar alerta de sucesso por 5 segundos na primeira conexão ou reconexão
+            if (isFirstConnection || window.apiWasDisconnected) {
+                AlertToast.success('API conectada com sucesso!');
+                window.apiWasDisconnected = false;
+            }
+            
+            window.apiConnected = true;
+        } else {
+            console.warn('[APP] API parcialmente conectada');
+            window.apiConnected = false;
+            window.apiWasDisconnected = true;
+            
+            // Mostrar animação de tentativa de conexão
+            showConnectionAttempt();
+        }
+    } catch (error) {
+        console.error('[APP] Erro ao conectar com a API:', error);
+        window.apiConnected = false;
+        window.apiWasDisconnected = true;
+        
+        // Mostrar animação de tentativa de conexão
+        showConnectionAttempt();
+    }
+    
+    isFirstConnection = false;
+    
+    // Tentar novamente após 30 segundos
+    setTimeout(verificarStatusAPI, 30000);
+}
+
+// Função para mostrar animação de tentativa de conexão
+function showConnectionAttempt() {
+    AlertInfo.show(
+        '🔄 Tentando Conectar',
+        'Estamos tentando se conectar com o servidor. Por favor, aguarde...',
+        false, // sem botão OK
+        8000 // fechar após 8 segundos
+    );
+}
+
 // Carregar dados do localStorage
-function loadDataFromLocalStorage() {
-    caminhoes = window.localStorageApi.buscarCaminhoes();
-    abastecimentos = window.localStorageApi.buscarAbastecimentos();
+async function loadDataFromLocalStorage() {
+    try {
+        // Usar dbApi para buscar dados do backend
+        caminhoes = await window.dbApi.buscarCaminhoes();
+        abastecimentos = await window.dbApi.buscarAbastecimentos();
+        
+        // Atualizar referências globais para os relatórios
+        updateGlobalReferences();
+        
+        console.log(`Carregados ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos do backend`);
+    } catch (error) {
+        console.error('Erro ao carregar dados do backend:', error);
+        // Fallback para localStorage em caso de erro
+        const caminhoesJSON = localStorage.getItem('caminhoes');
+        const abastecimentosJSON = localStorage.getItem('abastecimentos');
+        
+        caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
+        abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
+        
+        // Atualizar referências globais para os relatórios
+        updateGlobalReferences();
+        
+        console.log(`Usando dados do localStorage como fallback: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
+    }
+}
+
+// Atualizar referências globais para os relatórios
+function updateGlobalReferences() {
+    window.caminhoes = caminhoes;
+    window.abastecimentos = abastecimentos;
+    console.log('[UPDATE] Referências globais atualizadas:', {
+        caminhoes: caminhoes.length,
+        abastecimentos: abastecimentos.length
+    });
 }
 
 // Configurar navegação entre seções
@@ -74,6 +199,24 @@ function setupEventHandlers() {
     // Manipuladores para caminhões
     document.getElementById('saveCaminhao').addEventListener('click', saveCaminhao);
     
+    // Botão de teste da API (Caminhões)
+    const btnTestApiCaminhao = document.getElementById('testApiButton');
+    if (btnTestApiCaminhao) {
+        btnTestApiCaminhao.addEventListener('click', testarApiCaminhao);
+    }
+
+    // Botão de teste da API (Abastecimentos)
+    const btnTestApiAbast = document.getElementById('testApiAbastecimentoButton');
+    if (btnTestApiAbast) {
+        btnTestApiAbast.addEventListener('click', testarApiAbastecimento);
+    }
+
+    // Botão de teste de mapeamento
+    const btnTestMapeamento = document.getElementById('testMapeamentoButton');
+    if (btnTestMapeamento) {
+        btnTestMapeamento.addEventListener('click', testarMapeamentoCampos);
+    }
+    
     // Manipuladores para abastecimentos
     document.getElementById('saveAbastecimento').addEventListener('click', saveAbastecimento);
     
@@ -90,9 +233,7 @@ function setupEventHandlers() {
     
     // Manipuladores para exportação
     document.getElementById('exportarExcel').addEventListener('click', exportarRelatorioExcel);
-    document.getElementById('exportarPdf').addEventListener('click', exportarRelatorioPdf);
-    
-    // Manipuladores para formulários de relatórios
+    document.getElementById('exportarPdf').addEventListener('click', exportarRelatorioPdf);      // Manipuladores para formulários de relatórios
     document.getElementById('relatorioConsumoForm').addEventListener('submit', (e) => {
         e.preventDefault();
         gerarRelatorioConsumo();
@@ -117,30 +258,37 @@ function updateDashboard() {
         return dataAbastecimento >= primeiroDiaMes;
     });
     
-    document.getElementById('totalAbastecimentos').textContent = abastecimentosMes.length;
-    
-    // Calcular média de consumo
-    let totalKm = 0;
-    let totalLitros = 0;
-    
-    abastecimentos.forEach(a => {
-        totalKm += (a.kmFinal - a.kmInicial);
-        totalLitros += parseFloat(a.litros);
+    // Obter filtros do dashboard
+    const dataInicio = document.getElementById('dashboardDataInicio').value;
+    const dataFim = document.getElementById('dashboardDataFim').value;
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim + 'T23:59:59');
+    // Filtrar abastecimentos pelo período
+    const abastecimentosFiltrados = abastecimentos.filter(a => {
+        const dt = new Date(a.data);
+        return dt >= inicio && dt <= fim;
     });
-    
-    const mediaConsumo = totalLitros > 0 ? (totalKm / totalLitros).toFixed(2) : 0;
-    document.getElementById('mediaConsumo').textContent = `${mediaConsumo} km/l`;
-    
-    // Calcular gasto total do mês
-    let gastoTotal = 0;
-    abastecimentosMes.forEach(a => {
-        gastoTotal += parseFloat(a.valorTotal);
+    // Atualizar contadores usando dados filtrados
+    document.getElementById('totalAbastecimentos').textContent = abastecimentosFiltrados.length;
+
+    // Calcular média de consumo no período
+    let totalKmPeriodo = 0;
+    let totalLitrosPeriodo = 0;
+    abastecimentosFiltrados.forEach(a => {
+        totalKmPeriodo += (a.kmFinal - a.kmInicial);
+        totalLitrosPeriodo += parseFloat(a.litros);
     });
-    
-    document.getElementById('gastoTotal').textContent = `R$ ${gastoTotal.toFixed(2)}`;
-    
-    // Atualizar gráficos
+    const mediaConsumoPeriodo = totalLitrosPeriodo > 0 ? (totalKmPeriodo / totalLitrosPeriodo).toFixed(2) : '0.00';
+    document.getElementById('mediaConsumo').textContent = `${mediaConsumoPeriodo} km/l`;
+
+    // Calcular gasto total no período
+    let gastoPeriodo = 0;
+    abastecimentosFiltrados.forEach(a => { gastoPeriodo += parseFloat(a.valorTotal); });
+    document.getElementById('gastoTotal').textContent = `R$ ${gastoPeriodo.toFixed(2)}`;    // Atualizar gráficos
     updateCharts();
+    
+    // Mostrar alerta de sucesso
+    AlertToast.info('Dashboard atualizado com sucesso!');
 }
 
 // Renderizar tabela de caminhões
@@ -215,9 +363,6 @@ function renderAbastecimentos() {
         // Calcular consumo
         const distancia = abastecimento.kmFinal - abastecimento.kmInicial;
         const consumo = (distancia / abastecimento.litros).toFixed(2);
-        // Formatar data
-        const data = new Date(abastecimento.data).toLocaleDateString('pt-BR');
-        
         // Formatar período, se existir
         let periodoText = '';
         if (abastecimento.periodoInicio && abastecimento.periodoFim) {
@@ -228,7 +373,6 @@ function renderAbastecimentos() {
         
         row.innerHTML = `
             <td>${placaCaminhao}</td>
-            <td>${data}</td>
             <td>${periodoText}</td>
             <td>${modeloCaminhao}</td>
             <td>${abastecimento.motorista}</td>
@@ -266,21 +410,22 @@ function renderAbastecimentos() {
 
 // Salvar caminhão (novo ou editado)
 async function saveCaminhao() {
+    console.log('[APP] Iniciando salvamento de caminhão...');
     const caminhaoIdInput = document.getElementById('caminhaoId');
     const placaInput = document.getElementById('placa');
     const modeloInput = document.getElementById('modelo');
     const anoInput = document.getElementById('ano');
     const capacidadeInput = document.getElementById('capacidade');
     const motoristaInput = document.getElementById('motorista');
-    
-    // Validar campos obrigatórios
+      // Validar campos obrigatórios
     if (!placaInput.value || !modeloInput.value || !anoInput.value || !capacidadeInput.value) {
-        alert('Por favor, preencha todos os campos obrigatórios.');
+        AlertError.validation('Por favor, preencha todos os campos obrigatórios.');
         return;
     }
     
     // Verificar se é uma edição ou um novo registro
     const isEdit = caminhaoIdInput.value !== '';
+    console.log(`[APP] Tipo de operação: ${isEdit ? 'Edição' : 'Novo caminhão'}`);
     
     // Preparar objeto do caminhão
     const caminhaoObj = {
@@ -292,11 +437,13 @@ async function saveCaminhao() {
         motorista: motoristaInput.value
     };
     
-    try {
-        // Salvar usando localStorage API
-        const savedCaminhao = window.localStorageApi.salvarCaminhao(caminhaoObj);
-        
-        // Atualizar array local
+    console.log('[APP] Objeto caminhão preparado:', caminhaoObj);
+      try {
+        console.log('[APP] Enviando caminhão para API...');
+        // Usar dbApi em vez de localStorageApi para garantir que estamos usando a API do backend
+        const savedCaminhao = await window.dbApi.salvarCaminhao(caminhaoObj);
+        console.log('[APP] Caminhão salvo com sucesso:', savedCaminhao);
+          // Atualizar array local
         if (isEdit) {
             const index = caminhoes.findIndex(c => c.id === caminhaoIdInput.value);
             if (index !== -1) {
@@ -305,19 +452,38 @@ async function saveCaminhao() {
         } else {
             caminhoes.push(savedCaminhao);
         }
+          // Atualizar referências globais para os relatórios
+        updateGlobalReferences();
         
         // Atualizar interface
         renderCaminhoes();
         populateCaminhaoSelects();
         updateDashboard();
         
+        // Exibir toast de sucesso
+        AlertToast.success(isEdit ? 'Caminhão atualizado com sucesso!' : 'Caminhão cadastrado com sucesso!');
+        
         // Fechar modal e limpar formulário
         const modal = bootstrap.Modal.getInstance(document.getElementById('addCaminhaoModal'));
         modal.hide();
-        resetCaminhaoForm();
-    } catch (err) {
-        console.error('Erro ao salvar caminhão:', err);
-        alert('Ocorreu um erro ao salvar o caminhão. Por favor, tente novamente.');
+        resetCaminhaoForm();} catch (err) {
+        console.error('[APP] Erro ao salvar caminhão:', err);
+        
+        // Exibir mensagem de erro mais detalhada
+        let mensagemErro = 'Ocorreu um erro ao salvar o caminhão. ';
+        
+        // Verificar se o erro tem uma mensagem específica
+        if (err.message) {        console.error('[APP] Mensagem de erro:', err.message);
+            if (err.message.includes('placa')) {
+                mensagemErro += 'Já existe um caminhão com esta placa.';
+            } else {
+                mensagemErro += err.message;
+            }
+        } else {
+            mensagemErro += 'Por favor, tente novamente.';
+        }
+        
+        AlertError.show('Erro ao Salvar', mensagemErro);
     }
 }
 
@@ -351,6 +517,7 @@ function resetCaminhaoForm() {
 
 // Salvar abastecimento (novo ou editado)
 async function saveAbastecimento() {
+    console.log('[APP] Iniciando salvamento de abastecimento...');
     const abastecimentoIdInput = document.getElementById('abastecimentoId');
     const periodoInicioInput = document.getElementById('periodoInicio');
     const periodoFimInput = document.getElementById('periodoFim');
@@ -362,11 +529,10 @@ async function saveAbastecimento() {
     const valorLitroInput = document.getElementById('valorLitro');
     const postoInput = document.getElementById('posto');
     const observacoesInput = document.getElementById('observacoes');
-    
-    // Validar campos obrigatórios
+      // Validar campos obrigatórios
     if (!periodoInicioInput.value || !periodoFimInput.value || !caminhaoSelect.value || !motoristaInput.value || 
         !kmInicialInput.value || !kmFinalInput.value || !litrosInput.value || !valorLitroInput.value) {
-        alert('Por favor, preencha todos os campos obrigatórios.');
+        AlertError.validation('Por favor, preencha todos os campos obrigatórios.');
         return;
     }
     
@@ -375,7 +541,7 @@ async function saveAbastecimento() {
     const dataFim = new Date(periodoFimInput.value);
     
     if (dataFim < dataInicio) {
-        alert('A data final do período deve ser posterior à data inicial.');
+        AlertError.validation('A data final do período deve ser posterior à data inicial.');
         return;
     }
     
@@ -384,7 +550,7 @@ async function saveAbastecimento() {
     const kmFinal = parseFloat(kmFinalInput.value);
     
     if (kmFinal <= kmInicial) {
-        alert('A quilometragem final deve ser maior que a quilometragem inicial.');
+        AlertError.validation('A quilometragem final deve ser maior que a quilometragem inicial.');
         return;
     }
     
@@ -392,9 +558,9 @@ async function saveAbastecimento() {
     const litros = parseFloat(litrosInput.value);
     const valorLitro = parseFloat(valorLitroInput.value);
     const valorTotal = litros * valorLitro;
-    
-    // Verificar se é uma edição ou um novo registro
+      // Verificar se é uma edição ou um novo registro
     const isEdit = abastecimentoIdInput.value !== '';
+    console.log(`[APP] Tipo de operação: ${isEdit ? 'Edição' : 'Novo abastecimento'}`);
     
     // Preparar objeto do abastecimento
     const abastecimentoObj = {
@@ -413,11 +579,12 @@ async function saveAbastecimento() {
         observacoes: observacoesInput.value
     };
     
-    try {
-        // Salvar usando localStorage API
-        const savedAbastecimento = window.localStorageApi.salvarAbastecimento(abastecimentoObj);
-        
-        // Atualizar array local
+    console.log('[APP] Objeto abastecimento preparado:', abastecimentoObj);    try {
+        console.log('[APP] Enviando abastecimento para API...');
+        // Salvar usando dbApi para conectar ao backend
+        const savedAbastecimento = await window.dbApi.salvarAbastecimento(abastecimentoObj);
+        console.log('[APP] Abastecimento salvo com sucesso:', savedAbastecimento);
+          // Atualizar array local
         if (isEdit) {
             const index = abastecimentos.findIndex(a => a.id === abastecimentoIdInput.value);
             if (index !== -1) {
@@ -426,18 +593,33 @@ async function saveAbastecimento() {
         } else {
             abastecimentos.push(savedAbastecimento);
         }
+          // Atualizar referências globais para os relatórios
+        updateGlobalReferences();
         
         // Atualizar interface
         renderAbastecimentos();
         updateDashboard();
         
+        // Exibir toast de sucesso
+        AlertToast.success(isEdit ? 'Abastecimento atualizado com sucesso!' : 'Abastecimento cadastrado com sucesso!');
+        
         // Fechar modal e limpar formulário
         const modal = bootstrap.Modal.getInstance(document.getElementById('addAbastecimentoModal'));
         modal.hide();
-        resetAbastecimentoForm();
-    } catch (err) {
-        console.error('Erro ao salvar abastecimento:', err);
-        alert('Ocorreu um erro ao salvar o abastecimento. Por favor, tente novamente.');
+        resetAbastecimentoForm();} catch (err) {
+        console.error('[APP] Erro ao salvar abastecimento:', err);
+        
+        // Exibir mensagem de erro mais detalhada
+        let mensagemErro = 'Ocorreu um erro ao salvar o abastecimento. ';
+          // Verificar se o erro tem uma mensagem específica
+        if (err.message) {
+            console.error('[APP] Mensagem de erro:', err.message);
+            mensagemErro += err.message;
+        } else {
+            mensagemErro += 'Por favor, tente novamente.';
+        }
+        
+        AlertError.show('Erro ao Salvar', mensagemErro);
     }
 }
 
@@ -513,6 +695,20 @@ function populateCaminhaoSelects() {
     const caminhaoRelatorioSelect = document.getElementById('caminhaoSelect');
     caminhaoRelatorioSelect.innerHTML = '<option value="todos">Todos os caminhões</option>';
     
+    // Select para relatórios de custos
+    const caminhaoCustosSelect = document.getElementById('caminhaoCustosSelect');
+    caminhaoCustosSelect.innerHTML = '<option value="todos">Todos os caminhões</option>';
+    
+    // Select para dashboard
+    const dashboardCaminhaoSelect = document.getElementById('dashboardCaminhaoSelect');
+    dashboardCaminhaoSelect.innerHTML = '<option value="todos">Todos os caminhões</option>';
+    caminhoes.forEach(caminhao => {
+        const opt = document.createElement('option');
+        opt.value = caminhao.id;
+        opt.textContent = `${caminhao.placa} - ${caminhao.modelo}`;
+        dashboardCaminhaoSelect.appendChild(opt);
+    });
+    
     // Adicionar opções para cada caminhão
     caminhoes.forEach(caminhao => {
         const option1 = document.createElement('option');
@@ -524,22 +720,26 @@ function populateCaminhaoSelects() {
         option2.value = caminhao.id;
         option2.textContent = `${caminhao.placa} - ${caminhao.modelo}`;
         caminhaoRelatorioSelect.appendChild(option2);
+        
+        const option3 = document.createElement('option');
+        option3.value = caminhao.id;
+        option3.textContent = `${caminhao.placa} - ${caminhao.modelo}`;
+        caminhaoCustosSelect.appendChild(option3);
     });
 }
 
 // Mostrar modal de confirmação de exclusão
-function showDeleteConfirmation(id, type) {
-    document.getElementById('deleteItemId').value = id;
-    document.getElementById('deleteItemType').value = type;
+async function showDeleteConfirmation(id, type) {
+    const itemName = type === 'caminhao' ? 'caminhão' : 'abastecimento';
     
-    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    modal.show();
+    const result = await AlertConfirm.delete(itemName);
+    if (result.isConfirmed) {
+        await confirmDelete(id, type);
+    }
 }
 
-// Confirmar exclusão de item
-async function confirmDelete() {
-    const id = document.getElementById('deleteItemId').value;
-    const type = document.getElementById('deleteItemType').value;
+// Confirmar exclusão de item (agora chamada diretamente pela confirmação)
+async function confirmDelete(id, type) {
     
     try {
         if (type === 'caminhao') {
@@ -552,15 +752,17 @@ async function confirmDelete() {
                 }
                 
                 // Remover abastecimentos associados
-                abastecimentos.filter(a => a.caminhaoId === id).forEach(a => {
-                    window.localStorageApi.excluirAbastecimento(a.id);
+                abastecimentos.filter(a => a.caminhaoId === id).forEach(async (a) => {
+                    await window.dbApi.excluirAbastecimento(a.id);
                 });
                 abastecimentos = abastecimentos.filter(a => a.caminhaoId !== id);
             }
-            
-            // Excluir caminhão
-            window.localStorageApi.excluirCaminhao(id);
+              // Excluir caminhão
+            await window.dbApi.excluirCaminhao(id);
             caminhoes = caminhoes.filter(c => c.id !== id);
+            
+            // Atualizar referências globais para os relatórios
+            updateGlobalReferences();
             
             // Atualizar interface
             renderCaminhoes();
@@ -568,35 +770,40 @@ async function confirmDelete() {
             populateCaminhaoSelects();
         } else if (type === 'abastecimento') {
             // Excluir abastecimento
-            window.localStorageApi.excluirAbastecimento(id);
+            await window.dbApi.excluirAbastecimento(id);
             abastecimentos = abastecimentos.filter(a => a.id !== id);
+            
+            // Atualizar referências globais para os relatórios
+            updateGlobalReferences();
             
             // Atualizar interface
             renderAbastecimentos();
         }
-        
-        // Atualizar dashboard
+          // Atualizar dashboard
         updateDashboard();
         
-        // Fechar modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
-        modal.hide();
+        // Exibir toast de sucesso
+        const itemName = type === 'caminhao' ? 'Caminhão' : 'Abastecimento';
+        AlertToast.success(`${itemName} excluído com sucesso!`);
     } catch (err) {
         console.error('Erro ao excluir item:', err);
-        alert('Ocorreu um erro ao excluir o item. Por favor, tente novamente.');
+        AlertError.show('Erro ao Excluir', 'Ocorreu um erro ao excluir o item. Por favor, tente novamente.');
     }
 }
 
 // Função para limpar os dados (útil para testes ou redefinição)
 async function clearAllData() {
-    if (confirm('Tem certeza que deseja apagar todos os dados? Esta ação não pode ser desfeita.')) {
+    const result = await AlertConfirm.clearData();
+    if (result.isConfirmed) {
         try {
-            // Limpar dados usando localStorage API
-            window.localStorageApi.limparTodosDados();
-            
-            // Limpar arrays locais
+            // Limpar dados usando dbApi
+            await window.dbApi.limparTodosDados();
+              // Limpar arrays locais
             caminhoes = [];
             abastecimentos = [];
+            
+            // Atualizar referências globais para os relatórios
+            updateGlobalReferences();
             
             // Atualizar interface
             renderCaminhoes();
@@ -604,13 +811,247 @@ async function clearAllData() {
             updateDashboard();
             populateCaminhaoSelects();
             
-            alert('Todos os dados foram removidos com sucesso.');
+            AlertSuccess.show('Dados Removidos', 'Todos os dados foram removidos com sucesso.');
         } catch (err) {
             console.error('Erro ao limpar dados:', err);
-            alert('Ocorreu um erro ao limpar os dados. Por favor, tente novamente.');
+            AlertError.show('Erro ao Limpar', 'Ocorreu um erro ao limpar os dados. Por favor, tente novamente.');
         }
     }
 }
 
+// Funções para teste direto da API
+async function testarApiCaminhao() {
+    console.log('[TEST] Iniciando teste de API para caminhões');
+    
+    try {
+        // Criar um caminhão de teste com dados aleatórios
+        const randomNum = Math.floor(Math.random() * 10000);
+        const testCaminhao = {
+            placa: `TEST${randomNum}`,
+            modelo: `Modelo Teste ${randomNum}`,
+            ano: 2025,
+            capacidade: 500,
+            motorista: `Motorista Teste ${randomNum}`
+        };
+        
+        console.log('[TEST] Dados de teste:', testCaminhao);
+        
+        // Fazer chamada direta à API usando fetch
+        const response = await fetch(`${window.API_BASE_URL}/caminhoes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(testCaminhao)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Erro ${response.status}: ${errorData.error || 'Erro desconhecido'}`);
+        }
+          const data = await response.json();
+        console.log('[TEST] Resposta do servidor:', data);
+        
+        // Atualizar a interface após o sucesso
+        AlertSuccess.detailed(
+            'Teste Realizado com Sucesso!',
+            `Caminhão "${data.modelo}" com placa "${data.placa}" foi criado no banco de dados.`
+        );
+        
+        // Recarregar dados
+        await loadDataFromLocalStorage();
+        renderCaminhoes();
+        
+    } catch (error) {
+        console.error('[TEST] Erro no teste da API:', error);
+        AlertError.api(error);
+    }
+}
+
+// Função para testar API de abastecimentos
+async function testarApiAbastecimento() {
+    console.log('[TEST] Iniciando teste de API para abastecimentos');
+    
+    try {
+        // Primeiro, precisamos obter um caminhão existente
+        const caminhoes = await window.dbApi.buscarCaminhoes();
+        
+        if (!caminhoes || caminhoes.length === 0) {
+            throw new Error('Não existem caminhões cadastrados. Crie um caminhão primeiro.');
+        }
+        
+        // Escolher um caminhão aleatório
+        const caminhao = caminhoes[Math.floor(Math.random() * caminhoes.length)];
+        console.log('[TEST] Usando caminhão:', caminhao);
+        
+        // Criar dados de teste para abastecimento
+        const hoje = new Date();
+        const randomNum = Math.floor(Math.random() * 10000);
+        const testAbastecimento = {
+            data: hoje.toISOString().split('T')[0],
+            periodoInicio: hoje.toISOString().split('T')[0],
+            periodoFim: hoje.toISOString().split('T')[0],
+            caminhaoId: caminhao.id,
+            motorista: `Motorista Teste ${randomNum}`,
+            kmInicial: 1000,
+            kmFinal: 1500,
+            litros: 100,
+            valorLitro: 5.5,
+            valorTotal: 550,
+            posto: `Posto Teste ${randomNum}`,
+            observacoes: `Abastecimento de teste via API ${randomNum}`
+        };
+        
+        console.log('[TEST] Dados de teste:', testAbastecimento);
+        
+        // Fazer chamada direta à API usando fetch
+        const response = await fetch(`${window.API_BASE_URL}/abastecimentos`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(testAbastecimento)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Erro ${response.status}: ${errorData.error || 'Erro desconhecido'}`);
+        }
+        
+        const data = await response.json();
+        console.log('[TEST] Resposta do servidor:', data);
+          // Atualizar a interface após o sucesso
+        AlertSuccess.detailed(
+            'Teste Realizado com Sucesso!',
+            `Abastecimento para o caminhão "${caminhao.placa}" foi criado no banco de dados.`
+        );
+        
+        // Recarregar dados
+        await loadDataFromLocalStorage();
+        renderAbastecimentos();
+        updateDashboard();
+        
+    } catch (error) {
+        console.error('[TEST] Erro no teste da API:', error);
+        AlertError.api(error);
+    }
+}
+
+// Função para testar mapeamento de campos entre frontend e backend
+async function testarMapeamentoCampos() {
+    console.log('🧪 [TESTE MAPEAMENTO] Iniciando teste de mapeamento de campos...');
+    
+    try {
+        // 1. Verificar se há caminhões disponíveis
+        console.log('[TESTE MAPEAMENTO] 1️⃣ Buscando caminhões...');
+        const caminhoesDisponiveis = await window.dbApi.buscarCaminhoes();
+        console.log('[TESTE MAPEAMENTO] Caminhões encontrados:', caminhoesDisponiveis);
+        
+        if (caminhoesDisponiveis.length === 0) {
+            throw new Error('Nenhum caminhão encontrado. Crie um caminhão primeiro.');
+        }
+        
+        // 2. Usar o primeiro caminhão disponível
+        const caminhaoTeste = caminhoesDisponiveis[0];
+        console.log('[TESTE MAPEAMENTO] Usando caminhão:', caminhaoTeste);
+        
+        // 3. Criar dados de teste com campos em camelCase (formato frontend)
+        const hoje = new Date();
+        const dadosAbastecimento = {
+            data: hoje.toISOString().split('T')[0],
+            periodoInicio: hoje.toISOString().split('T')[0], // camelCase
+            periodoFim: hoje.toISOString().split('T')[0], // camelCase
+            caminhaoId: caminhaoTeste.id, // camelCase
+            motorista: 'Teste Mapeamento Automático',
+            kmInicial: 8000, // camelCase
+            kmFinal: 8250, // camelCase
+            litros: 45,
+            valorLitro: 6.2, // camelCase
+            valorTotal: 279, // camelCase
+            posto: 'Posto Teste Mapeamento',
+            observacoes: 'Teste automático de mapeamento de campos entre frontend e backend'
+        };
+        
+        console.log('[TESTE MAPEAMENTO] 2️⃣ Dados de teste (formato frontend - camelCase):', dadosAbastecimento);
+        
+        // 4. Salvar abastecimento via API frontend
+        console.log('[TESTE MAPEAMENTO] 3️⃣ Salvando abastecimento via frontend API...');
+        const abastecimentoSalvo = await window.dbApi.salvarAbastecimento(dadosAbastecimento);
+        console.log('[TESTE MAPEAMENTO] Abastecimento salvo (resposta do backend):', abastecimentoSalvo);
+        
+        // 5. Verificar se os campos foram mapeados corretamente na resposta
+        console.log('[TESTE MAPEAMENTO] 4️⃣ Verificando mapeamento na resposta...');
+        
+        const camposEsperadosResposta = ['caminhaoId', 'periodoInicio', 'periodoFim', 'kmInicial', 'kmFinal', 'valorLitro', 'valorTotal'];
+        const camposMissingResposta = camposEsperadosResposta.filter(campo => !(campo in abastecimentoSalvo));
+        
+        if (camposMissingResposta.length > 0) {
+            console.warn('[TESTE MAPEAMENTO] ⚠️ Campos não mapeados na resposta:', camposMissingResposta);
+        } else {
+            console.log('[TESTE MAPEAMENTO] ✅ Campos mapeados corretamente na resposta!');
+        }
+        
+        // 6. Buscar todos os abastecimentos para verificar o mapeamento na listagem
+        console.log('[TESTE MAPEAMENTO] 5️⃣ Verificando mapeamento na listagem...');
+        const abastecimentosListagem = await window.dbApi.buscarAbastecimentos();
+        console.log('[TESTE MAPEAMENTO] Abastecimentos na listagem:', abastecimentosListagem);
+        
+        // Encontrar o abastecimento criado na listagem
+        const abastecimentoNaListagem = abastecimentosListagem.find(a => a.id === abastecimentoSalvo.id);
+        if (!abastecimentoNaListagem) {
+            throw new Error('Abastecimento criado não foi encontrado na listagem');
+        }
+        
+        console.log('[TESTE MAPEAMENTO] Abastecimento encontrado na listagem:', abastecimentoNaListagem);
+        
+        // Verificar se os campos estão em camelCase na listagem
+        const camposMissingListagem = camposEsperadosResposta.filter(campo => !(campo in abastecimentoNaListagem));
+        if (camposMissingListagem.length > 0) {
+            console.warn('[TESTE MAPEAMENTO] ⚠️ Campos não mapeados na listagem:', camposMissingListagem);
+        } else {
+            console.log('[TESTE MAPEAMENTO] ✅ Campos mapeados corretamente na listagem!');
+        }
+        
+        // 7. Limpar dados de teste
+        console.log('[TESTE MAPEAMENTO] 6️⃣ Limpando dados de teste...');
+        await window.dbApi.excluirAbastecimento(abastecimentoSalvo.id);
+        console.log('[TESTE MAPEAMENTO] ✅ Dados de teste removidos');
+        
+        // 8. Resultado final
+        const resultadoFinal = {
+            sucesso: true,
+            camposMapeadosResposta: camposMissingResposta.length === 0,
+            camposMapeadosListagem: camposMissingListagem.length === 0,
+            abastecimentoTeste: abastecimentoSalvo
+        };
+          console.log('[TESTE MAPEAMENTO] 🎉 TESTE CONCLUÍDO!');
+        console.log('[TESTE MAPEAMENTO] Resultado final:', resultadoFinal);
+        
+        if (resultadoFinal.camposMapeadosResposta && resultadoFinal.camposMapeadosListagem) {
+            AlertSuccess.detailed(
+                '✅ Teste de Mapeamento PASSOU!',
+                'O mapeamento de campos entre frontend e backend está funcionando corretamente.'
+            );
+        } else {
+            AlertWarning.show(
+                '⚠️ Teste de Mapeamento com AVISOS!',
+                'Alguns campos podem não estar sendo mapeados corretamente.\n\nConsulte o console para detalhes.'
+            );
+        }
+        
+        return resultadoFinal;
+        
+    } catch (error) {
+        console.error('[TESTE MAPEAMENTO] ❌ ERRO NO TESTE:', error);
+        AlertError.detailed(
+            '❌ Teste de Mapeamento FALHOU!',
+            `Erro: ${error.message}`
+        );
+        return {
+            sucesso: false,
+            erro: error.message
+        };
+    }
+}
+
 // Manter as funções restantes do arquivo original (updateCharts, exportarRelatorioExcel, etc.)
-// ...

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final - Relatórios de Combustível</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .debug-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .debug-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .log-output {
+            background-color: #343a40;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">🔧 Teste Final - Sistema de Relatórios</h1>
+        
+        <!-- Status de Conexão -->
+        <div class="debug-section">
+            <div class="debug-title">📡 Status de Conexão</div>
+            <div id="statusConexao" class="alert alert-info">Verificando...</div>
+        </div>
+
+        <!-- Dados Carregados -->
+        <div class="debug-section">
+            <div class="debug-title">📊 Dados Carregados</div>
+            <div id="statusDados" class="alert alert-secondary">Carregando...</div>
+            <button class="btn btn-outline-primary btn-sm" onclick="mostrarDadosDetalhados()">Ver Dados Detalhados</button>
+            <div id="dadosDetalhados" style="display: none;" class="mt-2"></div>
+        </div>
+
+        <!-- Formulário de Relatório -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>🎯 Geração de Relatório</h4>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="dataInicio" class="form-label">Data Início:</label>
+                        <input type="date" class="form-control" id="dataInicio" value="2025-05-01">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dataFim" class="form-label">Data Fim:</label>
+                        <input type="date" class="form-control" id="dataFim" value="2025-12-31">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="caminhaoSelect" class="form-label">Caminhão:</label>
+                        <select class="form-select" id="caminhaoSelect">
+                            <option value="todos">Todos os Caminhões</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" onclick="testarGeracaoRelatorio()">
+                        🚀 Gerar Relatório
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="limparLogs()">
+                        🧹 Limpar Logs
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console de Debug -->
+        <div class="debug-section">
+            <div class="debug-title">🐛 Console de Debug</div>
+            <div id="debugConsole" class="log-output">
+                <div class="text-success">✅ Console de debug inicializado...</div>
+            </div>
+        </div>
+
+        <!-- Resultado do Relatório -->
+        <div id="relatorioResultados" class="mt-4"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Interceptar console.log para mostrar no debug
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        function addToDebugConsole(message, type = 'log') {
+            const debugConsole = document.getElementById('debugConsole');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'text-danger' : type === 'warn' ? 'text-warning' : 'text-light';
+            
+            debugConsole.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addToDebugConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addToDebugConsole('❌ ' + args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            addToDebugConsole('⚠️ ' + args.join(' '), 'warn');
+        };
+
+        // Variáveis globais
+        let caminhoes = [];
+        let abastecimentos = [];
+        let dbApi = null;
+
+        // Configurar API
+        const API_BASE_URL = 'http://localhost:3001/api';
+        
+        // Objeto para simular dbApi
+        window.dbApi = {
+            async buscarCaminhoes() {
+                console.log('🔄 Buscando caminhões...');
+                const response = await fetch(`${API_BASE_URL}/caminhoes`);
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+                const data = await response.json();
+                console.log('✅ Caminhões carregados:', data.length);
+                return data;
+            },
+            
+            async buscarAbastecimentos() {
+                console.log('🔄 Buscando abastecimentos...');
+                const response = await fetch(`${API_BASE_URL}/abastecimentos`);
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+                const data = await response.json();
+                console.log('✅ Abastecimentos carregados:', data.length);
+                return data;
+            }
+        };
+
+        // Função para formatar data
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Função para criar gráficos (simplificada)
+        function createCustomChart(canvasId, type, labels, datasets, title, xAxisLabel, yAxisLabel) {
+            console.log(`📊 Criando gráfico: ${title}`);
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.warn(`⚠️ Canvas ${canvasId} não encontrado`);
+                return;
+            }
+            
+            try {
+                new Chart(canvas, {
+                    type: type,
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { title: { display: true, text: title } },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: yAxisLabel } },
+                            x: { title: { display: true, text: xAxisLabel } }
+                        }
+                    }
+                });
+                console.log(`✅ Gráfico ${title} criado com sucesso`);
+            } catch (error) {
+                console.error(`❌ Erro ao criar gráfico ${title}:`, error);
+            }
+        }
+
+        // Função principal de geração de relatório (copiada do arquivo original)
+        async function gerarRelatorioConsumo() {
+            console.log('🔄 Iniciando geração de relatório de consumo...');
+            
+            // Mostrar loading enquanto processa
+            const resultadosElement = document.getElementById('relatorioResultados');
+            if (!resultadosElement) {
+                console.error('❌ Elemento relatorioResultados não encontrado!');
+                alert('Erro: Elemento de exibição do relatório não encontrado.');
+                return;
+            }
+            
+            resultadosElement.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Gerando relatório...</p></div>';
+            
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+            const caminhaoId = document.getElementById('caminhaoSelect').value;
+            
+            // Validar datas
+            if (!dataInicio || !dataFim) {
+                resultadosElement.innerHTML = '<div class="alert alert-danger">Por favor, selecione o período para o relatório.</div>';
+                return;
+            }
+
+            console.log('📅 Período selecionado:', dataInicio, 'até', dataFim);
+            console.log('🚛 Caminhão selecionado:', caminhaoId);
+            
+            // Garantir que os dados estão carregados - forçar recarregamento se necessário
+            let dadosCaminhoes = window.caminhoes || caminhoes || [];
+            let dadosAbastecimentos = window.abastecimentos || abastecimentos || [];
+            
+            // Se não há dados, tentar recarregar
+            if (dadosAbastecimentos.length === 0 && typeof window.dbApi !== 'undefined') {
+                console.log('⚠️ Dados não encontrados, tentando recarregar...');
+                try {
+                    dadosCaminhoes = await window.dbApi.buscarCaminhoes();
+                    dadosAbastecimentos = await window.dbApi.buscarAbastecimentos();
+                    
+                    // Atualizar globais
+                    window.caminhoes = dadosCaminhoes;
+                    window.abastecimentos = dadosAbastecimentos;
+                    if (typeof caminhoes !== 'undefined') caminhoes = dadosCaminhoes;
+                    if (typeof abastecimentos !== 'undefined') abastecimentos = dadosAbastecimentos;
+                    
+                    console.log('✅ Dados recarregados com sucesso');
+                } catch (error) {
+                    console.error('❌ Erro ao recarregar dados:', error);
+                }
+            }
+            
+            console.log('📊 Dados disponíveis:', {
+                caminhoes: dadosCaminhoes.length,
+                abastecimentos: dadosAbastecimentos.length,
+                windowCaminhoes: (window.caminhoes || []).length,
+                windowAbastecimentos: (window.abastecimentos || []).length
+            });
+            
+            if (dadosAbastecimentos.length === 0) {
+                resultadosElement.innerHTML = 
+                    '<div class="alert alert-warning">Nenhum abastecimento encontrado no sistema. Verifique se os dados foram carregados ou se há conexão com a API.</div>';
+                return;
+            }
+            
+            // Filtrar abastecimentos pelo período com comparação de data mais robusta
+            let abastecimentosFiltrados = dadosAbastecimentos.filter(a => {
+                // Extrair apenas a parte da data (sem horário) para comparação
+                const dataAbast = a.data.split('T')[0]; // '2025-06-01'
+                const dentroIntervalo = dataAbast >= dataInicio && dataAbast <= dataFim;
+                
+                if (!dentroIntervalo) {
+                    console.log(`🔍 Abastecimento ${a.id} fora do período: ${dataAbast} (${dataInicio} - ${dataFim})`);
+                }
+                
+                return dentroIntervalo;
+            });
+            
+            console.log('📋 Abastecimentos filtrados por período:', abastecimentosFiltrados.length);
+            
+            // Log detalhado dos abastecimentos filtrados
+            abastecimentosFiltrados.forEach((a, i) => {
+                console.log(`  ${i+1}. ${a.id} - ${a.data.split('T')[0]} - Caminhão: ${a.caminhao_id}`);
+            });
+            
+            // Filtrar por caminhão se não for "todos"
+            if (caminhaoId !== 'todos') {
+                const antesFiltroCaminhao = abastecimentosFiltrados.length;
+                abastecimentosFiltrados = abastecimentosFiltrados.filter(a => a.caminhao_id === caminhaoId);
+                console.log(`🚛 Filtro por caminhão ${caminhaoId}: ${antesFiltroCaminhao} → ${abastecimentosFiltrados.length}`);
+            }
+            
+            // Verificar se há dados para o relatório
+            if (abastecimentosFiltrados.length === 0) {
+                resultadosElement.innerHTML = 
+                    '<div class="alert alert-warning">Nenhum dado encontrado para o período e caminhão selecionados.<br><small class="text-muted">Período: ' + dataInicio + ' a ' + dataFim + (caminhaoId !== 'todos' ? ' | Caminhão: ' + caminhaoId : '') + '</small></div>';
+                return;
+            }
+            
+            console.log('✅ Iniciando processamento de', abastecimentosFiltrados.length, 'abastecimentos');
+            
+            // Agrupar dados por caminhão
+            const dadosPorCaminhao = {};
+            
+            abastecimentosFiltrados.forEach((a, index) => {
+                console.log(`🔍 Processando abastecimento ${index + 1}:`, a.id);
+                
+                if (!dadosPorCaminhao[a.caminhao_id]) {
+                    const caminhao = dadosCaminhoes.find(c => c.id === a.caminhao_id);
+                    console.log('🚛 Caminhão encontrado:', caminhao ? `${caminhao.placa} - ${caminhao.modelo}` : 'Não encontrado');
+                    
+                    dadosPorCaminhao[a.caminhao_id] = {
+                        id: a.caminhao_id,
+                        placa: caminhao ? caminhao.placa : 'Desconhecido',
+                        modelo: caminhao ? caminhao.modelo : 'Desconhecido',
+                        totalKm: 0,
+                        totalLitros: 0,
+                        totalGasto: 0,
+                        abastecimentos: []
+                    };
+                }
+                
+                // Adicionar dados deste abastecimento com validação
+                const kmInicial = parseFloat(a.km_inicial || 0);
+                const kmFinal = parseFloat(a.km_final || 0);
+                const litros = parseFloat(a.litros || 0);
+                const valorTotal = parseFloat(a.valor_total || 0);
+                
+                const distancia = kmFinal - kmInicial;
+                
+                console.log(`📏 Cálculos: KM ${kmInicial} → ${kmFinal} = ${distancia}km, ${litros}L, R$${valorTotal}`);
+                
+                dadosPorCaminhao[a.caminhao_id].totalKm += distancia;
+                dadosPorCaminhao[a.caminhao_id].totalLitros += litros;
+                dadosPorCaminhao[a.caminhao_id].totalGasto += valorTotal;
+                dadosPorCaminhao[a.caminhao_id].abastecimentos.push(a);
+            });
+            
+            console.log('📊 Dados agrupados por caminhão:', Object.keys(dadosPorCaminhao).length, 'caminhões');
+            
+            // Calcular consumo médio e outros indicadores
+            Object.values(dadosPorCaminhao).forEach(dadosCaminhao => {
+                dadosCaminhao.mediaConsumo = dadosCaminhao.totalLitros > 0 ? 
+                    (dadosCaminhao.totalKm / dadosCaminhao.totalLitros).toFixed(2) : 'N/A';
+                dadosCaminhao.custoMedio = dadosCaminhao.totalKm > 0 ? 
+                    (dadosCaminhao.totalGasto / dadosCaminhao.totalKm).toFixed(2) : 'N/A';
+                    
+                console.log(`📈 ${dadosCaminhao.placa}: KM=${dadosCaminhao.totalKm}, L=${dadosCaminhao.totalLitros}, R$=${dadosCaminhao.totalGasto}, Consumo=${dadosCaminhao.mediaConsumo}, Custo/km=R$${dadosCaminhao.custoMedio}`);
+            });
+            
+            // Gerar HTML para exibir os resultados
+            let html = `
+                <h4 class="mb-3">Relatório de Consumo - ${formatDate(dataInicio)} a ${formatDate(dataFim)}</h4>
+                <div class="table-responsive mb-4">
+                    <table class="table table-striped table-bordered">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Caminhão</th>
+                                <th>Distância (km)</th>
+                                <th>Combustível (L)</th>
+                                <th>Consumo Médio (km/l)</th>
+                                <th>Gasto Total (R$)</th>
+                                <th>Custo por km (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Adicionar linha para cada caminhão
+            Object.values(dadosPorCaminhao).forEach(dados => {
+                console.log(`🏗️ Gerando linha para caminhão: ${dados.placa}`, {
+                    totalKm: dados.totalKm,
+                    totalLitros: dados.totalLitros,
+                    totalGasto: dados.totalGasto,
+                    mediaConsumo: dados.mediaConsumo,
+                    custoMedio: dados.custoMedio
+                });
+                
+                html += `
+                    <tr>
+                        <td>${dados.placa} - ${dados.modelo}</td>
+                        <td>${dados.totalKm.toLocaleString('pt-BR')}</td>
+                        <td>${dados.totalLitros.toFixed(2)}</td>
+                        <td>${dados.mediaConsumo}</td>
+                        <td>R$ ${dados.totalGasto.toFixed(2)}</td>
+                        <td>R$ ${dados.custoMedio}</td>
+                    </tr>
+                `;
+            });
+            
+            // Fechar tabela principal
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            console.log('📋 HTML gerado:', html.length, 'caracteres');
+            console.log('📊 Dados finais para exibição:', Object.values(dadosPorCaminhao).map(d => ({
+                placa: d.placa,
+                modelo: d.modelo, 
+                totalKm: d.totalKm,
+                totalLitros: d.totalLitros,
+                totalGasto: d.totalGasto,
+                mediaConsumo: d.mediaConsumo,
+                custoMedio: d.custoMedio
+            })));
+            
+            // Exibir resultados
+            console.log('🖥️ Inserindo HTML no elemento relatorioResultados...');
+            resultadosElement.innerHTML = html;
+            console.log('✅ Relatório exibido com sucesso!');
+            console.log('🔍 Conteúdo final do elemento:', resultadosElement.innerHTML.substring(0, 200) + '...');
+        }
+
+        // Funções de teste
+        async function verificarConexao() {
+            const statusElement = document.getElementById('statusConexao');
+            try {
+                const response = await fetch(`${API_BASE_URL}/caminhoes`);
+                if (response.ok) {
+                    statusElement.className = 'alert alert-success';
+                    statusElement.innerHTML = '✅ Conexão com backend OK (porta 3001)';
+                    return true;
+                } else {
+                    throw new Error(`Status HTTP: ${response.status}`);
+                }
+            } catch (error) {
+                statusElement.className = 'alert alert-danger';
+                statusElement.innerHTML = `❌ Erro de conexão: ${error.message}`;
+                return false;
+            }
+        }
+
+        async function carregarDados() {
+            const statusElement = document.getElementById('statusDados');
+            const caminhaoSelect = document.getElementById('caminhaoSelect');
+            
+            try {
+                console.log('🔄 Carregando dados...');
+                
+                // Carregar caminhões
+                caminhoes = await window.dbApi.buscarCaminhoes();
+                window.caminhoes = caminhoes;
+                
+                // Carregar abastecimentos
+                abastecimentos = await window.dbApi.buscarAbastecimentos();
+                window.abastecimentos = abastecimentos;
+                
+                // Atualizar interface
+                statusElement.className = 'alert alert-success';
+                statusElement.innerHTML = `✅ Dados carregados: ${caminhoes.length} caminhões, ${abastecimentos.length} abastecimentos`;
+                
+                // Popular select de caminhões
+                caminhaoSelect.innerHTML = '<option value="todos">Todos os Caminhões</option>';
+                caminhoes.forEach(c => {
+                    caminhaoSelect.innerHTML += `<option value="${c.id}">${c.placa} - ${c.modelo}</option>`;
+                });
+                
+                console.log('✅ Dados carregados e interface atualizada');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                statusElement.className = 'alert alert-danger';
+                statusElement.innerHTML = `❌ Erro: ${error.message}`;
+                return false;
+            }
+        }
+
+        function mostrarDadosDetalhados() {
+            const detailsElement = document.getElementById('dadosDetalhados');
+            
+            const html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🚛 Caminhões (${caminhoes.length})</h6>
+                        <ul class="list-group list-group-flush small">
+                            ${caminhoes.map(c => `<li class="list-group-item">${c.placa} - ${c.modelo} (${c.motorista})</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>⛽ Abastecimentos (${abastecimentos.length})</h6>
+                        <ul class="list-group list-group-flush small">
+                            ${abastecimentos.map(a => `<li class="list-group-item">${a.placa} - ${a.data.split('T')[0]} - ${a.km_inicial}→${a.km_final}km - ${a.litros}L - R$${a.valor_total}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            detailsElement.innerHTML = html;
+            detailsElement.style.display = detailsElement.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function testarGeracaoRelatorio() {
+            console.log('🚀 Iniciando teste de geração de relatório...');
+            await gerarRelatorioConsumo();
+        }
+
+        function limparLogs() {
+            document.getElementById('debugConsole').innerHTML = '<div class="text-success">✅ Console de debug limpo...</div>';
+        }
+
+        // Inicialização
+        async function inicializar() {
+            console.log('🔄 Inicializando sistema de testes...');
+            
+            const conexaoOk = await verificarConexao();
+            if (conexaoOk) {
+                await carregarDados();
+            }
+            
+            console.log('✅ Sistema inicializado');
+        }
+
+        // Executar inicialização quando a página carregar
+        window.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>
