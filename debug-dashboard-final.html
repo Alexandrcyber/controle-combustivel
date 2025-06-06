@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Dashboard Final</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .debug-card { margin: 15px 0; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        .info { color: blue; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto; }
+        .dashboard-preview { border: 2px solid #007bff; border-radius: 10px; padding: 20px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <h1 class="text-center my-4">🔍 Debug Dashboard Final</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card debug-card">
+                    <div class="card-header">
+                        <h5>🔗 Status das Conexões</h5>
+                    </div>
+                    <div class="card-body" id="status-conexoes">
+                        <button class="btn btn-primary" onclick="verificarConexoes()">Verificar Conexões</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card debug-card">
+                    <div class="card-header">
+                        <h5>📊 Carregamento de Dados</h5>
+                    </div>
+                    <div class="card-body" id="carregamento-dados">
+                        <button class="btn btn-success" onclick="carregarDadosDebug()">Carregar Dados</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card debug-card">
+                    <div class="card-header">
+                        <h5>🏠 Prévia do Dashboard</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-warning" onclick="simularDashboardCompleto()">Simular Dashboard Completo</button>
+                        <div id="dashboard-preview" class="dashboard-preview"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card debug-card">
+                    <div class="card-header">
+                        <h5>🐛 Log de Debug</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre id="debug-log"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração
+        window.API_BASE_URL = '/api';
+        let dadosCarregados = { caminhoes: [], abastecimentos: [] };
+
+        function log(message, type = 'info') {
+            const debugLog = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${message}\n`;
+            debugLog.textContent += logEntry;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(`[DEBUG] ${logEntry.trim()}`);
+        }
+
+        async function verificarConexoes() {
+            const statusDiv = document.getElementById('status-conexoes');
+            statusDiv.innerHTML = '<div class="text-info">🔄 Verificando conexões...</div>';
+            
+            let status = {};
+            
+            try {
+                // Testar backend direto
+                const backendResponse = await fetch('http://localhost:3001/api/health');
+                status.backend = backendResponse.ok ? '✅ Online' : '❌ Erro';
+                log(`Backend direto: ${status.backend}`, backendResponse.ok ? 'success' : 'error');
+            } catch (error) {
+                status.backend = '❌ Offline';
+                log(`Backend direto: ${status.backend} - ${error.message}`, 'error');
+            }
+
+            try {
+                // Testar proxy frontend
+                const proxyResponse = await fetch('/api/health');
+                status.proxy = proxyResponse.ok ? '✅ Online' : '❌ Erro';
+                log(`Proxy frontend: ${status.proxy}`, proxyResponse.ok ? 'success' : 'error');
+            } catch (error) {
+                status.proxy = '❌ Offline';
+                log(`Proxy frontend: ${status.proxy} - ${error.message}`, 'error');
+            }
+
+            // Verificar window.dbApi
+            status.dbApi = window.dbApi ? '✅ Disponível' : '❌ Não encontrado';
+            log(`window.dbApi: ${status.dbApi}`, window.dbApi ? 'success' : 'error');
+
+            statusDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-12"><strong>Backend Direto:</strong> ${status.backend}</div>
+                    <div class="col-12"><strong>Proxy Frontend:</strong> ${status.proxy}</div>
+                    <div class="col-12"><strong>window.dbApi:</strong> ${status.dbApi}</div>
+                </div>
+            `;
+        }
+
+        async function carregarDadosDebug() {
+            const dadosDiv = document.getElementById('carregamento-dados');
+            dadosDiv.innerHTML = '<div class="text-info">🔄 Carregando dados...</div>';
+
+            try {
+                log('Iniciando carregamento de dados...', 'info');
+
+                // Carregar via fetch direto
+                const [caminhoesResponse, abastecimentosResponse] = await Promise.all([
+                    fetch('/api/caminhoes'),
+                    fetch('/api/abastecimentos')
+                ]);
+
+                const caminhoes = await caminhoesResponse.json();
+                const abastecimentos = await abastecimentosResponse.json();
+
+                log(`Dados carregados - Caminhões: ${caminhoes.length}, Abastecimentos: ${abastecimentos.length}`, 'success');
+
+                // Analisar estrutura dos abastecimentos
+                if (abastecimentos.length > 0) {
+                    const primeiro = abastecimentos[0];
+                    const campos = Object.keys(primeiro);
+                    log(`Campos do primeiro abastecimento: ${campos.join(', ')}`, 'info');
+                    
+                    // Verificar se tem campos necessários
+                    const temCamelCase = primeiro.kmInicial && primeiro.kmFinal && primeiro.valorTotal;
+                    const temSnakeCase = primeiro.km_inicial && primeiro.km_final && primeiro.valor_total;
+                    
+                    log(`Formato camelCase disponível: ${temCamelCase}`, temCamelCase ? 'success' : 'warning');
+                    log(`Formato snake_case disponível: ${temSnakeCase}`, temSnakeCase ? 'success' : 'warning');
+                }
+
+                dadosCarregados = { caminhoes, abastecimentos };
+
+                // Testar com window.dbApi se disponível
+                if (window.dbApi) {
+                    try {
+                        const caminhoesApi = await window.dbApi.buscarCaminhoes();
+                        const abastecimentosApi = await window.dbApi.buscarAbastecimentos();
+                        
+                        log(`Dados via dbApi - Caminhões: ${caminhoesApi.length}, Abastecimentos: ${abastecimentosApi.length}`, 'success');
+                        
+                        if (abastecimentosApi.length > 0) {
+                            const primeiroApi = abastecimentosApi[0];
+                            const camposApi = Object.keys(primeiroApi);
+                            log(`Campos via dbApi: ${camposApi.join(', ')}`, 'info');
+                        }
+                        
+                        dadosCarregados.caminhoesApi = caminhoesApi;
+                        dadosCarregados.abastecimentosApi = abastecimentosApi;
+                        
+                    } catch (apiError) {
+                        log(`Erro ao usar dbApi: ${apiError.message}`, 'error');
+                    }
+                }
+
+                dadosDiv.innerHTML = `
+                    <div class="success">
+                        <h6>✅ Dados Carregados:</h6>
+                        <p><strong>Fetch Direto:</strong> ${caminhoes.length} caminhões, ${abastecimentos.length} abastecimentos</p>
+                        ${window.dbApi ? `<p><strong>Via dbApi:</strong> ${dadosCarregados.caminhoesApi?.length || 0} caminhões, ${dadosCarregados.abastecimentosApi?.length || 0} abastecimentos</p>` : ''}
+                    </div>
+                `;
+
+            } catch (error) {
+                log(`Erro ao carregar dados: ${error.message}`, 'error');
+                dadosDiv.innerHTML = `<div class="error">❌ Erro: ${error.message}</div>`;
+            }
+        }
+
+        function simularDashboardCompleto() {
+            const previewDiv = document.getElementById('dashboard-preview');
+            
+            const abastecimentos = dadosCarregados.abastecimentosApi || dadosCarregados.abastecimentos || [];
+            const caminhoes = dadosCarregados.caminhoesApi || dadosCarregados.caminhoes || [];
+
+            if (abastecimentos.length === 0) {
+                previewDiv.innerHTML = '<div class="warning">⚠️ Nenhum abastecimento disponível para simular dashboard</div>';
+                return;
+            }
+
+            log('Simulando dashboard com dados carregados...', 'info');
+
+            // Filtrar por mês atual
+            const hoje = new Date();
+            const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            const abastecimentosMes = abastecimentos.filter(a => {
+                const dataAbastecimento = new Date(a.data);
+                return dataAbastecimento >= primeiroDiaMes;
+            });
+
+            log(`Abastecimentos do mês atual: ${abastecimentosMes.length}`, 'info');
+
+            // Calcular métricas
+            let totalKm = 0;
+            let totalLitros = 0;
+            let totalGasto = 0;
+            let detalhesCalculo = [];
+
+            abastecimentosMes.forEach((a, index) => {
+                // Tentar ambos os formatos
+                const kmInicial = parseFloat(a.kmInicial || a.km_inicial || 0);
+                const kmFinal = parseFloat(a.kmFinal || a.km_final || 0);
+                const litros = parseFloat(a.litros || 0);
+                const valorTotal = parseFloat(a.valorTotal || a.valor_total || 0);
+                
+                const km = kmFinal - kmInicial;
+                
+                totalKm += km;
+                totalLitros += litros;
+                totalGasto += valorTotal;
+                
+                detalhesCalculo.push({
+                    index: index + 1,
+                    data: new Date(a.data).toLocaleDateString('pt-BR'),
+                    km: km.toFixed(0),
+                    litros: litros.toFixed(2),
+                    valor: valorTotal.toFixed(2)
+                });
+                
+                log(`Abastecimento ${index + 1}: ${km.toFixed(0)}km, ${litros.toFixed(2)}L, R$${valorTotal.toFixed(2)}`, 'info');
+            });
+
+            const mediaConsumo = totalLitros > 0 ? (totalKm / totalLitros).toFixed(2) : '0.00';
+
+            log(`Totais calculados: ${totalKm.toFixed(0)}km, ${totalLitros.toFixed(2)}L, R$${totalGasto.toFixed(2)}, Média: ${mediaConsumo}km/L`, 'success');
+
+            previewDiv.innerHTML = `
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h5>${caminhoes.length}</h5>
+                                <p>Total Caminhões</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5>${abastecimentosMes.length}</h5>
+                                <p>Abastecimentos (mês)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h5>${mediaConsumo} km/L</h5>
+                                <p>Média Consumo</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h5>R$ ${totalGasto.toFixed(2)}</h5>
+                                <p>Gasto Total (mês)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>📋 Detalhes dos Cálculos:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Data</th>
+                                    <th>KM</th>
+                                    <th>Litros</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${detalhesCalculo.map(d => `
+                                    <tr>
+                                        <td>${d.index}</td>
+                                        <td>${d.data}</td>
+                                        <td>${d.km}</td>
+                                        <td>${d.litros}</td>
+                                        <td>R$ ${d.valor}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Auto-inicializar
+        window.addEventListener('load', () => {
+            log('Página de debug carregada', 'info');
+            setTimeout(() => {
+                verificarConexoes();
+            }, 500);
+        });
+    </script>
+
+    <!-- Scripts necessários -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

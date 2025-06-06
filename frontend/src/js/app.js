@@ -120,9 +120,17 @@ function showConnectionAttempt() {
 // Carregar dados do localStorage
 async function loadDataFromLocalStorage() {
     try {
+        console.log('[LOAD] Iniciando carregamento de dados...');
+        
         // Usar dbApi para buscar dados do backend
         caminhoes = await window.dbApi.buscarCaminhoes();
         abastecimentos = await window.dbApi.buscarAbastecimentos();
+        
+        console.log('[LOAD] Dados carregados:', {
+            caminhoes: caminhoes.length,
+            abastecimentos: abastecimentos.length,
+            primeiroAbastecimento: abastecimentos[0] || null
+        });
         
         // Atualizar referências globais para os relatórios
         updateGlobalReferences();
@@ -136,6 +144,11 @@ async function loadDataFromLocalStorage() {
         
         caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
         abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
+        
+        console.log('[LOAD] Usando fallback localStorage:', {
+            caminhoes: caminhoes.length,
+            abastecimentos: abastecimentos.length
+        });
         
         // Atualizar referências globais para os relatórios
         updateGlobalReferences();
@@ -247,6 +260,11 @@ function setupEventHandlers() {
 
 // Atualizar dados do dashboard
 function updateDashboard() {
+    console.log('[DASHBOARD] Atualizando dashboard...', {
+        caminhoes: caminhoes.length,
+        abastecimentos: abastecimentos.length
+    });
+    
     // Atualizar contadores
     document.getElementById('totalCaminhoes').textContent = caminhoes.length;
     
@@ -269,22 +287,29 @@ function updateDashboard() {
         return dt >= inicio && dt <= fim;
     });
     // Atualizar contadores usando dados filtrados
-    document.getElementById('totalAbastecimentos').textContent = abastecimentosFiltrados.length;
-
-    // Calcular média de consumo no período
+    document.getElementById('totalAbastecimentos').textContent = abastecimentosFiltrados.length;    // Calcular média de consumo no período
     let totalKmPeriodo = 0;
     let totalLitrosPeriodo = 0;
     abastecimentosFiltrados.forEach(a => {
-        totalKmPeriodo += (a.kmFinal - a.kmInicial);
-        totalLitrosPeriodo += parseFloat(a.litros);
+        // Suportar tanto camelCase quanto snake_case
+        const kmInicial = parseFloat(a.kmInicial || a.km_inicial || 0);
+        const kmFinal = parseFloat(a.kmFinal || a.km_final || 0);
+        const litros = parseFloat(a.litros || 0);
+        
+        totalKmPeriodo += (kmFinal - kmInicial);
+        totalLitrosPeriodo += litros;
     });
     const mediaConsumoPeriodo = totalLitrosPeriodo > 0 ? (totalKmPeriodo / totalLitrosPeriodo).toFixed(2) : '0.00';
     document.getElementById('mediaConsumo').textContent = `${mediaConsumoPeriodo} km/l`;
 
     // Calcular gasto total no período
     let gastoPeriodo = 0;
-    abastecimentosFiltrados.forEach(a => { gastoPeriodo += parseFloat(a.valorTotal); });
-    document.getElementById('gastoTotal').textContent = `R$ ${gastoPeriodo.toFixed(2)}`;    // Atualizar gráficos
+    abastecimentosFiltrados.forEach(a => { 
+        // Suportar tanto camelCase quanto snake_case
+        const valorTotal = parseFloat(a.valorTotal || a.valor_total || 0);
+        gastoPeriodo += valorTotal;
+    });
+    document.getElementById('gastoTotal').textContent = `R$ ${gastoPeriodo.toFixed(2)}`;// Atualizar gráficos
     updateCharts();
     
     // Mostrar alerta de sucesso

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+        }
+        .card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin: 10px 0;
+            padding: 15px;
+        }
+        .card-success { border-color: #28a745; background-color: #d4edda; }
+        .card-error { border-color: #dc3545; background-color: #f8d7da; }
+        .card-warning { border-color: #ffc107; background-color: #fff3cd; }
+        .card-info { border-color: #17a2b8; background-color: #d1ecf1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Teste Final - Dashboard Funcionando</h1>
+        
+        <button class="btn" onclick="executarTesteFinal()">🚀 Executar Teste Completo</button>
+        <button class="btn" onclick="abrirDashboardPrincipal()">🏠 Abrir Dashboard Principal</button>
+        <button class="btn" onclick="verificarDadosLocalStorage()">💾 Verificar localStorage</button>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001/api';
+
+        function log(message, type = 'info') {
+            const resultado = document.getElementById('resultado');
+            const cardClass = `card-${type}`;
+            const icon = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            resultado.innerHTML += `
+                <div class="card ${cardClass}">
+                    <strong>${icon[type] || 'ℹ️'} ${message}</strong>
+                </div>
+            `;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function executarTesteFinal() {
+            document.getElementById('resultado').innerHTML = '';
+            log('Iniciando teste final do sistema...', 'info');
+
+            try {
+                // Passo 1: Verificar APIs
+                log('📡 Passo 1: Verificando conectividade com APIs...', 'info');
+                
+                const caminhoesResponse = await fetch(`${API_BASE_URL}/caminhoes`);
+                const abastecimentosResponse = await fetch(`${API_BASE_URL}/abastecimentos`);
+                
+                if (!caminhoesResponse.ok || !abastecimentosResponse.ok) {
+                    throw new Error('APIs não estão respondendo corretamente');
+                }
+
+                const caminhoesData = await caminhoesResponse.json();
+                const abastecimentosData = await abastecimentosResponse.json();
+
+                log(`APIs funcionando: ${caminhoesData.length} caminhões, ${abastecimentosData.length} abastecimentos`, 'success');
+
+                // Passo 2: Testar função updateDashboard
+                log('📊 Passo 2: Testando cálculos do dashboard...', 'info');
+                
+                // Simular a lógica exata do updateDashboard
+                const hoje = new Date();
+                const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+                const dataFim = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
+                
+                log(`Período de teste: ${dataInicio} até ${dataFim}`, 'info');
+
+                const inicio = new Date(dataInicio);
+                const fim = new Date(dataFim + 'T23:59:59');
+                
+                // Filtrar abastecimentos pelo período (como no código real)
+                const abastecimentosFiltrados = abastecimentosData.filter(a => {
+                    const dt = new Date(a.data);
+                    return dt >= inicio && dt <= fim;
+                });
+
+                log(`Abastecimentos no período: ${abastecimentosFiltrados.length}`, 'info');
+
+                // Calcular métricas (usando a lógica exata do updateDashboard)
+                let totalKmPeriodo = 0;
+                let totalLitrosPeriodo = 0;
+                let gastoPeriodo = 0;
+
+                abastecimentosFiltrados.forEach(a => {
+                    // Suportar tanto camelCase quanto snake_case (como no código corrigido)
+                    const kmInicial = parseFloat(a.kmInicial || a.km_inicial || 0);
+                    const kmFinal = parseFloat(a.kmFinal || a.km_final || 0);
+                    const litros = parseFloat(a.litros || 0);
+                    const valorTotal = parseFloat(a.valorTotal || a.valor_total || 0);
+                    
+                    totalKmPeriodo += (kmFinal - kmInicial);
+                    totalLitrosPeriodo += litros;
+                    gastoPeriodo += valorTotal;
+                });
+
+                const mediaConsumoPeriodo = totalLitrosPeriodo > 0 ? (totalKmPeriodo / totalLitrosPeriodo).toFixed(2) : '0.00';
+
+                log(`Métricas calculadas:`, 'success');
+                log(`   └── Total Caminhões: ${caminhoesData.length}`, 'info');
+                log(`   └── Total Abastecimentos (período): ${abastecimentosFiltrados.length}`, 'info');
+                log(`   └── Total KM (período): ${totalKmPeriodo.toFixed(2)}`, 'info');
+                log(`   └── Total Litros (período): ${totalLitrosPeriodo.toFixed(2)}`, 'info');
+                log(`   └── Gasto Total (período): R$ ${gastoPeriodo.toFixed(2)}`, 'info');
+                log(`   └── Média Consumo (período): ${mediaConsumoPeriodo} km/l`, 'info');
+
+                // Passo 3: Verificar se localStorage está sincronizado
+                log('💾 Passo 3: Verificando localStorage...', 'info');
+                
+                const localCaminhoes = localStorage.getItem('caminhoes');
+                const localAbastecimentos = localStorage.getItem('abastecimentos');
+
+                if (localCaminhoes && localAbastecimentos) {
+                    const caminhoesLocal = JSON.parse(localCaminhoes);
+                    const abastecimentosLocal = JSON.parse(localAbastecimentos);
+                    
+                    log(`localStorage sincronizado: ${caminhoesLocal.length} caminhões, ${abastecimentosLocal.length} abastecimentos`, 'success');
+                } else {
+                    log('localStorage vazio, populando...', 'warning');
+                    localStorage.setItem('caminhoes', JSON.stringify(caminhoesData));
+                    localStorage.setItem('abastecimentos', JSON.stringify(abastecimentosData));
+                    log('localStorage populado com dados da API', 'success');
+                }
+
+                // Passo 4: Verificar problemas comuns
+                log('🔍 Passo 4: Verificando potenciais problemas...', 'info');
+                
+                let problemasEncontrados = 0;
+
+                // Verificar campos undefined/null
+                abastecimentosData.forEach((a, index) => {
+                    const kmInicial = a.kmInicial || a.km_inicial;
+                    const kmFinal = a.kmFinal || a.km_final;
+                    const valorTotal = a.valorTotal || a.valor_total;
+                    
+                    if (!kmInicial || !kmFinal || !valorTotal) {
+                        log(`Problema no abastecimento ${index + 1}: campos faltando`, 'warning');
+                        problemasEncontrados++;
+                    }
+                });
+
+                if (problemasEncontrados === 0) {
+                    log('Nenhum problema encontrado nos dados', 'success');
+                } else {
+                    log(`${problemasEncontrados} problemas encontrados (mas sistema deve funcionar)`, 'warning');
+                }
+
+                // Passo 5: Conclusão
+                log('🎉 Teste Final Concluído', 'success');
+                
+                if (totalKmPeriodo > 0 && gastoPeriodo > 0) {
+                    log('Dashboard deve estar funcionando corretamente! ✅', 'success');
+                    log('Recomendação: Abrir o dashboard principal para verificar visualmente', 'info');
+                } else {
+                    log('Possível problema: Métricas zeradas. Verificar dados ou período', 'warning');
+                }
+
+            } catch (error) {
+                log(`Erro durante o teste: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        function abrirDashboardPrincipal() {
+            log('Abrindo dashboard principal...', 'info');
+            window.open('http://localhost:3000', '_blank');
+        }
+
+        function verificarDadosLocalStorage() {
+            const caminhoes = localStorage.getItem('caminhoes');
+            const abastecimentos = localStorage.getItem('abastecimentos');
+            
+            if (caminhoes && abastecimentos) {
+                const caminhoesData = JSON.parse(caminhoes);
+                const abastecimentosData = JSON.parse(abastecimentos);
+                
+                log(`localStorage OK: ${caminhoesData.length} caminhões, ${abastecimentosData.length} abastecimentos`, 'success');
+            } else {
+                log('localStorage vazio ou incompleto', 'warning');
+            }
+        }
+
+        // Auto-executar
+        window.addEventListener('load', () => {
+            log('Página carregada. Execute o teste para verificar o status do dashboard.', 'info');
+        });
+    </script>
+</body>
+</html>

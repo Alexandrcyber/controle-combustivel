@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Dashboard - Controle de Combustível</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Dashboard - Controle de Combustível</h1>
+    
+    <div class="debug-section">
+        <h2>🔗 Status das APIs</h2>
+        <button onclick="testarAPIs()">Testar Conexões APIs</button>
+        <div id="status-apis"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>📊 Dados Carregados</h2>
+        <button onclick="carregarDados()">Carregar Dados</button>
+        <button onclick="verificarDbApi()">Verificar window.dbApi</button>
+        <div id="dados-carregados"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🏠 Simulação Dashboard</h2>
+        <button onclick="simularDashboard()">Simular Dashboard</button>
+        <div id="simulacao-dashboard"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🐛 Console Debug</h2>
+        <div id="console-debug"></div>
+    </div>
+
+    <script>
+        // Incluir configuração e API
+        const API_BASE_URL = '/api';
+        
+        function log(message, type = 'info') {
+            const debugDiv = document.getElementById('console-debug');
+            const timestamp = new Date().toLocaleTimeString();
+            debugDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        async function testarAPIs() {
+            const statusDiv = document.getElementById('status-apis');
+            statusDiv.innerHTML = '<p>🔄 Testando APIs...</p>';
+            
+            try {
+                // Testar health check
+                const healthResponse = await fetch('/api/health');
+                const healthData = await healthResponse.json();
+                log('✅ Health check OK: ' + JSON.stringify(healthData), 'success');
+
+                // Testar caminhões
+                const caminhoesResponse = await fetch('/api/caminhoes');
+                const caminhoes = await caminhoesResponse.json();
+                log(`✅ Caminhões carregados: ${caminhoes.length}`, 'success');
+
+                // Testar abastecimentos
+                const abastecimentosResponse = await fetch('/api/abastecimentos');
+                const abastecimentos = await abastecimentosResponse.json();
+                log(`✅ Abastecimentos carregados: ${abastecimentos.length}`, 'success');
+
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ APIs funcionando corretamente!</h4>
+                        <p><strong>Caminhões:</strong> ${caminhoes.length}</p>
+                        <p><strong>Abastecimentos:</strong> ${abastecimentos.length}</p>
+                        <p><strong>Health:</strong> ${healthData.status}</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                log('❌ Erro ao testar APIs: ' + error.message, 'error');
+                statusDiv.innerHTML = `<div class="error">❌ Erro: ${error.message}</div>`;
+            }
+        }
+
+        async function verificarDbApi() {
+            const dadosDiv = document.getElementById('dados-carregados');
+            
+            if (typeof window.dbApi === 'undefined') {
+                log('❌ window.dbApi não está definido', 'error');
+                dadosDiv.innerHTML += '<div class="error">❌ window.dbApi não encontrado</div>';
+                return;
+            }
+
+            log('✅ window.dbApi encontrado', 'success');
+            dadosDiv.innerHTML += '<div class="success">✅ window.dbApi disponível</div>';
+
+            try {
+                const caminhoes = await window.dbApi.buscarCaminhoes();
+                const abastecimentos = await window.dbApi.buscarAbastecimentos();
+                
+                log(`✅ Dados via dbApi - Caminhões: ${caminhoes.length}, Abastecimentos: ${abastecimentos.length}`, 'success');
+                
+                window.caminhoes = caminhoes;
+                window.abastecimentos = abastecimentos;
+                
+                dadosDiv.innerHTML += `
+                    <div class="success">
+                        <h4>✅ Dados carregados via window.dbApi:</h4>
+                        <p><strong>Caminhões:</strong> ${caminhoes.length}</p>
+                        <p><strong>Abastecimentos:</strong> ${abastecimentos.length}</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                log('❌ Erro ao usar window.dbApi: ' + error.message, 'error');
+                dadosDiv.innerHTML += `<div class="error">❌ Erro window.dbApi: ${error.message}</div>`;
+            }
+        }
+
+        async function carregarDados() {
+            const dadosDiv = document.getElementById('dados-carregados');
+            dadosDiv.innerHTML = '<p>🔄 Carregando dados...</p>';
+
+            try {
+                const [caminhoes, abastecimentos] = await Promise.all([
+                    fetch('/api/caminhoes').then(r => r.json()),
+                    fetch('/api/abastecimentos').then(r => r.json())
+                ]);
+
+                window.caminhoes = caminhoes;
+                window.abastecimentos = abastecimentos;
+
+                dadosDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Dados carregados diretamente:</h4>
+                        <p><strong>Caminhões:</strong> ${caminhoes.length}</p>
+                        <p><strong>Abastecimentos:</strong> ${abastecimentos.length}</p>
+                        <details>
+                            <summary>Ver estrutura dos dados</summary>
+                            <pre>${JSON.stringify({ caminhoes: caminhoes[0], abastecimentos: abastecimentos[0] }, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+
+                log(`✅ Dados carregados - Caminhões: ${caminhoes.length}, Abastecimentos: ${abastecimentos.length}`, 'success');
+
+            } catch (error) {
+                log('❌ Erro ao carregar dados: ' + error.message, 'error');
+                dadosDiv.innerHTML = `<div class="error">❌ Erro: ${error.message}</div>`;
+            }
+        }
+
+        function simularDashboard() {
+            const dashboardDiv = document.getElementById('simulacao-dashboard');
+            
+            if (!window.caminhoes || !window.abastecimentos) {
+                dashboardDiv.innerHTML = '<div class="warning">⚠️ Carregue os dados primeiro!</div>';
+                return;
+            }
+
+            const totalCaminhoes = window.caminhoes.length;
+            const totalAbastecimentos = window.abastecimentos.length;
+
+            // Calcular estatísticas do mês atual
+            const hoje = new Date();
+            const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            const abastecimentosMes = window.abastecimentos.filter(a => {
+                const dataAbastecimento = new Date(a.data);
+                return dataAbastecimento >= primeiroDiaMes;
+            });
+
+            let totalLitrosMes = 0;
+            let totalGastoMes = 0;
+            let totalKmMes = 0;
+
+            abastecimentosMes.forEach(a => {
+                totalLitrosMes += parseFloat(a.litros || 0);
+                totalGastoMes += parseFloat(a.valor_total || 0);
+                totalKmMes += (parseFloat(a.km_final || 0) - parseFloat(a.km_inicial || 0));
+            });
+
+            const mediaConsumo = totalKmMes > 0 && totalLitrosMes > 0 ? (totalKmMes / totalLitrosMes).toFixed(2) : '0.00';
+
+            dashboardDiv.innerHTML = `
+                <div class="success">
+                    <h4>📊 Dashboard Simulado:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 0;">
+                        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>Total Caminhões:</strong> ${totalCaminhoes}
+                        </div>
+                        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>Abastecimentos (mês):</strong> ${abastecimentosMes.length}
+                        </div>
+                        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>Total Litros (mês):</strong> ${totalLitrosMes.toFixed(2)}L
+                        </div>
+                        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>Total Gasto (mês):</strong> R$ ${totalGastoMes.toFixed(2)}
+                        </div>
+                        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>Total KM (mês):</strong> ${totalKmMes.toFixed(0)} km
+                        </div>
+                        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <strong>Média Consumo:</strong> ${mediaConsumo} km/L
+                        </div>
+                    </div>
+                    <p class="info">📅 Período: ${primeiroDiaMes.toLocaleDateString('pt-BR')} até hoje</p>
+                </div>
+            `;
+
+            log(`✅ Dashboard simulado - ${totalCaminhoes} caminhões, ${abastecimentosMes.length} abastecimentos no mês`, 'success');
+        }
+
+        // Auto-executar testes
+        window.addEventListener('load', () => {
+            log('🚀 Página carregada, iniciando testes automáticos...', 'info');
+            setTimeout(() => {
+                testarAPIs();
+            }, 500);
+        });
+    </script>
+
+    <!-- Incluir scripts necessários do sistema -->
+    <script src="src/js/config.js"></script>
+    <script src="src/js/api.js"></script>
+</body>
+</html>
