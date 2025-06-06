@@ -11,13 +11,17 @@ window.AppConfig = {
   
   // Debug mode
   debug: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
-  
-  // Configurações da API
+    // Configurações da API
   api: {
     baseUrl: (() => {
       // Verificar se existe variável de ambiente customizada
       if (window.ENV_API_BASE_URL) {
         return window.ENV_API_BASE_URL;
+      }
+      
+      // Para desenvolvimento local, usar proxy
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return '/api'; // Usar proxy local configurado no servidor Express
       }
       
       // Configuração baseada no ambiente

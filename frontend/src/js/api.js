@@ -1,7 +1,7 @@
 // Configuração da API
 const API_CONFIG = {
     // Obter URL base de variável global ou usar fallback
-    baseURL: window.API_BASE_URL || 'http://localhost:3001/api',
+    baseURL: window.API_BASE_URL || '/api', // Usar proxy local para desenvolvimento
     headers: {
         'Content-Type': 'application/json'
     }

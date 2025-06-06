@@ -50,14 +50,14 @@ async function criarCaminhao(req, res) {
         
         const id = generateId();
         const status = 'ativo'; // Status padrão
-        
-        const result = await pool.query(`
+          const result = await pool.query(`
             INSERT INTO caminhoes (id, placa, modelo, ano, capacidade, motorista, status, observacoes)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
         `, [id, placa, modelo, ano || null, capacidade || null, motorista || null, status, observacoes || null]);
         
-        res.status(201).json(result.rows[0]);    } catch (error) {
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
         console.error('Erro ao criar caminhão:', error);
         
         // Verificar se é erro de duplicata de placa
@@ -91,10 +91,10 @@ async function atualizarCaminhao(req, res) {
             SET placa = $2, modelo = $3, ano = $4, capacidade = $5, 
                 motorista = $6, status = $7, observacoes = $8, updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
-            RETURNING *
-        `, [id, placa, modelo, ano, capacidade, motorista, status, observacoes]);
+            RETURNING *        `, [id, placa, modelo, ano, capacidade, motorista, status, observacoes]);
         
-        res.json(result.rows[0]);    } catch (error) {
+        res.json(result.rows[0]);
+    } catch (error) {
         console.error('Erro ao atualizar caminhão:', error);
         
         // Verificar se é erro de duplicata de placa

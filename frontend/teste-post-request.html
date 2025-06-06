@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste POST Request - Proxy</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste POST Request através do Proxy</h1>
+    
+    <div class="container info">
+        <h3>📋 Status dos Servidores</h3>
+        <p><strong>Frontend:</strong> <span id="frontend-status">Verificando...</span></p>
+        <p><strong>Backend (via proxy):</strong> <span id="backend-status">Verificando...</span></p>
+    </div>
+
+    <div class="container">
+        <h3>🚛 Teste: Criar Novo Caminhão (POST)</h3>
+        <div class="form-group">
+            <label for="placa">Placa:</label>
+            <input type="text" id="placa" value="ABC-1234" placeholder="Ex: ABC-1234">
+        </div>
+        <div class="form-group">
+            <label for="modelo">Modelo:</label>
+            <input type="text" id="modelo" value="Scania R440" placeholder="Ex: Volvo FH">
+        </div>
+        <div class="form-group">
+            <label for="capacidade">Capacidade (litros):</label>
+            <input type="number" id="capacidade" value="500" placeholder="Ex: 500">
+        </div>
+        <button onclick="criarCaminhao()">🚛 Criar Caminhão via POST</button>
+        <button onclick="listarCaminhoes()">📋 Listar Caminhões (GET)</button>
+        <button onclick="testarConexao()">🔗 Testar Conexão Backend</button>
+    </div>
+
+    <div class="container">
+        <h3>📊 Resultados dos Testes</h3>
+        <div id="resultados"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api'; // Usar proxy
+        
+        function log(message, type = 'info') {
+            const resultados = document.getElementById('resultados');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = `container ${type}`;
+            div.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            resultados.appendChild(div);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        async function testarConexao() {
+            log('🔗 Testando conexão com backend via proxy...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Backend conectado: ${JSON.stringify(data)}`, 'success');
+                    document.getElementById('backend-status').textContent = '✅ Online';
+                } else {
+                    log(`❌ Erro na conexão: ${response.status} - ${JSON.stringify(data)}`, 'error');
+                    document.getElementById('backend-status').textContent = '❌ Erro';
+                }
+            } catch (error) {
+                log(`❌ Erro de conexão: ${error.message}`, 'error');
+                document.getElementById('backend-status').textContent = '❌ Offline';
+            }
+        }
+
+        async function criarCaminhao() {
+            const placa = document.getElementById('placa').value;
+            const modelo = document.getElementById('modelo').value;
+            const capacidade = parseInt(document.getElementById('capacidade').value);
+
+            if (!placa || !modelo || !capacidade) {
+                log('❌ Preencha todos os campos!', 'error');
+                return;
+            }
+
+            const dadosCaminhao = { placa, modelo, capacidade_tanque: capacidade };
+            
+            log(`🚛 Criando caminhão: ${JSON.stringify(dadosCaminhao)}`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/caminhoes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(dadosCaminhao)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Caminhão criado com sucesso! ID: ${data.id}`, 'success');
+                    log(`📄 Resposta completa: ${JSON.stringify(data, null, 2)}`, 'success');
+                    
+                    // Limpar formulário
+                    document.getElementById('placa').value = '';
+                    document.getElementById('modelo').value = '';
+                    document.getElementById('capacidade').value = '';
+                } else {
+                    log(`❌ Erro ao criar caminhão: ${response.status} - ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição POST: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        async function listarCaminhoes() {
+            log('📋 Listando caminhões...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/caminhoes`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ ${data.length} caminhões encontrados`, 'success');
+                    if (data.length > 0) {
+                        const preview = data.slice(0, 3).map(c => 
+                            `${c.placa} (${c.modelo})`
+                        ).join(', ');
+                        log(`📋 Primeiros caminhões: ${preview}`, 'info');
+                    }
+                } else {
+                    log(`❌ Erro ao listar: ${response.status} - ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro na requisição GET: ${error.message}`, 'error');
+            }
+        }
+
+        // Verificar status inicial
+        window.onload = function() {
+            document.getElementById('frontend-status').textContent = '✅ Online';
+            testarConexao();
+        };
+    </script>
+</body>
+</html>

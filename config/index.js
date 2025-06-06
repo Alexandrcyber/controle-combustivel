@@ -20,10 +20,11 @@ const config = {
     port: parseInt(process.env.FRONTEND_PORT) || 3000,
     host: process.env.FRONTEND_HOST || 'localhost',
   },
-  
-  // Banco de Dados
+    // Banco de Dados
   database: {
-    type: process.env.DB_TYPE || 'json',
+    type: process.env.DB_TYPE || 'postgresql',
+    url: process.env.DATABASE_URL,
+    ssl: process.env.DB_SSL === 'true',
     path: process.env.DB_PATH || './data',
   },
   

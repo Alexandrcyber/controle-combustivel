@@ -9,7 +9,7 @@ if (process.env.DATABASE_URL) {
     // Usar DATABASE_URL para Neon ou outros provedores cloud
     poolConfig = {
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: { rejectUnauthorized: false }
     };
 } else {
     // Usar configurações individuais para desenvolvimento local

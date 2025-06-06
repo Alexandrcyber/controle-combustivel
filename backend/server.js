@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+// Carregar configurações do .env específico do backend
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+
 // Importar configurações centralizadas
 const config = require('../config');
 
