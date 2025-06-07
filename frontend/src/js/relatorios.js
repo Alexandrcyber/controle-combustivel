@@ -748,7 +748,12 @@ function obterDadosDoRelatorio() {
             totais: {
                 gasto: totalGasto,
                 consumo: totalConsumo,
-                distancia: totalDistancia
+                distancia: totalDistancia,
+                totalGasto: totalGasto,
+                totalLitros: totalConsumo,
+                totalKm: totalDistancia,
+                totalAbastecimentos: totalAbastecimentos,
+                quantidadeCaminhoes: totalCaminhoes
             },
             medias: medias
         };
@@ -784,11 +789,11 @@ function criarPlanilhaDashboard(wb, dados) {
         ['Métrica', 'Valor', 'Unidade'],
         ['Total de Caminhões', Object.keys(dados.dadosPorCaminhao).length, 'veículos'],
         ['Distância Total', totais.totalKm.toLocaleString('pt-BR'), 'km'],
-        ['Combustível Total', totais.formatarMoeda(totalLitros), 'litros'],
-        ['Gasto Total', `R$ ${totais.formatarMoeda(totalGasto)}`, 'reais'],
-        ['Consumo Médio Geral', totais.formatarMoeda(consumoMedio), 'km/l'],
-        ['Custo por Quilômetro', `R$ ${totais.formatarMoeda(custoPorKm)}`, 'reais/km'],
-        ['Valor Médio do Litro', `R$ ${totais.formatarMoeda(valorMedioLitro)}`, 'reais/litro'],
+        ['Combustível Total', formatarMoeda(totais.totalLitros), 'litros'],
+        ['Gasto Total', `R$ ${formatarMoeda(totais.totalGasto)}`, 'reais'],
+        ['Consumo Médio Geral', formatarMoeda(totais.consumoMedio), 'km/l'],
+        ['Custo por Quilômetro', `R$ ${formatarMoeda(totais.custoPorKm)}`, 'reais/km'],
+        ['Valor Médio do Litro', `R$ ${formatarMoeda(totais.valorMedioLitro)}`, 'reais/litro'],
         [''],
         ['RANKING DE EFICIÊNCIA'],
         [''],
@@ -805,7 +810,7 @@ function criarPlanilhaDashboard(wb, dados) {
         const status = caminhao.mediaConsumo >= totais.consumoMedio ? 'Eficiente' : 'Atenção';
         XLSX.utils.sheet_add_aoa(ws, [
             [index + 1, `${caminhao.placa} - ${caminhao.modelo}`, 
-             caminhao.formatarMoeda(mediaConsumo), `R$ ${caminhao.formatarMoeda(custoMedio)}`, status]
+             formatarMoeda(caminhao.mediaConsumo), `R$ ${formatarMoeda(caminhao.custoMedio)}`, status]
         ], { origin: `A${linha}` });
         linha++;
     });
@@ -835,9 +840,9 @@ function criarPlanilhaResumoExecutivo(wb, dados) {
     Object.values(dados.dadosPorCaminhao).forEach(caminhao => {
         XLSX.utils.sheet_add_aoa(ws, [
             [caminhao.placa, caminhao.placa, caminhao.modelo, 
-             caminhao.totalKm, caminhao.formatarMoeda(totalLitros),
-             caminhao.formatarMoeda(totalGasto), caminhao.formatarMoeda(mediaConsumo),
-             caminhao.formatarMoeda(custoMedio), caminhao.formatarMoeda(valorMedioLitro),
+             caminhao.totalKm, formatarMoeda(caminhao.totalLitros),
+             formatarMoeda(caminhao.totalGasto), formatarMoeda(caminhao.mediaConsumo),
+             formatarMoeda(caminhao.custoMedio), formatarMoeda(caminhao.valorMedioLitro),
              caminhao.abastecimentos.length]
         ], { origin: `A${linha}` });
         linha++;
@@ -881,7 +886,7 @@ function criarPlanilhaDadosDetalhados(wb, dados) {
         XLSX.utils.sheet_add_aoa(ws, [
             [formatDate(abast.data), `${caminhao.placa} - ${caminhao.modelo}`, caminhao.placa,
              abast.motorista, abast.kmInicial, abast.kmFinal, distancia,
-             abast.formatarMoeda(litros), abast.formatarMoeda(valorTotal), 
+             formatarMoeda(abast.litros), formatarMoeda(abast.valorTotal), 
              formatarMoeda(valorPorLitro), formatarMoeda(consumo)]
         ], { origin: `A${linha}` });
         linha++;
@@ -908,8 +913,8 @@ function criarPlanilhaAnaliseCustos(wb, dados) {
     analiseTemporalData.forEach(periodo => {
         XLSX.utils.sheet_add_aoa(ws, [
             [periodo.periodo, periodo.abastecimentos, periodo.distancia,
-             periodo.formatarMoeda(combustivel), periodo.formatarMoeda(gasto),
-             periodo.formatarMoeda(consumoMedio), periodo.formatarMoeda(custoPorKm)]
+             formatarMoeda(periodo.combustivel), formatarMoeda(periodo.gasto),
+             formatarMoeda(periodo.consumoMedio), formatarMoeda(periodo.custoPorKm)]
         ], { origin: `A${linha}` });
         linha++;
     });
@@ -926,8 +931,8 @@ function criarPlanilhaAnaliseCustos(wb, dados) {
     const analisePrecos = criarAnalisePrecos(dados.abastecimentos);
     analisePrecos.forEach(preco => {
         XLSX.utils.sheet_add_aoa(ws, [
-            [formatDate(preco.data), preco.formatarMoeda(valorLitro), 
-             preco.formatarMoeda(variacao), preco.tendencia]
+            [formatDate(preco.data), formatarMoeda(preco.valorLitro), 
+             formatarMoeda(preco.variacao), preco.tendencia]
         ], { origin: `A${linha}` });
         linha++;
     });
@@ -946,10 +951,10 @@ function criarPlanilhaIndicadores(wb, dados) {
         [''],
         ['Indicador', 'Valor Atual', 'Meta Sugerida', 'Status', 'Observação'],
         [''],
-        ['Consumo Médio Geral (km/l)', totais.formatarMoeda(consumoMedio), '12.0', 
+        ['Consumo Médio Geral (km/l)', formatarMoeda(totais.consumoMedio), '12.0', 
          totais.consumoMedio >= 12 ? 'OK' : 'Atenção', 
          totais.consumoMedio >= 12 ? 'Dentro da meta' : 'Abaixo da meta recomendada'],
-        ['Custo por Quilômetro (R$/km)', totais.formatarMoeda(custoPorKm), '0.60',
+        ['Custo por Quilômetro (R$/km)', formatarMoeda(totais.custoPorKm), '0.60',
          totais.custoPorKm <= 0.6 ? 'OK' : 'Atenção',
          totais.custoPorKm <= 0.6 ? 'Custo controlado' : 'Custo elevado'],
         ['Variação Consumo Entre Veículos (%)', 
@@ -969,9 +974,9 @@ function criarPlanilhaIndicadores(wb, dados) {
         
         XLSX.utils.sheet_add_aoa(ws, [
             [`${caminhao.placa} - ${caminhao.modelo}`, 
-             caminhao.formatarMoeda(mediaConsumo),
+             formatarMoeda(caminhao.mediaConsumo),
              `${variacaoConsumo > 0 ? '+' : ''}${formatarNumero(variacaoConsumo, 1)}%`,
-             `R$ ${caminhao.formatarMoeda(custoMedio)}`,
+             `R$ ${formatarMoeda(caminhao.custoMedio)}`,
              classificacao]
         ], { origin: `A${linha}` });
         linha++;
@@ -1132,8 +1137,8 @@ function criarCapaPdf(doc, dados, cores) {
         `Total Gasto: R$ ${dados.totais.gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         `Total Consumido: ${dados.totais.consumo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} L`,
         `Distância Total: ${dados.totais.distancia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} km`,
-        `Média de Consumo: ${dados.medias.formatarMoeda(consumo)} km/L`,
-        `Custo por km: R$ ${dados.medias.formatarMoeda(custoPorKm)}`
+        `Média de Consumo: ${formatarNumero(dados.medias.consumo)} km/L`,
+        `Custo por km: R$ ${formatarMoeda(dados.medias.custoPorKm)}`
     ];
     
     items.forEach(item => {
@@ -1205,7 +1210,7 @@ function criarDashboardExecutivoPdf(doc, dados, cores) {    // Cabeçalho da pá
         { label: 'Gasto Total', valor: `R$ ${dados.totais.gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cor: cores.sucesso },
         { label: 'Consumo Total', valor: `${dados.totais.consumo.toLocaleString('pt-BR')} L`, cor: cores.info },
         { label: 'Distância Total', valor: `${dados.totais.distancia.toLocaleString('pt-BR')} km`, cor: cores.alerta },
-        { label: 'Eficiência Média', valor: `${dados.medias.formatarMoeda(consumo)} km/L`, cor: cores.secundaria }
+        { label: 'Eficiência Média', valor: `${formatarNumero(dados.medias.consumo)} km/L`, cor: cores.secundaria }
     ];
       // Desenhar cards dos KPIs
     let cardX = 15;
@@ -1333,8 +1338,8 @@ function criarIndicadoresPdf(doc, dados, cores) {
         doc.setTextColor(...cores.texto);
         doc.setFontSize(9);
         doc.text(caminhao.placa, 15, yPos + 3);
-        doc.text(caminhao.formatarNumero(totalLitros, 1), 55, yPos + 3);
-        doc.text(caminhao.formatarNumero(totalKm, 1), 95, yPos + 3);
+        doc.text(formatarNumero(caminhao.totalLitros, 1), 55, yPos + 3);
+        doc.text(formatarNumero(caminhao.totalKm, 1), 95, yPos + 3);
         doc.text(formatarMoeda(eficiencia), 145, yPos + 3);
         
         // Status colorido
@@ -1430,10 +1435,10 @@ function criarAnaliseDetalhadaPdf(doc, dados, cores) {
         const consumo = caminhao.totalKm > 0 ? formatarMoeda(caminhao.totalLitros / caminhao.totalKm * 100) : 0;
         const custoPorKm = caminhao.totalKm > 0 ? formatarMoeda(caminhao.totalGasto / caminhao.totalKm) : 0;
         
-        doc.text(`📊 Quilometragem Total: ${caminhao.formatarNumero(totalKm, 0)} km`, 20, yPos);
-        doc.text(`⛽ Combustível Total: ${caminhao.formatarNumero(totalLitros, 0)} litros`, 110, yPos);
+        doc.text(`📊 Quilometragem Total: ${formatarNumero(caminhao.totalKm, 0)} km`, 20, yPos);
+        doc.text(`⛽ Combustível Total: ${formatarNumero(caminhao.totalLitros, 0)} litros`, 110, yPos);
         yPos += 7;
-        doc.text(`💰 Gasto Total: R$ ${caminhao.formatarMoeda(totalGasto)}`, 20, yPos);
+        doc.text(`💰 Gasto Total: R$ ${formatarMoeda(caminhao.totalGasto)}`, 20, yPos);
         doc.text(`📈 Consumo: ${consumo} L/100km`, 110, yPos);
         yPos += 7;
         doc.text(`💵 Custo/km: R$ ${custoPorKm}`, 20, yPos);
@@ -1477,13 +1482,13 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     doc.setFontSize(10);
     
     // Métricas financeiras
-    doc.text(`💰 Gasto Total no Período: R$ ${totais.formatarMoeda(totalGasto)}`, 20, yPos);
+    doc.text(`💰 Gasto Total no Período: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
     yPos += 8;
-    doc.text(`💵 Custo Médio por km: R$ ${totais.formatarMoeda(custoPorKm)}`, 20, yPos);
+    doc.text(`💵 Custo Médio por km: R$ ${formatarMoeda(totais.custoPorKm)}`, 20, yPos);
     yPos += 8;
-    doc.text(`⛽ Preço Médio do Litro: R$ ${totais.formatarMoeda(valorMedioLitro)}`, 20, yPos);
+    doc.text(`⛽ Preço Médio do Litro: R$ ${formatarMoeda(totais.valorMedioLitro)}`, 20, yPos);
     yPos += 8;
-    doc.text(`📊 Consumo Médio da Frota: ${totais.formatarMoeda(consumoMedio)} km/l`, 20, yPos);
+    doc.text(`📊 Consumo Médio da Frota: ${formatarMoeda(totais.consumoMedio)} km/l`, 20, yPos);
     
     yPos += 20;
       // Projeções
@@ -1509,7 +1514,7 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     yPos += 8;
     doc.text(`📅 Projeção Anual: R$ ${formatarMoeda(gastoAnual)} / ${formatarNumero(litrosAnuais, 0)} litros`, 20, yPos);
     yPos += 8;
-    doc.textformatarMoeda(`💡 Economia potencial com 10% de melhoria: R$ ${(gastoAnual * 0.1)}/ano`, 20, yPos);
+    doc.text(`💡 Economia potencial com 10% de melhoria: R$ ${formatarMoeda(gastoAnual * 0.1)}/ano`, 20, yPos);
     
     yPos += 20;
       // Ranking de Eficiência
@@ -1539,7 +1544,7 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     caminhoesPorEficiencia.forEach((caminhao, index) => {
         const posicao = index + 1;
         const emoji = posicao === 1 ? '🥇' : posicao === 2 ? '🥈' : posicao === 3 ? '🥉' : '📊';
-        doc.text(`${emoji} ${posicao}º ${caminhao.placa} - ${caminhao.formatarNumero(consumo, 1)} L/100km - R$ ${caminhao.formatarMoeda(custoPorKm)}/km`, 20, yPos);
+        doc.text(`${emoji} ${posicao}º ${caminhao.placa} - ${formatarNumero(caminhao.consumo, 1)} L/100km - R$ ${formatarMoeda(caminhao.custoPorKm)}/km`, 20, yPos);
         yPos += 6;
     });
     
@@ -1668,8 +1673,8 @@ function criarDadosDetalhadosPdf(doc, dados, cores) {
         return [
             new Date(a.data).toLocaleDateString('pt-BR'),
             caminhao ? caminhao.placa : 'N/A',
-            `${a.formatarNumero(litros, 1)}L`,
-            `R$ ${a.formatarMoeda(valorTotal)}`,
+            `${formatarNumero(a.litros, 1)}L`,
+            `R$ ${formatarMoeda(a.valorTotal)}`,
             a.posto || 'N/A'
         ];
     });
@@ -1738,11 +1743,11 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     doc.setTextColor(...cores.texto);
     doc.setFontSize(10);
     
-    doc.text(`💰 Gasto Mensal: R$ ${totais.formatarMoeda(totalGasto)}`, 20, yPos);
-    doc.text(`⛽ Consumo Médio: ${totais.formatarMoeda(consumoMedio)} km/l`, 110, yPos);
+    doc.text(`💰 Gasto Mensal: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
+    doc.text(`⛽ Consumo Médio: ${formatarMoeda(totais.consumoMedio)} km/l`, 110, yPos);
     yPos += 8;
-    doc.text(`🛣️ Distância: ${totais.formatarNumero(totalDistancia, 0)} km`, 20, yPos);
-    doc.text(`💵 Custo/km: R$ ${totais.formatarMoeda(custoPorKm)}`, 110, yPos);
+    doc.text(`🛣️ Distância: ${formatarNumero(totais.totalKm, 0)} km`, 20, yPos);
+    doc.text(`💵 Custo/km: R$ ${formatarMoeda(totais.custoPorKm)}`, 110, yPos);
     
     yPos += 20;
       // Cenário com Treinamento
@@ -1985,4 +1990,87 @@ function calcularVariacaoConsumo(dadosPorCaminhao) {
     const min = Math.min(...consumos);
     const max = Math.max(...consumos);
     return ((max - min) / min * 100);
+}
+
+function criarAnalisePrecos(abastecimentos) {
+    if (!abastecimentos || abastecimentos.length === 0) return [];
+    
+    const precosPorData = abastecimentos
+        .filter(a => a.litros > 0)
+        .map(a => ({
+            data: a.data,
+            valorLitro: a.valorTotal / a.litros
+        }))
+        .sort((a, b) => new Date(a.data) - new Date(b.data));
+    
+    const analise = [];
+    for (let i = 0; i < precosPorData.length; i++) {
+        const atual = precosPorData[i];
+        const anterior = i > 0 ? precosPorData[i - 1] : atual;
+        
+        const variacao = i > 0 ? 
+            ((atual.valorLitro - anterior.valorLitro) / anterior.valorLitro * 100) : 0;
+        
+        let tendencia = 'Estável';
+        if (variacao > 5) tendencia = 'Alta';
+        else if (variacao < -5) tendencia = 'Baixa';
+        
+        analise.push({
+            data: atual.data,
+            valorLitro: atual.valorLitro,
+            variacao: variacao,
+            tendencia: tendencia
+        });
+    }
+    
+    return analise.slice(-10); // Últimos 10 registros
+}
+
+function criarAnaliseTemporalData(abastecimentos) {
+    if (!abastecimentos || abastecimentos.length === 0) return [];
+    
+    const dadosPorMes = {};
+    
+    abastecimentos.forEach(a => {
+        const data = new Date(a.data);
+        const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!dadosPorMes[chave]) {
+            dadosPorMes[chave] = {
+                periodo: chave,
+                abastecimentos: 0,
+                distancia: 0,
+                combustivel: 0,
+                gasto: 0
+            };
+        }
+        
+        const entrada = dadosPorMes[chave];
+        entrada.abastecimentos++;
+        entrada.distancia += (a.kmFinal - a.kmInicial);
+        entrada.combustivel += a.litros;
+        entrada.gasto += a.valorTotal;
+    });
+    
+    // Calcular métricas
+    return Object.values(dadosPorMes).map(periodo => ({
+        ...periodo,
+        consumoMedio: periodo.combustivel > 0 ? periodo.distancia / periodo.combustivel : 0,
+        custoPorKm: periodo.distancia > 0 ? periodo.gasto / periodo.distancia : 0
+    }));
+}
+
+function aplicarEstilizacaoDashboard(ws) {
+    // Função placeholder para estilização básica
+    // Em implementações futuras, pode adicionar cores e formatação
+    if (!ws['!ref']) return;
+    
+    // Adicionar larguras de coluna básicas
+    ws['!cols'] = [
+        { wch: 15 }, // Coluna A
+        { wch: 12 }, // Coluna B
+        { wch: 10 }, // Coluna C
+        { wch: 15 }, // Coluna D
+        { wch: 12 }  // Coluna E
+    ];
 }
