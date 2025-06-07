@@ -243,7 +243,10 @@ function setupEventHandlers() {
     
     // Manipulador para confirmação de exclusão
     document.getElementById('confirmDelete').addEventListener('click', confirmDelete);    // Manipuladores para exportação
-    document.getElementById('exportarPdfCompleto').addEventListener('click', exportarPdfCompleto);// Manipuladores para formulários de relatórios
+    document.getElementById('exportarPdfCompleto').addEventListener('click', exportarPdfCompleto);
+    document.getElementById('exportarPdf').addEventListener('click', exportarPdfCustos);
+    
+    // Manipuladores para formulários de relatórios
     document.getElementById('relatorioConsumoForm').addEventListener('submit', (e) => {
         e.preventDefault();
         gerarRelatorioConsumo();

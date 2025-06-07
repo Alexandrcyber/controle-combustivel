@@ -582,7 +582,7 @@ function exportarRelatorioExcel() {
         // 3. Criar planilha de Dados Detalhados
         criarPlanilhaDadosDetalhados(wb, dadosRelatorio);
         
-        // 4. Criar planilha de Análise de Custos
+        // 4. Criar planilha de Analise de Custos
         criarPlanilhaAnaliseCustos(wb, dadosRelatorio);
         
         // 5. Criar planilha de Indicadores
@@ -787,20 +787,20 @@ function criarPlanilhaDashboard(wb, dados) {
         ['INDICADORES PRINCIPAIS'],
         [''],
         ['Métrica', 'Valor', 'Unidade'],
-        ['Total de Caminhões', Object.keys(dados.dadosPorCaminhao).length, 'veículos'],
-        ['Distância Total', totais.totalKm.toLocaleString('pt-BR'), 'km'],
+        ['Total de Caminhoes', Object.keys(dados.dadosPorCaminhao).length, 'veiculos'],
+        ['Distancia Total', totais.totalKm.toLocaleString('pt-BR'), 'km'],
         ['Combustível Total', formatarMoeda(totais.totalLitros), 'litros'],
         ['Gasto Total', `R$ ${formatarMoeda(totais.totalGasto)}`, 'reais'],
         ['Consumo Médio Geral', formatarMoeda(totais.consumoMedio), 'km/l'],
         ['Custo por Quilômetro', `R$ ${formatarMoeda(totais.custoPorKm)}`, 'reais/km'],
         ['Valor Médio do Litro', `R$ ${formatarMoeda(totais.valorMedioLitro)}`, 'reais/litro'],
         [''],
-        ['RANKING DE EFICIÊNCIA'],
+        ['RANKING DE EFICIENCIA'],
         [''],
         ['Posição', 'Caminhão', 'Consumo (km/l)', 'Custo/km (R$)', 'Status']
     ], { origin: 'A1' });
     
-    // Ranking de eficiência
+    // Ranking de eficiencia
     const ranking = Object.values(dados.dadosPorCaminhao)
         .sort((a, b) => b.mediaConsumo - a.mediaConsumo)
         .slice(0, 10);
@@ -831,7 +831,7 @@ function criarPlanilhaResumoExecutivo(wb, dados) {
     XLSX.utils.sheet_add_aoa(ws, [
         ['RESUMO EXECUTIVO'],
         [''],
-        ['Caminhão', 'Placa', 'Modelo', 'Distância (km)', 'Combustível (L)', 
+        ['Caminhao', 'Placa', 'Modelo', 'Distancia (km)', 'Combustivel (L)', 
          'Gasto Total (R$)', 'Consumo (km/l)', 'Custo/km (R$)', 'Valor/L (R$)', 'Abastecimentos']
     ], { origin: 'A1' });
     
@@ -870,7 +870,7 @@ function criarPlanilhaDadosDetalhados(wb, dados) {
         ['DADOS DETALHADOS DOS ABASTECIMENTOS'],
         [''],
         ['Data', 'Caminhão', 'Placa', 'Motorista', 'Km Inicial', 'Km Final', 
-         'Distância', 'Litros', 'Valor Total', 'Valor/L', 'Consumo (km/l)']
+         'Distancia', 'Litros', 'Valor Total', 'Valor/L', 'Consumo (km/l)']
     ], { origin: 'A1' });
     
     // Dados detalhados
@@ -895,17 +895,17 @@ function criarPlanilhaDadosDetalhados(wb, dados) {
     XLSX.utils.book_append_sheet(wb, ws, 'Dados Detalhados');
 }
 
-// Criar planilha de Análise de Custos
+// Criar planilha de Analise de Custos
 function criarPlanilhaAnaliseCustos(wb, dados) {
     const ws = XLSX.utils.aoa_to_sheet([]);
     
-    // Análise por período (agrupamento por mês)
+    // Analise por periodo (agrupamento por mes)
     const analiseTemporalData = criarAnaliseTemporalData(dados.abastecimentos);
     
     XLSX.utils.sheet_add_aoa(ws, [
-        ['ANÁLISE DE CUSTOS POR PERÍODO'],
+        ['ANALISE DE CUSTOS POR PERIODO'],
         [''],
-        ['Mês/Ano', 'Abastecimentos', 'Distância (km)', 'Combustível (L)', 
+        ['Mes/Ano', 'Abastecimentos', 'Distancia (km)', 'Combustivel (L)', 
          'Gasto Total (R$)', 'Consumo Médio (km/l)', 'Custo/km (R$)']
     ], { origin: 'A1' });
     
@@ -919,7 +919,7 @@ function criarPlanilhaAnaliseCustos(wb, dados) {
         linha++;
     });
     
-    // Análise de variação de preços
+    // Analise de variacao de precos
     linha += 2;
     XLSX.utils.sheet_add_aoa(ws, [
         ['VARIAÇÃO DE PREÇOS DO COMBUSTÍVEL'],
@@ -937,7 +937,7 @@ function criarPlanilhaAnaliseCustos(wb, dados) {
         linha++;
     });
     
-    XLSX.utils.book_append_sheet(wb, ws, 'Análise de Custos');
+    XLSX.utils.book_append_sheet(wb, ws, 'Analise de Custos');
 }
 
 // Criar planilha de Indicadores
@@ -957,14 +957,14 @@ function criarPlanilhaIndicadores(wb, dados) {
         ['Custo por Quilômetro (R$/km)', formatarMoeda(totais.custoPorKm), '0.60',
          totais.custoPorKm <= 0.6 ? 'OK' : 'Atenção',
          totais.custoPorKm <= 0.6 ? 'Custo controlado' : 'Custo elevado'],
-        ['Variação Consumo Entre Veículos (%)', 
+        ['Variacao Consumo Entre Veiculos (%)', 
          calcularVariacaoConsumoformatarMoeda(dados.dadosPorCaminhao), '15.0',
          calcularVariacaoConsumo(dados.dadosPorCaminhao) <= 15 ? 'OK' : 'Atenção',
          'Quanto menor, mais homogênea a frota'],
         [''],
-        ['ANÁLISE DETALHADA POR VEÍCULO'],
+        ['ANALISE DETALHADA POR VEICULO'],
         [''],
-        ['Veículo', 'Consumo (km/l)', 'Vs. Média Geral', 'Custo/km (R$)', 'Classificação']
+        ['Veiculo', 'Consumo (km/l)', 'Vs. Media Geral', 'Custo/km (R$)', 'Classificacao']
     ], { origin: 'A1' });
     
     let linha = 12;
@@ -987,9 +987,9 @@ function criarPlanilhaIndicadores(wb, dados) {
 
 // ================== NOVA FUNÇÃO PDF COMPLETO ==================
 
-// Nova função para exportar PDF completo com todos os dados e análises
+// Nova funcao para exportar PDF completo com todos os dados e analises
 function exportarPdfCompleto() {
-    AlertInfo.loading('Gerando PDF Completo', 'Criando relatório abrangente com dashboards e análises...');
+    AlertInfo.loading('Gerando PDF Completo', 'Criando relatorio abrangente com dashboards e analises...');
     
     try {
         // Obter dados do relatório
@@ -1049,7 +1049,7 @@ function exportarPdfCompleto() {
         doc.addPage();
         yPos = criarSimuladorCenariosPdf(doc, dados, cores);
         
-        // ================== PÁGINA 9: MANUTENÇÃO PREVENTIVA ==================
+        // ================== PAGINA 9: MANUTENCAO PREVENTIVA ==================
         doc.addPage();
         yPos = criarManutencaoPreventivaPdf(doc, dados, cores);
         
@@ -1110,8 +1110,8 @@ function criarCapaPdf(doc, dados, cores) {
         yPos += 10;
     }
     
-    // Total de veículos
-    doc.text(`Total de Veículos: ${dados.totalCaminhoes}`, 20, yPos);
+    // Total de veiculos
+    adicionarTextoPDF(doc, `Total de Veiculos: ${dados.totalCaminhoes}`, 20, yPos);
     yPos += 10;
     
     // Total de abastecimentos
@@ -1136,7 +1136,7 @@ function criarCapaPdf(doc, dados, cores) {
     const items = [
         `Total Gasto: R$ ${dados.totais.gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
         `Total Consumido: ${dados.totais.consumo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} L`,
-        `Distância Total: ${dados.totais.distancia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} km`,
+        `Distancia Total: ${dados.totais.distancia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} km`,
         `Média de Consumo: ${formatarNumero(dados.medias.consumo)} km/L`,
         `Custo por km: R$ ${formatarMoeda(dados.medias.custoPorKm)}`
     ];
@@ -1166,7 +1166,7 @@ function criarCapaPdf(doc, dados, cores) {
     if (dados.medias.consumo < 3) {
         insights.push('• Consumo médio abaixo do esperado - investigar possíveis problemas');
     } else if (dados.medias.consumo > 6) {
-        insights.push('• Excelente eficiência no consumo da frota');
+        insights.push('• Excelente eficiencia no consumo da frota');
     }
     
     if (dados.medias.custoPorKm > 2) {
@@ -1175,7 +1175,7 @@ function criarCapaPdf(doc, dados, cores) {
     
     if (insights.length === 0) {
         insights.push('• Performance da frota dentro dos padrões esperados');
-        insights.push('• Continue monitorando para manter a eficiência');
+        insights.push('• Continue monitorando para manter a eficiencia');
     }
     
     insights.forEach(insight => {
@@ -1194,10 +1194,7 @@ function criarCapaPdf(doc, dados, cores) {
 // Página 2: Dashboard Executivo
 function criarDashboardExecutivoPdf(doc, dados, cores) {    // Cabeçalho da página
     doc.setFillColor(...cores.primaria);
-    // Validar argumentos antes de chamar rect()
-    if (!isNaN(10) && !isNaN(10) && !isNaN(190) && !isNaN(15)) {
-        doc.rect(10, 10, 190, 15, 'F');
-    }
+    doc.rect(10, 10, 190, 15, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.text('DASHBOARD EXECUTIVO', 105, 21, { align: 'center' });
@@ -1209,8 +1206,8 @@ function criarDashboardExecutivoPdf(doc, dados, cores) {    // Cabeçalho da pá
     const kpis = [
         { label: 'Gasto Total', valor: `R$ ${dados.totais.gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, cor: cores.sucesso },
         { label: 'Consumo Total', valor: `${dados.totais.consumo.toLocaleString('pt-BR')} L`, cor: cores.info },
-        { label: 'Distância Total', valor: `${dados.totais.distancia.toLocaleString('pt-BR')} km`, cor: cores.alerta },
-        { label: 'Eficiência Média', valor: `${formatarNumero(dados.medias.consumo)} km/L`, cor: cores.secundaria }
+        { label: 'Distancia Total', valor: `${dados.totais.distancia.toLocaleString('pt-BR')} km`, cor: cores.alerta },
+        { label: 'Eficiencia Media', valor: `${formatarNumero(dados.medias.consumo)} km/L`, cor: cores.secundaria }
     ];
       // Desenhar cards dos KPIs
     let cardX = 15;
@@ -1232,10 +1229,10 @@ function criarDashboardExecutivoPdf(doc, dados, cores) {    // Cabeçalho da pá
     });
     
     yPos += 40;
-      // Gráfico de barras simples - Top 5 veículos por consumo
+      // Grafico de barras simples - Top 5 veiculos por consumo
     doc.setTextColor(...cores.texto);
     doc.setFontSize(14);
-    doc.text('TOP 5 VEÍCULOS POR CONSUMO', 20, yPos);
+    adicionarTextoPDF(doc, 'TOP 5 VEICULOS POR CONSUMO', 20, yPos);
     yPos += 15;
     
     const caminhoesPorConsumo = Object.values(dados.dadosPorCaminhao)
@@ -1255,11 +1252,11 @@ function criarDashboardExecutivoPdf(doc, dados, cores) {    // Cabeçalho da pá
     const consumoPorVeiculo = (dados.totais.consumo && dados.totalCaminhoes > 0) ? 
         dados.totais.consumo / dados.totalCaminhoes : 0;    
     const tendencias = [
-        `Gasto médio por veículo: R$ ${formatarMoeda(gastoPorVeiculo)}`,
-        `Consumo médio por veículo: ${formatarMoeda(consumoPorVeiculo)} L`,
+        `Gasto medio por veiculo: R$ ${formatarMoeda(gastoPorVeiculo)}`,
+        `Consumo medio por veiculo: ${formatarMoeda(consumoPorVeiculo)} L`,
         `Custo médio por litro: R$ ${((dados.totais.gasto && dados.totais.consumo > 0) ? 
             (dados.totais.gasto / dados.totais.consumo) : 0).toFixed(2)}`,
-        `Quilometragem média por veículo: R$ ${((dados.totais.distancia && dados.totalCaminhoes > 0) ? 
+        `Quilometragem media por veiculo: R$ ${((dados.totais.distancia && dados.totalCaminhoes > 0) ? 
             (dados.totais.distancia / dados.totalCaminhoes) : 0).toFixed(2)} km`
     ];
       tendencias.forEach(tendencia => {
@@ -1290,7 +1287,7 @@ function criarIndicadoresPdf(doc, dados, cores) {
     
     // Matriz de performance
     doc.setFontSize(14);
-    doc.text('MATRIZ DE PERFORMANCE POR VEÍCULO', 20, yPos);
+    adicionarTextoPDF(doc, 'MATRIZ DE PERFORMANCE POR VEICULO', 20, yPos);
     yPos += 15;
     
     // Cabeçalho da tabela
@@ -1303,13 +1300,13 @@ function criarIndicadoresPdf(doc, dados, cores) {
     doc.setFontSize(10);
     doc.text('PLACA', 15, yPos + 7);
     doc.text('CONSUMO (L)', 50, yPos + 7);
-    doc.text('DISTÂNCIA (km)', 90, yPos + 7);
-    doc.text('EFICIÊNCIA (km/L)', 135, yPos + 7);
+    adicionarTextoPDF(doc, 'DISTANCIA (km)', 90, yPos + 7);
+    adicionarTextoPDF(doc, 'EFICIENCIA (km/L)', 135, yPos + 7);
     doc.text('STATUS', 175, yPos + 7);
     
     yPos += 12;
     
-    // Dados dos veículos
+    // Dados dos veiculos
     Object.values(dados.dadosPorCaminhao).forEach((caminhao, index) => {
         if (yPos > 260) {
             doc.addPage();
@@ -1366,7 +1363,7 @@ function criarIndicadoresPdf(doc, dados, cores) {
     
     // Gerar alertas baseados nos dados
     const alertas = [];
-      // Verificar veículos com baixa eficiência
+      // Verificar veiculos com baixa eficiencia
     const veiculosBaixaEficiencia = Object.values(dados.dadosPorCaminhao)
         .filter(c => c.totalLitros > 0 && (c.totalKm / c.totalLitros) < 3);
     
@@ -1396,7 +1393,7 @@ function criarIndicadoresPdf(doc, dados, cores) {
     return yPos;
 }
 
-// Página 3: Análise Detalhada por Veículo
+// Pagina 3: Analise Detalhada por Veiculo
 function criarAnaliseDetalhadaPdf(doc, dados, cores) {
     // Cabeçalho da página
     doc.setFillColor(...cores.primaria);
@@ -1406,7 +1403,7 @@ function criarAnaliseDetalhadaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.text('ANÁLISE DETALHADA POR VEÍCULO', 105, 21, { align: 'center' });
+    adicionarTextoPDF(doc, 'ANALISE DETALHADA POR VEICULO', 105, 21, { align: 'center' });
     
     let yPos = 35;
     doc.setTextColor(...cores.texto);
@@ -1517,7 +1514,7 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     adicionarTextoPDF(doc, `💡 Economia potencial com 10% de melhoria: R$ ${formatarMoeda(gastoAnual * 0.1)}/ano`, 20, yPos);
     
     yPos += 20;
-      // Ranking de Eficiência
+      // Ranking de Eficiencia
     doc.setFillColor(...cores.sucesso);
     // Validar argumentos antes de chamar rect()
     if (!isNaN(yPos) && yPos >= 0) {
@@ -1525,13 +1522,13 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('RANKING DE EFICIÊNCIA DOS VEÍCULOS', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'RANKING DE EFICIENCIA DOS VEICULOS', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
     doc.setFontSize(9);
     
-    // Ordenar caminhões por eficiência
+    // Ordenar caminhoes por eficiencia
     const caminhoesPorEficiencia = Object.values(dados.dadosPorCaminhao)
         .filter(c => c.totalKm > 0)
         .map(c => ({
@@ -1543,8 +1540,8 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     
     caminhoesPorEficiencia.forEach((caminhao, index) => {
         const posicao = index + 1;
-        const emoji = posicao === 1 ? '🥇' : posicao === 2 ? '🥈' : posicao === 3 ? '🥉' : '📊';
-        doc.text(`${emoji} ${posicao}º ${caminhao.placa} - ${formatarNumero(caminhao.consumo, 1)} L/100km - R$ ${formatarMoeda(caminhao.custoPorKm)}/km`, 20, yPos);
+        const indicador = posicao === 1 ? '1º LUGAR' : posicao === 2 ? '2º LUGAR' : posicao === 3 ? '3º LUGAR' : `${posicao}º LUGAR`;
+        adicionarTextoPDF(doc, `${indicador} - ${caminhao.placa} - ${formatarNumero(caminhao.consumo, 1)} L/100km - R$ ${formatarMoeda(caminhao.custoPorKm)}/km`, 20, yPos);
         yPos += 6;
     });
     
@@ -1614,7 +1611,7 @@ function criarAnalisePreditivaPdf(doc, dados, cores) {
     
     adicionarTextoPDF(doc, `🎯 Melhoria 5% (treinamento): Economia de R$ ${formatarMoeda(economia5)}/ano`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `🎯 Melhoria 10% (manutenção): Economia de R$ ${formatarMoeda(economia10)}/ano`, 20, yPos);
+    adicionarTextoPDF(doc, `MELHORIA 10% (manutencao): Economia de R$ ${formatarMoeda(economia10)}/ano`, 20, yPos);
     yPos += 8;
     adicionarTextoPDF(doc, `🎯 Melhoria 15% (renovação): Economia de R$ ${formatarMoeda(economia15)}/ano`, 20, yPos);
     
@@ -1643,7 +1640,7 @@ function criarAnalisePreditivaPdf(doc, dados, cores) {
     
     adicionarTextoPDF(doc, `💡 Treinamento (R$ ${investimentoTreinamento}): ROI ${roiTreinamento}% ao ano`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `🔧 Manutenção (R$ ${investimentoManutencao}): ROI ${roiManutencao}% ao ano`, 20, yPos);
+    adicionarTextoPDF(doc, `MANUTENCAO (R$ ${investimentoManutencao}): ROI ${roiManutencao}% ao ano`, 20, yPos);
     yPos += 8;
     adicionarTextoPDF(doc, `🚛 Renovação (R$ ${investimentoRenovacao}): ROI ${roiRenovacao}% ao ano`, 20, yPos);
     
@@ -1667,7 +1664,7 @@ function criarDadosDetalhadosPdf(doc, dados, cores) {
     // Preparar dados para tabela
     const abastecimentos = dados.abastecimentosFiltrados.slice(0, 20); // Limitar a 20 registros mais recentes
     
-    const cabecalhos = ['Data', 'Veículo', 'Litros', 'Valor', 'Posto'];
+    const cabecalhos = ['Data', 'Veiculo', 'Litros', 'Valor', 'Posto'];
     const dadosTabela = abastecimentos.map(a => {
         const caminhao = dados.caminhoes.find(c => c.id === a.caminhaoId);
         return [
@@ -1746,7 +1743,7 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     adicionarTextoPDF(doc, `💰 Gasto Mensal: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
     adicionarTextoPDF(doc, `⛽ Consumo Médio: ${formatarMoeda(totais.consumoMedio)} km/l`, 110, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `🛣️ Distância: ${formatarNumero(totais.totalKm, 0)} km`, 20, yPos);
+    adicionarTextoPDF(doc, `DISTANCIA: ${formatarNumero(totais.totalKm, 0)} km`, 20, yPos);
     adicionarTextoPDF(doc, `💵 Custo/km: R$ ${formatarMoeda(totais.custoPorKm)}`, 110, yPos);
     
     yPos += 20;
@@ -1758,7 +1755,7 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('CENÁRIO: TREINAMENTO DE CONDUTORES (+5% eficiência)', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'CENARIO: TREINAMENTO DE CONDUTORES (+5% eficiencia)', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
@@ -1776,7 +1773,7 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     adicionarTextoPDF(doc, `📉 Economia: ${formatarNumero(economiaLitros, 0)} litros/mês`, 20, yPos);
     
     yPos += 20;
-      // Cenário com Manutenção
+      // Cenario com Manutencao
     doc.setFillColor(...cores.sucesso);
     // Validar argumentos antes de chamar rect()
     if (!isNaN(yPos) && yPos >= 0) {
@@ -1784,7 +1781,7 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('CENÁRIO: MANUTENÇÃO PREVENTIVA (+10% eficiência)', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'CENARIO: MANUTENCAO PREVENTIVA (+10% eficiencia)', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
@@ -1810,7 +1807,7 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('CENÁRIO: RENOVAÇÃO DA FROTA (+15% eficiência)', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'CENARIO: RENOVACAO DA FROTA (+15% eficiencia)', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
@@ -1830,7 +1827,7 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     return yPos + 20;
 }
 
-// Página 9: Manutenção Preventiva
+// Pagina 9: Manutencao Preventiva
 function criarManutencaoPreventivaPdf(doc, dados, cores) {
     // Cabeçalho da página
     doc.setFillColor(...cores.primaria);
@@ -1840,12 +1837,12 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.text('MANUTENÇÃO PREVENTIVA E ALERTAS', 105, 21, { align: 'center' });
+    adicionarTextoPDF(doc, 'MANUTENCAO PREVENTIVA E ALERTAS', 105, 21, { align: 'center' });
     
     let yPos = 35;
     doc.setTextColor(...cores.texto);
     
-    // Alertas por Veículo
+    // Alertas por Veiculo
     doc.setFillColor(...cores.perigo);
     // Validar argumentos antes de chamar rect()
     if (!isNaN(yPos) && yPos >= 0) {
@@ -1936,6 +1933,393 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     adicionarTextoPDF(doc, `REGISTROS: Manter registros detalhados de manutencao`, 20, yPos);
     
     return yPos + 20;
+}
+
+// Exportar relatório de custos para PDF
+async function exportarPdfCustos() {
+    console.log('🚀 Iniciando geracao de PDF de custos...');
+    
+    try {
+        // Capturar dados do formulário
+        let dataInicio = document.getElementById('custosDataInicio')?.value;
+        let dataFim = document.getElementById('custosDataFim')?.value;
+        const caminhaoId = document.getElementById('caminhaoCustosSelect')?.value || 'todos';
+
+        // Se as datas não estão preenchidas, usar período padrão (últimos 30 dias)
+        if (!dataInicio || !dataFim) {
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+            
+            dataInicio = trintaDiasAtras.toISOString().split('T')[0];
+            dataFim = hoje.toISOString().split('T')[0];
+            
+            console.log('📅 Usando período padrão para PDF:', dataInicio, 'até', dataFim);
+        }
+
+        // Processar dados igual à função gerarRelatorioCustos
+        const dadosCaminhoes = window.caminhoes || [];
+        let dadosAbastecimentos = window.abastecimentos || [];
+        
+        console.log('📊 Dados disponíveis para PDF:', {
+            caminhoes: dadosCaminhoes.length,
+            abastecimentos: dadosAbastecimentos.length,
+            periodo: { inicio: dataInicio, fim: dataFim },
+            caminhaoSelecionado: caminhaoId
+        });
+        
+        // Verificar se há dados básicos
+        if (dadosCaminhoes.length === 0) {
+            console.error('❌ Não há caminhões cadastrados');
+            alert('Erro: Não há caminhões cadastrados. Por favor, cadastre pelo menos um caminhão.');
+            return;
+        }
+        
+        if (dadosAbastecimentos.length === 0) {
+            console.error('❌ Não há abastecimentos cadastrados');
+            alert('Erro: Não há abastecimentos cadastrados. Por favor, registre pelo menos um abastecimento.');
+            return;
+        }
+        
+        // Normalizar campos
+        dadosAbastecimentos = dadosAbastecimentos.map(a => ({
+            ...a,
+            caminhaoId: getField(a, 'caminhao_id', 'caminhaoId'),
+            kmInicial: getNumField(a, 'km_inicial', 'kmInicial'),
+            kmFinal: getNumField(a, 'km_final', 'kmFinal'),
+            litros: getNumField(a, 'litros', 'litros'),
+            valorTotal: getNumField(a, 'valor_total', 'valorTotal')
+        }));
+
+        // Filtrar por data
+        let filtrados = dadosAbastecimentos.filter(a => {
+            const dia = a.data.split('T')[0];
+            return dia >= dataInicio && dia <= dataFim;
+        });
+        
+        // Filtrar por caminhão
+        if (caminhaoId !== 'todos') {
+            filtrados = filtrados.filter(a => a.caminhaoId === caminhaoId);
+        }
+        
+        if (filtrados.length === 0) {
+            console.warn('⚠️ Nenhum abastecimento encontrado no período');
+            alert('Aviso: Nenhum abastecimento foi encontrado no período selecionado.');
+            return;
+        }
+
+        // Agrupar dados por caminhão
+        const dadosPorCaminhao = {};
+        filtrados.forEach(a => {
+            if (!dadosPorCaminhao[a.caminhaoId]) {
+                const c = dadosCaminhoes.find(c => c.id === a.caminhaoId) || {};
+                dadosPorCaminhao[a.caminhaoId] = {
+                    placa: c.placa || 'Desconhecido',
+                    modelo: c.modelo || 'Desconhecido',
+                    totalLitros: 0,
+                    totalGasto: 0,
+                    totalKm: 0
+                };
+            }
+            const entry = dadosPorCaminhao[a.caminhaoId];
+            const dist = a.kmFinal - a.kmInicial;
+            entry.totalLitros += a.litros;
+            entry.totalGasto += a.valorTotal;
+            entry.totalKm += dist;
+        });
+
+        // Calcular totais gerais
+        let totalLitrosGeral = 0, totalGastoGeral = 0, totalKmGeral = 0;
+        Object.values(dadosPorCaminhao).forEach(d => {
+            d.mediaConsumo = d.totalLitros > 0 ? (d.totalKm / d.totalLitros) : 0;
+            d.custoMedio = d.totalKm > 0 ? (d.totalGasto / d.totalKm) : 0;
+            d.valorMedioLitro = d.totalLitros > 0 ? (d.totalGasto / d.totalLitros) : 0;
+            totalLitrosGeral += d.totalLitros;
+            totalGastoGeral += d.totalGasto;
+            totalKmGeral += d.totalKm;
+        });
+        const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
+        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';
+
+        // Criar PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Configurar cores
+        const cores = {
+            primaria: [52, 58, 64],
+            secundaria: [108, 117, 125],
+            sucesso: [40, 167, 69],
+            info: [23, 162, 184],
+            alerta: [255, 193, 7],
+            perigo: [220, 53, 69],
+            texto: [33, 37, 41]
+        };
+
+        // Cabeçalho
+        doc.setFillColor(...cores.primaria);
+        doc.rect(10, 10, 190, 20, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        adicionarTextoPDF(doc, 'RELATORIO DE CUSTOS', 105, 21, { align: 'center' });
+
+        // Período
+        doc.setTextColor(...cores.texto);
+        doc.setFontSize(12);
+        let yPos = 40;
+        adicionarTextoPDF(doc, `Periodo: ${formatDate(dataInicio)} a ${formatDate(dataFim)}`, 20, yPos);
+        yPos += 10;
+        
+        const caminhaoSelecionado = caminhaoId === 'todos' ? 'Todos os caminhoes' : 
+            (dadosCaminhoes.find(c => c.id === caminhaoId)?.placa || 'Desconhecido');
+        adicionarTextoPDF(doc, `Caminhao: ${caminhaoSelecionado}`, 20, yPos);
+        yPos += 15;
+
+        // Totais gerais
+        doc.setFillColor(...cores.info);
+        doc.rect(15, yPos, 180, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        adicionarTextoPDF(doc, 'RESUMO GERAL', 105, yPos + 6, { align: 'center' });
+        
+        yPos += 15;
+        doc.setTextColor(...cores.texto);
+        doc.setFontSize(10);
+        
+        adicionarTextoPDF(doc, `Total de Veiculos: ${Object.keys(dadosPorCaminhao).length}`, 20, yPos);
+        yPos += 6;
+        adicionarTextoPDF(doc, `Combustivel Total: ${formatarNumero(totalLitrosGeral, 2)} L`, 20, yPos);
+        yPos += 6;
+        adicionarTextoPDF(doc, `Gasto Total: R$ ${formatarMoeda(totalGastoGeral)}`, 20, yPos);
+        yPos += 6;
+        adicionarTextoPDF(doc, `Distancia Total: ${totalKmGeral.toLocaleString('pt-BR')} km`, 20, yPos);
+        yPos += 6;
+        adicionarTextoPDF(doc, `Consumo Medio Geral: ${consumoMedioGeral} km/L`, 20, yPos);
+        yPos += 6;
+        adicionarTextoPDF(doc, `Custo Medio por km: R$ ${custoPorKmGeral}`, 20, yPos);
+        yPos += 15;
+
+        // Tabela de dados por caminhão
+        doc.setFillColor(...cores.sucesso);
+        doc.rect(15, yPos, 180, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        adicionarTextoPDF(doc, 'DETALHAMENTO POR VEICULO', 105, yPos + 6, { align: 'center' });
+        
+        yPos += 15;
+        doc.setTextColor(...cores.texto);
+        doc.setFontSize(8);
+        
+        // Cabeçalhos da tabela
+        adicionarTextoPDF(doc, 'VEICULO', 20, yPos);
+        adicionarTextoPDF(doc, 'COMBUSTIVEL (L)', 70, yPos);
+        adicionarTextoPDF(doc, 'GASTO (R$)', 115, yPos);
+        adicionarTextoPDF(doc, 'DIST. (km)', 145, yPos);
+        adicionarTextoPDF(doc, 'CONS. (km/L)', 170, yPos);
+        yPos += 8;
+
+        // Linha de separação
+        doc.setDrawColor(...cores.texto);
+        doc.line(15, yPos - 2, 195, yPos - 2);
+
+        // Dados dos caminhões
+        Object.values(dadosPorCaminhao).forEach(d => {
+            if (yPos > 270) { // Nova página se necessário
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            adicionarTextoPDF(doc, `${d.placa} - ${d.modelo}`, 20, yPos);
+            adicionarTextoPDF(doc, formatarNumero(d.totalLitros, 2), 70, yPos);
+            adicionarTextoPDF(doc, `R$ ${formatarMoeda(d.totalGasto)}`, 115, yPos);
+            adicionarTextoPDF(doc, d.totalKm.toLocaleString('pt-BR'), 145, yPos);
+            adicionarTextoPDF(doc, formatarNumero(d.mediaConsumo, 2), 170, yPos);
+            yPos += 6;
+        });
+
+        // Rodapé
+        const dataGeracao = new Date().toLocaleString('pt-BR');
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        adicionarTextoPDF(doc, `Gerado em: ${dataGeracao}`, 20, 285);
+        adicionarTextoPDF(doc, 'Sistema de Controle de Combustivel', 105, 285, { align: 'center' });
+
+        // Salvar PDF
+        const nomeArquivo = `relatorio_custos_${dataInicio}_${dataFim}.pdf`;
+        doc.save(nomeArquivo);
+
+        console.log('✅ PDF de custos gerado com sucesso!', {
+            arquivo: nomeArquivo,
+            veiculos: Object.keys(dadosPorCaminhao).length,
+            periodo: { inicio: dataInicio, fim: dataFim }
+        });
+        
+        alert(`✅ PDF de custos gerado com sucesso!\nArquivo: ${nomeArquivo}\nVeículos: ${Object.keys(dadosPorCaminhao).length}`);
+
+    } catch (error) {
+        console.error('❌ Erro ao gerar PDF de custos:', error);
+        alert(`Erro ao gerar PDF de custos: ${error.message}\n\nVerifique o console para mais detalhes.`);
+    }
+}
+
+// Função para obter dados do relatório atual
+function obterDadosDoRelatorio() {
+    try {        // Obter dados do período selecionado
+        let dataInicio = document.getElementById('dataInicio')?.value || document.getElementById('custosDataInicio')?.value;
+        let dataFim = document.getElementById('dataFim')?.value || document.getElementById('custosDataFim')?.value;
+        const caminhaoId = document.getElementById('caminhaoSelect')?.value || document.getElementById('caminhaoCustosSelect')?.value;
+        
+        // Se não há datas selecionadas, usar período padrão (últimos 30 dias)
+        if (!dataInicio || !dataFim) {
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+            
+            dataInicio = trintaDiasAtras.toISOString().split('T')[0];
+            dataFim = hoje.toISOString().split('T')[0];
+            
+            console.log('📅 Usando período padrão:', dataInicio, 'até', dataFim);
+        }
+          // Acessar dados globais
+        const dadosCaminhoes = window.caminhoes || [];
+        let dadosAbastecimentos = window.abastecimentos || [];
+        
+        console.log('📊 Dados disponíveis:', {
+            caminhoes: dadosCaminhoes.length,
+            abastecimentos: dadosAbastecimentos.length,
+            periodo: { inicio: dataInicio, fim: dataFim }
+        });
+        
+        // Verificar se há dados básicos
+        if (dadosCaminhoes.length === 0) {
+            return {
+                valid: false,
+                message: 'Não há caminhões cadastrados no sistema. Por favor, cadastre pelo menos um caminhão.'
+            };
+        }
+        
+        if (dadosAbastecimentos.length === 0) {
+            return {
+                valid: false,
+                message: 'Não há abastecimentos cadastrados no sistema. Por favor, registre pelo menos um abastecimento.'
+            };
+        }
+          // Normalizar campos
+        dadosAbastecimentos = dadosAbastecimentos.map(a => ({
+            ...a,
+            caminhaoId: getField(a, 'caminhao_id', 'caminhaoId'),
+            kmInicial: getNumField(a, 'km_inicial', 'kmInicial'),
+            kmFinal: getNumField(a, 'km_final', 'kmFinal'),
+            litros: getNumField(a, 'litros', 'litros'),
+            valorTotal: getNumField(a, 'valor_total', 'valorTotal')
+        }));
+        
+        // Filtrar por período
+        let abastecimentosFiltrados = dadosAbastecimentos.filter(a => {
+            const dataAbast = a.data.split('T')[0];
+            return dataAbast >= dataInicio && dataAbast <= dataFim;
+        });
+        
+        // Filtrar por caminhão se especificado
+        if (caminhaoId && caminhaoId !== 'todos') {
+            abastecimentosFiltrados = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhaoId);
+        }
+        
+        // Agrupar dados por caminhão
+        const dadosPorCaminhao = {};
+        abastecimentosFiltrados.forEach(a => {
+            if (!dadosPorCaminhao[a.caminhaoId]) {
+                const c = dadosCaminhoes.find(cami => cami.id === a.caminhaoId) || {};
+                dadosPorCaminhao[a.caminhaoId] = {
+                    id: a.caminhaoId,
+                    placa: c.placa || 'Desconhecido',
+                    modelo: c.modelo || 'Desconhecido',
+                    totalKm: 0,
+                    totalLitros: 0,
+                    totalGasto: 0,
+                    abastecimentos: []
+                };
+            }
+            const entry = dadosPorCaminhao[a.caminhaoId];
+            const dist = a.kmFinal - a.kmInicial;
+            entry.totalKm += dist;
+            entry.totalLitros += a.litros;
+            entry.totalGasto += a.valorTotal;
+            entry.abastecimentos.push(a);
+        });
+          // Calcular métricas
+        Object.values(dadosPorCaminhao).forEach(dados => {
+            dados.mediaConsumo = dados.totalLitros > 0 ? dados.totalKm / dados.totalLitros : 0;
+            dados.custoMedio = dados.totalKm > 0 ? dados.totalGasto / dados.totalKm : 0;
+            dados.valorMedioLitro = dados.totalLitros > 0 ? dados.totalGasto / dados.totalLitros : 0;
+        });
+        
+        // Verificar se há dados suficientes para gerar o relatório
+        if (abastecimentosFiltrados.length === 0) {
+            return {
+                valid: false,
+                message: 'Não foram encontrados abastecimentos no período selecionado. Por favor, verifique as datas ou adicione dados de abastecimento.'
+            };
+        }
+        
+        if (Object.keys(dadosPorCaminhao).length === 0) {
+            return {
+                valid: false,
+                message: 'Não foram encontrados dados de caminhões para o período selecionado.'
+            };
+        }
+          // Calcular totais gerais
+        let totalGasto = 0;
+        let totalConsumo = 0;
+        let totalDistancia = 0;
+        let totalAbastecimentos = 0;
+        
+        Object.values(dadosPorCaminhao).forEach(dados => {
+            totalGasto += dados.totalGasto;
+            totalConsumo += dados.totalLitros;
+            totalDistancia += dados.totalKm;
+            totalAbastecimentos += dados.abastecimentos.length;
+        });
+        
+        // Calcular médias
+        const totalCaminhoes = Object.keys(dadosPorCaminhao).length;
+        const medias = {
+            consumo: totalConsumo > 0 ? (totalDistancia / totalConsumo) : 0,
+            custoPorKm: totalDistancia > 0 ? (totalGasto / totalDistancia) : 0,
+            gastoMedio: totalCaminhoes > 0 ? (totalGasto / totalCaminhoes) : 0,
+            litrosMedio: totalCaminhoes > 0 ? (totalConsumo / totalCaminhoes) : 0
+        };
+        
+        return {
+            valid: true,
+            periodo: { inicio: dataInicio, fim: dataFim },
+            caminhaoSelecionado: caminhaoId,
+            dadosPorCaminhao: dadosPorCaminhao,
+            abastecimentos: abastecimentosFiltrados,
+            abastecimentosFiltrados: abastecimentosFiltrados,
+            caminhoes: dadosCaminhoes,
+            totalCaminhoes: totalCaminhoes,
+            totalAbastecimentos: totalAbastecimentos,
+            totais: {
+                gasto: totalGasto,
+                consumo: totalConsumo,
+                distancia: totalDistancia,
+                totalGasto: totalGasto,
+                totalLitros: totalConsumo,
+                totalKm: totalDistancia,
+                totalAbastecimentos: totalAbastecimentos,
+                quantidadeCaminhoes: totalCaminhoes
+            },
+            medias: medias
+        };
+        
+    } catch (error) {
+        console.error('Erro ao obter dados do relatório:', error);
+        return {
+            valid: false,
+            message: `Erro ao processar dados: ${error.message}`
+        };
+    }
 }
 
 // Funções auxiliares adicionais
