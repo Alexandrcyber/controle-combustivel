@@ -1435,14 +1435,14 @@ function criarAnaliseDetalhadaPdf(doc, dados, cores) {
         const consumo = caminhao.totalKm > 0 ? formatarMoeda(caminhao.totalLitros / caminhao.totalKm * 100) : 0;
         const custoPorKm = caminhao.totalKm > 0 ? formatarMoeda(caminhao.totalGasto / caminhao.totalKm) : 0;
         
-        doc.text(`📊 Quilometragem Total: ${formatarNumero(caminhao.totalKm, 0)} km`, 20, yPos);
-        doc.text(`⛽ Combustível Total: ${formatarNumero(caminhao.totalLitros, 0)} litros`, 110, yPos);
+        adicionarTextoPDF(doc, `📊 Quilometragem Total: ${formatarNumero(caminhao.totalKm, 0)} km`, 20, yPos);
+        adicionarTextoPDF(doc, `⛽ Combustível Total: ${formatarNumero(caminhao.totalLitros, 0)} litros`, 110, yPos);
         yPos += 7;
-        doc.text(`💰 Gasto Total: R$ ${formatarMoeda(caminhao.totalGasto)}`, 20, yPos);
-        doc.text(`📈 Consumo: ${consumo} L/100km`, 110, yPos);
+        adicionarTextoPDF(doc, `💰 Gasto Total: R$ ${formatarMoeda(caminhao.totalGasto)}`, 20, yPos);
+        adicionarTextoPDF(doc, `📈 Consumo: ${consumo} L/100km`, 110, yPos);
         yPos += 7;
-        doc.text(`💵 Custo/km: R$ ${custoPorKm}`, 20, yPos);
-        doc.text(`🔢 Abastecimentos: ${caminhao.abastecimentos.length}`, 110, yPos);
+        adicionarTextoPDF(doc, `💵 Custo/km: R$ ${custoPorKm}`, 20, yPos);
+        adicionarTextoPDF(doc, `🔢 Abastecimentos: ${caminhao.abastecimentos.length}`, 110, yPos);
         
         yPos += 15;
     });
@@ -1482,13 +1482,13 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     doc.setFontSize(10);
     
     // Métricas financeiras
-    doc.text(`💰 Gasto Total no Período: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
+    adicionarTextoPDF(doc, `💰 Gasto Total no Período: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
     yPos += 8;
-    doc.text(`💵 Custo Médio por km: R$ ${formatarMoeda(totais.custoPorKm)}`, 20, yPos);
+    adicionarTextoPDF(doc, `💵 Custo Médio por km: R$ ${formatarMoeda(totais.custoPorKm)}`, 20, yPos);
     yPos += 8;
-    doc.text(`⛽ Preço Médio do Litro: R$ ${formatarMoeda(totais.valorMedioLitro)}`, 20, yPos);
+    adicionarTextoPDF(doc, `⛽ Preço Médio do Litro: R$ ${formatarMoeda(totais.valorMedioLitro)}`, 20, yPos);
     yPos += 8;
-    doc.text(`📊 Consumo Médio da Frota: ${formatarMoeda(totais.consumoMedio)} km/l`, 20, yPos);
+    adicionarTextoPDF(doc, `📊 Consumo Médio da Frota: ${formatarMoeda(totais.consumoMedio)} km/l`, 20, yPos);
     
     yPos += 20;
       // Projeções
@@ -1510,11 +1510,11 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     const litrosMensais = totais.totalLitros;
     const litrosAnuais = litrosMensais * 12;
     
-    doc.text(`📅 Projeção Mensal: R$ ${formatarMoeda(gastoMensal)} / ${formatarNumero(litrosMensais, 0)} litros`, 20, yPos);
+    adicionarTextoPDF(doc, `📅 Projeção Mensal: R$ ${formatarMoeda(gastoMensal)} / ${formatarNumero(litrosMensais, 0)} litros`, 20, yPos);
     yPos += 8;
-    doc.text(`📅 Projeção Anual: R$ ${formatarMoeda(gastoAnual)} / ${formatarNumero(litrosAnuais, 0)} litros`, 20, yPos);
+    adicionarTextoPDF(doc, `📅 Projeção Anual: R$ ${formatarMoeda(gastoAnual)} / ${formatarNumero(litrosAnuais, 0)} litros`, 20, yPos);
     yPos += 8;
-    doc.text(`💡 Economia potencial com 10% de melhoria: R$ ${formatarMoeda(gastoAnual * 0.1)}/ano`, 20, yPos);
+    adicionarTextoPDF(doc, `💡 Economia potencial com 10% de melhoria: R$ ${formatarMoeda(gastoAnual * 0.1)}/ano`, 20, yPos);
     
     yPos += 20;
       // Ranking de Eficiência
@@ -1587,11 +1587,11 @@ function criarAnalisePreditivaPdf(doc, dados, cores) {
     const projecao6Meses = gastoMensal * 6;
     const projecaoAnual = gastoMensal * 12;
     
-    doc.text(`📈 Projeção 3 meses: R$ ${formatarMoeda(projecao3Meses)}`, 20, yPos);
+    adicionarTextoPDF(doc, `📈 Projeção 3 meses: R$ ${formatarMoeda(projecao3Meses)}`, 20, yPos);
     yPos += 8;
-    doc.text(`📈 Projeção 6 meses: R$ ${formatarMoeda(projecao6Meses)}`, 20, yPos);
+    adicionarTextoPDF(doc, `📈 Projeção 6 meses: R$ ${formatarMoeda(projecao6Meses)}`, 20, yPos);
     yPos += 8;
-    doc.text(`📈 Projeção 12 meses: R$ ${formatarMoeda(projecaoAnual)}`, 20, yPos);
+    adicionarTextoPDF(doc, `📈 Projeção 12 meses: R$ ${formatarMoeda(projecaoAnual)}`, 20, yPos);
     
     yPos += 20;
       // Cenários de Otimização
@@ -1612,11 +1612,11 @@ function criarAnalisePreditivaPdf(doc, dados, cores) {
     const economia10 = projecaoAnual * 0.10;
     const economia15 = projecaoAnual * 0.15;
     
-    doc.text(`🎯 Melhoria 5% (treinamento): Economia de R$ ${formatarMoeda(economia5)}/ano`, 20, yPos);
+    adicionarTextoPDF(doc, `🎯 Melhoria 5% (treinamento): Economia de R$ ${formatarMoeda(economia5)}/ano`, 20, yPos);
     yPos += 8;
-    doc.text(`🎯 Melhoria 10% (manutenção): Economia de R$ ${formatarMoeda(economia10)}/ano`, 20, yPos);
+    adicionarTextoPDF(doc, `🎯 Melhoria 10% (manutenção): Economia de R$ ${formatarMoeda(economia10)}/ano`, 20, yPos);
     yPos += 8;
-    doc.text(`🎯 Melhoria 15% (renovação): Economia de R$ ${formatarMoeda(economia15)}/ano`, 20, yPos);
+    adicionarTextoPDF(doc, `🎯 Melhoria 15% (renovação): Economia de R$ ${formatarMoeda(economia15)}/ano`, 20, yPos);
     
     yPos += 20;
       // Cálculos de ROI
@@ -1641,11 +1641,11 @@ function criarAnalisePreditivaPdf(doc, dados, cores) {
     const roiManutencao = formatarNumero(economia10 / investimentoManutencao * 100, 1);
     const roiRenovacao = formatarNumero(economia15 / investimentoRenovacao * 100, 1);
     
-    doc.text(`💡 Treinamento (R$ ${investimentoTreinamento}): ROI ${roiTreinamento}% ao ano`, 20, yPos);
+    adicionarTextoPDF(doc, `💡 Treinamento (R$ ${investimentoTreinamento}): ROI ${roiTreinamento}% ao ano`, 20, yPos);
     yPos += 8;
-    doc.text(`🔧 Manutenção (R$ ${investimentoManutencao}): ROI ${roiManutencao}% ao ano`, 20, yPos);
+    adicionarTextoPDF(doc, `🔧 Manutenção (R$ ${investimentoManutencao}): ROI ${roiManutencao}% ao ano`, 20, yPos);
     yPos += 8;
-    doc.text(`🚛 Renovação (R$ ${investimentoRenovacao}): ROI ${roiRenovacao}% ao ano`, 20, yPos);
+    adicionarTextoPDF(doc, `🚛 Renovação (R$ ${investimentoRenovacao}): ROI ${roiRenovacao}% ao ano`, 20, yPos);
     
     return yPos + 20;
 }
@@ -1703,10 +1703,10 @@ function criarDadosDetalhadosPdf(doc, dados, cores) {
     // Resumo da tabela
     doc.setTextColor(...cores.texto);
     doc.setFontSize(10);
-    doc.text(`📊 Exibindo ${abastecimentos.length} de ${dados.abastecimentosFiltrados.length} registros`, 20, yPos);
+    adicionarTextoPDF(doc, `📊 Exibindo ${abastecimentos.length} de ${dados.abastecimentosFiltrados.length} registros`, 20, yPos);
     if (dados.abastecimentosFiltrados.length > 20) {
         yPos += 8;
-        doc.text(`ℹ️ Para ver todos os registros, acesse o sistema online`, 20, yPos);
+        adicionarTextoPDF(doc, `ℹ️ Para ver todos os registros, acesse o sistema online`, 20, yPos);
     }
     
     return yPos + 10;
@@ -1743,11 +1743,11 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     doc.setTextColor(...cores.texto);
     doc.setFontSize(10);
     
-    doc.text(`💰 Gasto Mensal: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
-    doc.text(`⛽ Consumo Médio: ${formatarMoeda(totais.consumoMedio)} km/l`, 110, yPos);
+    adicionarTextoPDF(doc, `💰 Gasto Mensal: R$ ${formatarMoeda(totais.totalGasto)}`, 20, yPos);
+    adicionarTextoPDF(doc, `⛽ Consumo Médio: ${formatarMoeda(totais.consumoMedio)} km/l`, 110, yPos);
     yPos += 8;
-    doc.text(`🛣️ Distância: ${formatarNumero(totais.totalKm, 0)} km`, 20, yPos);
-    doc.text(`💵 Custo/km: R$ ${formatarMoeda(totais.custoPorKm)}`, 110, yPos);
+    adicionarTextoPDF(doc, `🛣️ Distância: ${formatarNumero(totais.totalKm, 0)} km`, 20, yPos);
+    adicionarTextoPDF(doc, `💵 Custo/km: R$ ${formatarMoeda(totais.custoPorKm)}`, 110, yPos);
     
     yPos += 20;
       // Cenário com Treinamento
@@ -1769,11 +1769,11 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     const economiaLitros = totais.totalLitros * 0.05;
     const economiaReais = totais.totalGasto * 0.05;
     
-    doc.text(`💰 Novo Gasto: R$ ${formatarMoeda(gastoTreinamento)} (${formatarMoeda(economiaReais)} economia)`, 20, yPos);
+    adicionarTextoPDF(doc, `💰 Novo Gasto: R$ ${formatarMoeda(gastoTreinamento)} (${formatarMoeda(economiaReais)} economia)`, 20, yPos);
     yPos += 8;
-    doc.text(`⛽ Novo Consumo: ${formatarMoeda(consumoTreinamento)} km/l`, 20, yPos);
+    adicionarTextoPDF(doc, `⛽ Novo Consumo: ${formatarMoeda(consumoTreinamento)} km/l`, 20, yPos);
     yPos += 8;
-    doc.text(`📉 Economia: ${formatarNumero(economiaLitros, 0)} litros/mês`, 20, yPos);
+    adicionarTextoPDF(doc, `📉 Economia: ${formatarNumero(economiaLitros, 0)} litros/mês`, 20, yPos);
     
     yPos += 20;
       // Cenário com Manutenção
@@ -1795,11 +1795,11 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     const economiaLitrosManutencao = totais.totalLitros * 0.10;
     const economiaReaisManutencao = totais.totalGasto * 0.10;
     
-    doc.text(`💰 Novo Gasto: R$ ${formatarMoeda(gastoManutencao)} (${formatarMoeda(economiaReaisManutencao)} economia)`, 20, yPos);
+    adicionarTextoPDF(doc, `💰 Novo Gasto: R$ ${formatarMoeda(gastoManutencao)} (${formatarMoeda(economiaReaisManutencao)} economia)`, 20, yPos);
     yPos += 8;
-    doc.text(`⛽ Novo Consumo: ${formatarMoeda(consumoManutencao)} km/l`, 20, yPos);
+    adicionarTextoPDF(doc, `⛽ Novo Consumo: ${formatarMoeda(consumoManutencao)} km/l`, 20, yPos);
     yPos += 8;
-    doc.text(`📉 Economia: ${formatarNumero(economiaLitrosManutencao, 0)} litros/mês`, 20, yPos);
+    adicionarTextoPDF(doc, `📉 Economia: ${formatarNumero(economiaLitrosManutencao, 0)} litros/mês`, 20, yPos);
     
     yPos += 20;
       // Cenário com Renovação
@@ -1821,11 +1821,11 @@ function criarSimuladorCenariosPdf(doc, dados, cores) {
     const economiaLitrosRenovacao = totais.totalLitros * 0.15;
     const economiaReaisRenovacao = totais.totalGasto * 0.15;
     
-    doc.text(`💰 Novo Gasto: R$ ${formatarMoeda(gastoRenovacao)} (${formatarMoeda(economiaReaisRenovacao)} economia)`, 20, yPos);
+    adicionarTextoPDF(doc, `💰 Novo Gasto: R$ ${formatarMoeda(gastoRenovacao)} (${formatarMoeda(economiaReaisRenovacao)} economia)`, 20, yPos);
     yPos += 8;
-    doc.text(`⛽ Novo Consumo: ${formatarMoeda(consumoRenovacao)} km/l`, 20, yPos);
+    adicionarTextoPDF(doc, `⛽ Novo Consumo: ${formatarMoeda(consumoRenovacao)} km/l`, 20, yPos);
     yPos += 8;
-    doc.text(`📉 Economia: ${formatarNumero(economiaLitrosRenovacao, 0)} litros/mês`, 20, yPos);
+    adicionarTextoPDF(doc, `📉 Economia: ${formatarNumero(economiaLitrosRenovacao, 0)} litros/mês`, 20, yPos);
     
     return yPos + 20;
 }
@@ -1900,15 +1900,15 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     const proximaManutencao = new Date();
     proximaManutencao.setDate(proximaManutencao.getDate() + 30);
     
-    doc.text(`🔧 Próxima Revisão Geral: ${proximaManutencao.toLocaleDateString('pt-BR')}`, 20, yPos);
+    adicionarTextoPDF(doc, `🔧 Próxima Revisão Geral: ${proximaManutencao.toLocaleDateString('pt-BR')}`, 20, yPos);
     yPos += 8;
-    doc.text(`🛢️ Troca de Óleo: A cada 10.000 km ou 6 meses`, 20, yPos);
+    adicionarTextoPDF(doc, `🛢️ Troca de Óleo: A cada 10.000 km ou 6 meses`, 20, yPos);
     yPos += 8;
-    doc.text(`🔍 Inspeção de Filtros: A cada 5.000 km ou 3 meses`, 20, yPos);
+    adicionarTextoPDF(doc, `🔍 Inspeção de Filtros: A cada 5.000 km ou 3 meses`, 20, yPos);
     yPos += 8;
-    doc.text(`⚙️ Verificação de Pneus: Semanal`, 20, yPos);
+    adicionarTextoPDF(doc, `⚙️ Verificação de Pneus: Semanal`, 20, yPos);
     yPos += 8;
-    doc.text(`📊 Análise de Consumo: Mensal`, 20, yPos);
+    adicionarTextoPDF(doc, `📊 Análise de Consumo: Mensal`, 20, yPos);
     
     yPos += 20;
       // Recomendações Gerais
@@ -1925,15 +1925,15 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     doc.setTextColor(...cores.texto);
     doc.setFontSize(10);
     
-    doc.text(`✅ Implementar sistema de telemetria para monitoramento em tempo real`, 20, yPos);
+    adicionarTextoPDF(doc, `✅ Implementar sistema de telemetria para monitoramento em tempo real`, 20, yPos);
     yPos += 8;
-    doc.text(`✅ Treinar condutores em direção econômica`, 20, yPos);
+    adicionarTextoPDF(doc, `✅ Treinar condutores em direção econômica`, 20, yPos);
     yPos += 8;
-    doc.text(`✅ Estabelecer metas de consumo por veículo`, 20, yPos);
+    adicionarTextoPDF(doc, `✅ Estabelecer metas de consumo por veículo`, 20, yPos);
     yPos += 8;
-    doc.text(`✅ Revisar rotas para otimização de combustível`, 20, yPos);
+    adicionarTextoPDF(doc, `✅ Revisar rotas para otimização de combustível`, 20, yPos);
     yPos += 8;
-    doc.text(`✅ Manter registros detalhados de manutenção`, 20, yPos);
+    adicionarTextoPDF(doc, `✅ Manter registros detalhados de manutenção`, 20, yPos);
     
     return yPos + 20;
 }
@@ -2073,4 +2073,75 @@ function aplicarEstilizacaoDashboard(ws) {
         { wch: 15 }, // Coluna D
         { wch: 12 }  // Coluna E
     ];
+}
+
+// ================== FUNÇÃO PARA TRATAR CARACTERES ESPECIAIS NO PDF ==================
+
+// Função para converter emojis e caracteres especiais para texto compatível com PDF
+function normalizarTextoPDF(texto) {
+    if (typeof texto !== 'string') {
+        return String(texto || '');
+    }
+    
+    // Mapeamento de emojis para texto em português (padrão ABNT)
+    const emojisParaTexto = {
+        '📊': '[DADOS]',
+        '⛽': '[COMBUSTIVEL]',
+        '💰': '[GASTO]',
+        '📈': '[GRAFICO]',
+        '💵': '[CUSTO]',
+        '🔢': '[NUMERO]',
+        '💡': '[DICA]',
+        '🚗': '[VEICULO]',
+        '🥇': '[1º]',
+        '🥈': '[2º]',
+        '🥉': '[3º]',
+        '📅': '[DATA]',
+        '🔄': '[PROCESSO]',
+        '⚠️': '[ALERTA]',
+        '✅': '[OK]',
+        '❌': '[ERRO]',
+        '🎯': '[META]',
+        '📋': '[LISTA]',
+        '🔍': '[BUSCA]',
+        '📦': '[PACOTE]',
+        '🚀': '[LANCAMENTO]',
+        '⭐': '[ESTRELA]',
+        '🔧': '[MANUTENCAO]',
+        '📝': '[RELATORIO]',
+        '💯': '[100%]',
+        '🏆': '[PREMIO]',
+        '🎉': '[CELEBRACAO]',
+        '👍': '[APROVADO]',
+        '👎': '[REPROVADO]',
+        '⚡': '[RAPIDO]',
+        '🔥': '[DESTAQUE]',
+        '❗': '[IMPORTANTE]',
+        '❓': '[DUVIDA]',
+        '🎪': '[EVENTO]'
+    };
+    
+    // Substituir emojis por texto
+    let textoNormalizado = texto;
+    for (const [emoji, textoEquivalente] of Object.entries(emojisParaTexto)) {
+        textoNormalizado = textoNormalizado.replace(new RegExp(emoji, 'g'), textoEquivalente);
+    }
+    
+    // Remover outros caracteres especiais problemáticos
+    textoNormalizado = textoNormalizado
+        .replace(/[^\x00-\x7F]/g, '') // Remove caracteres não ASCII
+        .replace(/Ø/g, 'O')           // Substitui Ø por O
+        .replace(/Ü/g, 'U')           // Substitui Ü por U
+        .replace(/È/g, 'E')           // Substitui È por E
+        .replace(/=/g, ' = ')         // Normaliza símbolos de igualdade
+        .replace(/\s+/g, ' ')         // Remove espaços extras
+        .trim();                      // Remove espaços no início/fim
+    
+    return textoNormalizado;
+}
+
+// Função auxiliar para adicionar texto normalizado ao PDF
+function adicionarTextoPDF(doc, texto, x, y, opcoes = {}) {
+    const textoNormalizado = normalizarTextoPDF(texto);
+    doc.text(textoNormalizado, x, y, opcoes);
 }
