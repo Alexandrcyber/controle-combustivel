@@ -989,6 +989,18 @@ function criarPlanilhaIndicadores(wb, dados) {
 
 // Nova funcao para exportar PDF completo com todos os dados e analises
 function exportarPdfCompleto() {
+    console.log('🚀 Iniciando geração de PDF completo...');
+    
+    // Verificar se as datas foram selecionadas pelo usuário
+    const dataInicio = document.getElementById('dataInicio')?.value;
+    const dataFim = document.getElementById('dataFim')?.value;
+    
+    // Validar se as datas estão preenchidas
+    if (!dataInicio || !dataFim) {
+        AlertError.validation('Por favor, selecione o período para gerar o relatório PDF.');
+        return;
+    }
+    
     AlertInfo.loading('Gerando PDF Completo', 'Criando relatorio abrangente com dashboards e analises...');
     
     try {
@@ -1589,20 +1601,14 @@ async function exportarPdfCustos() {
     
     try {
         // Capturar dados do formulário
-        let dataInicio = document.getElementById('custosDataInicio')?.value;
-        let dataFim = document.getElementById('custosDataFim')?.value;
+        const dataInicio = document.getElementById('custosDataInicio')?.value;
+        const dataFim = document.getElementById('custosDataFim')?.value;
         const caminhaoId = document.getElementById('caminhaoCustosSelect')?.value || 'todos';
 
-        // Se as datas não estão preenchidas, usar período padrão (últimos 30 dias)
+        // Validar se as datas estão preenchidas
         if (!dataInicio || !dataFim) {
-            const hoje = new Date();
-            const trintaDiasAtras = new Date();
-            trintaDiasAtras.setDate(hoje.getDate() - 30);
-            
-            dataInicio = trintaDiasAtras.toISOString().split('T')[0];
-            dataFim = hoje.toISOString().split('T')[0];
-            
-            console.log('📅 Usando período padrão para PDF:', dataInicio, 'até', dataFim);
+            AlertError.validation('Por favor, selecione o período para gerar o relatório de custos.');
+            return;
         }
 
         // Processar dados igual à função gerarRelatorioCustos
