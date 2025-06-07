@@ -1,4 +1,4 @@
-// Funções auxiliares para formatação segura de números
+// Funcoes auxiliares para formatacao segura de numeros
 function garantirNumero(valor, padrao = 0) {
     if (valor === null || valor === undefined || valor === '' || isNaN(valor)) {
         return padrao;
@@ -35,30 +35,30 @@ function calcularSeguro(valor1, valor2, operacao = 'soma') {
     }
 }
 
-// Função para acessar campos independente do formato (snake_case ou camelCase)
+// Funcao para acessar campos independente do formato (snake_case ou camelCase)
 function getField(obj, snakeCase, camelCase) {
     return obj[snakeCase] !== undefined ? obj[snakeCase] : obj[camelCase];
 }
 
-// Função para acessar campos numéricos independente do formato (snake_case ou camelCase)
+// Funcao para acessar campos numericos independente do formato (snake_case ou camelCase)
 function getNumField(obj, snakeCase, camelCase, defaultValue = 0) {
     const value = obj[snakeCase] !== undefined ? obj[snakeCase] : obj[camelCase];
     return parseFloat(value || defaultValue);
 }
 
-// Gerar relatório de consumo - VERSÃO CORRIGIDA
+// Gerar relatorio de consumo - VERSAO CORRIGIDA
 async function gerarRelatorioConsumo() {
-    console.log('🔄 Iniciando geração de relatório de consumo...');
+    console.log('Iniciando geracao de relatorio de consumo...');
     
     // Mostrar alerta de loading
-    AlertInfo.loading('Gerando Relatório de Consumo', 'Processando dados, aguarde...');
+    AlertInfo.loading('Gerando Relatorio de Consumo', 'Processando dados, aguarde...');
     
     // Mostrar loading enquanto processa
     const resultadosElement = document.getElementById('relatorioResultados');
     if (!resultadosElement) {
-        console.error('❌ Elemento relatorioResultados não encontrado!');
+        console.error('Elemento relatorioResultados nao encontrado!');
         AlertUtils.close(); // Fechar loading
-        AlertError.show('Erro do Sistema', 'Elemento de exibição do relatório não encontrado.');
+        AlertError.show('Erro do Sistema', 'Elemento de exibicao do relatorio nao encontrado.');
         return;
     }
     
@@ -1086,11 +1086,11 @@ function criarCapaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text('RELATÓRIO DE COMBUSTÍVEL', 105, 40, { align: 'center' });
+    adicionarTextoPDF(doc, 'RELATORIO DE COMBUSTIVEL', 105, 40, { align: 'center' });
     
     // Subtítulo
     doc.setFontSize(14);
-    doc.text('Análise Completa de Consumo e Performance', 105, 48, { align: 'center' });
+    adicionarTextoPDF(doc, 'Analise Completa de Consumo e Performance', 105, 48, { align: 'center' });
     
     // Informações do relatório
     doc.setTextColor(...cores.texto);
@@ -1358,7 +1358,7 @@ function criarIndicadoresPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.text('ALERTAS E RECOMENDAÇÕES', 105, yPos + 10, { align: 'center' });
+    adicionarTextoPDF(doc, 'ALERTAS E RECOMENDACOES', 105, yPos + 10, { align: 'center' });
     
     yPos += 25;
     doc.setTextColor(...cores.texto);
@@ -1371,7 +1371,7 @@ function criarIndicadoresPdf(doc, dados, cores) {
         .filter(c => c.totalLitros > 0 && (c.totalKm / c.totalLitros) < 3);
     
     if (veiculosBaixaEficiencia.length > 0) {
-        alertas.push(`⚠️ ${veiculosBaixaEficiencia.length} veículo(s) com baixa eficiência precisam de atenção`);
+        alertas.push(`ATENCAO: ${veiculosBaixaEficiencia.length} veiculo(s) com baixa eficiencia precisam de atencao`);
     }
     
     // Verificar gastos elevados
@@ -1380,16 +1380,16 @@ function criarIndicadoresPdf(doc, dados, cores) {
         .filter(c => c.totalGasto > gastoMedio * 1.5);
     
     if (veiculosGastoAlto.length > 0) {
-        alertas.push(`💰 ${veiculosGastoAlto.length} veículo(s) com gastos acima da média`);
+        alertas.push(`CUSTO ALTO: ${veiculosGastoAlto.length} veiculo(s) com gastos acima da media`);
     }
     
     // Recomendações gerais
-    alertas.push('✓ Realizar manutenção preventiva regularmente');
-    alertas.push('✓ Monitorar padrões de condução dos motoristas');
-    alertas.push('✓ Avaliar rotas para otimização de combustível');
+    alertas.push('RECOMENDACAO: Realizar manutencao preventiva regularmente');
+    alertas.push('RECOMENDACAO: Monitorar padroes de conducao dos motoristas');
+    alertas.push('RECOMENDACAO: Avaliar rotas para otimizacao de combustivel');
     
     alertas.forEach(alerta => {
-        doc.text(alerta, 20, yPos);
+        adicionarTextoPDF(doc, alerta, 20, yPos);
         yPos += 8;
     });
     
@@ -1576,7 +1576,7 @@ function criarAnalisePreditivaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('PROJEÇÕES FINANCEIRAS FUTURAS', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'PROJECOES FINANCEIRAS FUTURAS', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
@@ -1853,7 +1853,7 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('ALERTAS POR VEÍCULO', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'ALERTAS POR VEICULO', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
@@ -1861,14 +1861,14 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     
     Object.values(dados.dadosPorCaminhao).forEach(caminhao => {
         const consumo = caminhao.totalKm > 0 ? (caminhao.totalLitros / caminhao.totalKm * 100) : 0;
-        let status = '🟢 Bom';
+        let status = 'BOM';
         let cor = cores.sucesso;
         
         if (consumo > 15) {
-            status = '🔴 Crítico - Revisar urgente';
+            status = 'CRITICO - Revisar urgente';
             cor = cores.perigo;
         } else if (consumo > 12) {
-            status = '🟡 Médio - Monitorar';
+            status = 'MEDIO - Monitorar';
             cor = cores.alerta;
         }
           doc.setFillColor(...cor);
@@ -1878,7 +1878,7 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
         }
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(9);
-        doc.text(`${caminhao.placa}: ${status} (${formatarNumero(consumo, 1)} L/100km)`, 25, yPos + 4);
+        adicionarTextoPDF(doc, `${caminhao.placa}: ${status} (${formatarNumero(consumo, 1)} L/100km)`, 25, yPos + 4);
         yPos += 10;
     });
     
@@ -1891,7 +1891,7 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('CRONOGRAMA SUGERIDO DE MANUTENÇÕES', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'CRONOGRAMA SUGERIDO DE MANUTENCOES', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
@@ -1900,15 +1900,15 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     const proximaManutencao = new Date();
     proximaManutencao.setDate(proximaManutencao.getDate() + 30);
     
-    adicionarTextoPDF(doc, `🔧 Próxima Revisão Geral: ${proximaManutencao.toLocaleDateString('pt-BR')}`, 20, yPos);
+    adicionarTextoPDF(doc, `REVISAO: Proxima Revisao Geral: ${proximaManutencao.toLocaleDateString('pt-BR')}`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `🛢️ Troca de Óleo: A cada 10.000 km ou 6 meses`, 20, yPos);
+    adicionarTextoPDF(doc, `OLEO: Troca de Oleo: A cada 10.000 km ou 6 meses`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `🔍 Inspeção de Filtros: A cada 5.000 km ou 3 meses`, 20, yPos);
+    adicionarTextoPDF(doc, `FILTROS: Inspecao de Filtros: A cada 5.000 km ou 3 meses`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `⚙️ Verificação de Pneus: Semanal`, 20, yPos);
+    adicionarTextoPDF(doc, `PNEUS: Verificacao de Pneus: Semanal`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `📊 Análise de Consumo: Mensal`, 20, yPos);
+    adicionarTextoPDF(doc, `ANALISE: Analise de Consumo: Mensal`, 20, yPos);
     
     yPos += 20;
       // Recomendações Gerais
@@ -1919,21 +1919,21 @@ function criarManutencaoPreventivaPdf(doc, dados, cores) {
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
-    doc.text('RECOMENDAÇÕES GERAIS', 105, yPos + 6, { align: 'center' });
+    adicionarTextoPDF(doc, 'RECOMENDACOES GERAIS', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
     doc.setTextColor(...cores.texto);
     doc.setFontSize(10);
     
-    adicionarTextoPDF(doc, `✅ Implementar sistema de telemetria para monitoramento em tempo real`, 20, yPos);
+    adicionarTextoPDF(doc, `IMPLEMENTAR: Sistema de telemetria para monitoramento em tempo real`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `✅ Treinar condutores em direção econômica`, 20, yPos);
+    adicionarTextoPDF(doc, `TREINAMENTO: Condutores em direcao economica`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `✅ Estabelecer metas de consumo por veículo`, 20, yPos);
+    adicionarTextoPDF(doc, `METAS: Estabelecer metas de consumo por veiculo`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `✅ Revisar rotas para otimização de combustível`, 20, yPos);
+    adicionarTextoPDF(doc, `ROTAS: Revisar rotas para otimizacao de combustivel`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `✅ Manter registros detalhados de manutenção`, 20, yPos);
+    adicionarTextoPDF(doc, `REGISTROS: Manter registros detalhados de manutencao`, 20, yPos);
     
     return yPos + 20;
 }

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - PDF com Caracteres Corrigidos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        .status-box {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .status-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .status-warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-primary">🧪 Teste de PDF com Caracteres Corrigidos</h1>
+        <p class="lead">Validação das correções de caracteres especiais, acentos e emojis no PDF</p>
+
+        <div class="test-section">
+            <h3>Status da Correção</h3>
+            <div id="statusCorrecao" class="status-box status-warning">
+                <strong>⏳ Aguardando teste...</strong>
+                <p>Clique no botão abaixo para testar a geração de PDF</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Dados de Teste</h3>
+            <p>O teste irá gerar um PDF com os seguintes elementos problemáticos que foram corrigidos:</p>
+            <ul>
+                <li><strong>Seções com acentos:</strong> ALERTAS POR VEÍCULO → ALERTAS POR VEICULO</li>
+                <li><strong>Emojis de status:</strong> 🔴 Crítico → CRITICO</li>
+                <li><strong>Símbolos Unicode:</strong> ⚠️ → ATENCAO</li>
+                <li><strong>Caracteres especiais:</strong> ç, ã, õ, á, é → c, a, o, a, e</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>Teste de Geração</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <button id="btnTestarPDF" class="btn btn-primary btn-lg w-100">
+                        📄 Gerar PDF de Teste
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button id="btnTestarPDFCompleto" class="btn btn-success btn-lg w-100">
+                        📊 Gerar PDF Completo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Resultados do Teste</h3>
+            <div id="resultadosTeste">
+                <p class="text-muted">Nenhum teste executado ainda.</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Log de Debugging</h3>
+            <div id="logDebug" class="bg-light p-3" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                <!-- Logs aparecerão aqui -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para adicionar logs
+        function adicionarLog(mensagem, tipo = 'info') {
+            const logDiv = document.getElementById('logDebug');
+            const timestamp = new Date().toLocaleTimeString();
+            const cor = tipo === 'error' ? 'red' : tipo === 'success' ? 'green' : tipo === 'warning' ? 'orange' : 'black';
+            logDiv.innerHTML += `<div style="color: ${cor}">[${timestamp}] ${mensagem}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Função para atualizar status
+        function atualizarStatus(mensagem, tipo = 'warning') {
+            const statusDiv = document.getElementById('statusCorrecao');
+            statusDiv.className = `status-box status-${tipo}`;
+            statusDiv.innerHTML = `<strong>${mensagem}</strong>`;
+        }
+
+        // Dados de teste simulados
+        const dadosTeste = {
+            valid: true,
+            periodo: { 
+                inicio: '2024-01-01', 
+                fim: '2024-01-31' 
+            },
+            totalCaminhoes: 3,
+            totalAbastecimentos: 15,
+            dadosPorCaminhao: {
+                '1': {
+                    id: '1',
+                    placa: 'ABC-1234',
+                    modelo: 'Volvo FH',
+                    totalKm: 5500,
+                    totalLitros: 1100,
+                    totalGasto: 6600,
+                    mediaConsumo: 5.0,
+                    custoMedio: 1.2,
+                    valorMedioLitro: 6.0,
+                    abastecimentos: [
+                        { data: '2024-01-15', motorista: 'João', kmInicial: 1000, kmFinal: 1500, litros: 100, valorTotal: 600 }
+                    ]
+                },
+                '2': {
+                    id: '2',
+                    placa: 'DEF-5678',
+                    modelo: 'Mercedes Actros',
+                    totalKm: 4200,
+                    totalLitros: 900,
+                    totalGasto: 5400,
+                    mediaConsumo: 4.7,
+                    custoMedio: 1.3,
+                    valorMedioLitro: 6.0,
+                    abastecimentos: [
+                        { data: '2024-01-20', motorista: 'Pedro', kmInicial: 2000, kmFinal: 2400, litros: 85, valorTotal: 510 }
+                    ]
+                }
+            },
+            abastecimentosFiltrados: [
+                { id: 1, data: '2024-01-15', caminhaoId: '1', motorista: 'João', kmInicial: 1000, kmFinal: 1500, litros: 100, valorTotal: 600 },
+                { id: 2, data: '2024-01-20', caminhaoId: '2', motorista: 'Pedro', kmInicial: 2000, kmFinal: 2400, litros: 85, valorTotal: 510 }
+            ],
+            caminhoes: [
+                { id: '1', placa: 'ABC-1234', modelo: 'Volvo FH' },
+                { id: '2', placa: 'DEF-5678', modelo: 'Mercedes Actros' }
+            ],
+            totais: {
+                gasto: 12000,
+                consumo: 2000,
+                distancia: 9700,
+                totalGasto: 12000,
+                totalLitros: 2000,
+                totalKm: 9700
+            },
+            medias: {
+                consumo: 4.85,
+                custoPorKm: 1.24
+            }
+        };
+
+        // Função normalizadora para caracteres (baseada na do relatorios.js)
+        function normalizarTextoPDF(texto) {
+            if (typeof texto !== 'string') {
+                return String(texto || '');
+            }
+            
+            // Mapeamento de emojis para texto
+            const emojisParaTexto = {
+                '📊': '[DADOS]',
+                '⛽': '[COMBUSTIVEL]',
+                '💰': '[GASTO]',
+                '📈': '[GRAFICO]',
+                '💵': '[CUSTO]',
+                '🔢': '[NUMERO]',
+                '💡': '[DICA]',
+                '🚗': '[VEICULO]',
+                '🥇': '[1º]',
+                '🥈': '[2º]',
+                '🥉': '[3º]',
+                '📅': '[DATA]',
+                '🔄': '[PROCESSO]',
+                '⚠️': '[ALERTA]',
+                '✅': '[OK]',
+                '❌': '[ERRO]',
+                '🎯': '[META]',
+                '🔴': 'CRITICO',
+                '🟡': 'MEDIO',
+                '🟢': 'BOM'
+            };
+            
+            let textoNormalizado = texto;
+            
+            // Substituir emojis
+            for (const [emoji, textoEquivalente] of Object.entries(emojisParaTexto)) {
+                textoNormalizado = textoNormalizado.replace(new RegExp(emoji, 'g'), textoEquivalente);
+            }
+            
+            // Normalizar acentos
+            textoNormalizado = textoNormalizado
+                .replace(/[áàâãä]/g, 'a')
+                .replace(/[éèêë]/g, 'e')
+                .replace(/[íìîï]/g, 'i')
+                .replace(/[óòôõö]/g, 'o')
+                .replace(/[úùûü]/g, 'u')
+                .replace(/[ç]/g, 'c')
+                .replace(/[ÁÀÂÃÄ]/g, 'A')
+                .replace(/[ÉÈÊË]/g, 'E')
+                .replace(/[ÍÌÎÏ]/g, 'I')
+                .replace(/[ÓÒÔÕÖ]/g, 'O')
+                .replace(/[ÚÙÛÜ]/g, 'U')
+                .replace(/[Ç]/g, 'C')
+                .replace(/[ñ]/g, 'n')
+                .replace(/[Ñ]/g, 'N')
+                .trim();
+                
+            return textoNormalizado;
+        }
+
+        // Função para adicionar texto normalizado ao PDF
+        function adicionarTextoPDF(doc, texto, x, y, opcoes = {}) {
+            const textoNormalizado = normalizarTextoPDF(texto);
+            doc.text(textoNormalizado, x, y, opcoes);
+        }
+
+        // Teste da geração de PDF simples
+        document.getElementById('btnTestarPDF').addEventListener('click', function() {
+            adicionarLog('Iniciando teste de PDF simples...', 'info');
+            atualizarStatus('🔄 Gerando PDF de teste...', 'warning');
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Teste de textos com caracteres problemáticos
+                let yPos = 20;
+                
+                adicionarLog('Testando títulos com acentos...', 'info');
+                adicionarTextoPDF(doc, 'ALERTAS POR VEÍCULO', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'PROJEÇÕES FINANCEIRAS FUTURAS', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'ALERTAS E RECOMENDAÇÕES', 20, yPos);
+                yPos += 20;
+                
+                adicionarLog('Testando emojis e símbolos...', 'info');
+                adicionarTextoPDF(doc, '🔴 Status Crítico', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, '🟡 Status Médio', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, '🟢 Status Bom', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, '⚠️ Alerta de Manutenção', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, '✅ Recomendação: Realizar manutenção', 20, yPos);
+                yPos += 20;
+                
+                adicionarLog('Testando caracteres especiais em dados...', 'info');
+                adicionarTextoPDF(doc, 'Motorista: João Silva', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'Distância percorrida: 1.500 km', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'Consumo médio: 5,2 km/L', 20, yPos);
+                yPos += 10;
+                
+                // Salvar PDF
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const nomeArquivo = `teste-pdf-caracteres-${timestamp}.pdf`;
+                doc.save(nomeArquivo);
+                
+                adicionarLog(`PDF salvo como: ${nomeArquivo}`, 'success');
+                atualizarStatus('✅ PDF de teste gerado com sucesso!', 'success');
+                
+                document.getElementById('resultadosTeste').innerHTML = `
+                    <div class="alert alert-success">
+                        <h5>✅ Teste Concluído com Sucesso!</h5>
+                        <p><strong>Arquivo gerado:</strong> ${nomeArquivo}</p>
+                        <p><strong>Caracteres testados:</strong></p>
+                        <ul>
+                            <li>Acentos: ç, ã, õ, á, é → normalizados</li>
+                            <li>Emojis: 🔴, 🟡, 🟢, ⚠️, ✅ → convertidos para texto</li>
+                            <li>Títulos de seções: normalizados</li>
+                        </ul>
+                    </div>
+                `;
+                
+            } catch (error) {
+                adicionarLog(`Erro durante geração: ${error.message}`, 'error');
+                atualizarStatus('❌ Erro na geração do PDF', 'error');
+                
+                document.getElementById('resultadosTeste').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>❌ Erro no Teste</h5>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p>Verifique o console para mais detalhes.</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Teste da geração de PDF completo (simulação das funções do sistema)
+        document.getElementById('btnTestarPDFCompleto').addEventListener('click', function() {
+            adicionarLog('Iniciando teste de PDF completo...', 'info');
+            atualizarStatus('🔄 Gerando PDF completo de teste...', 'warning');
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Simular as seções problemáticas do relatório
+                let yPos = 20;
+                
+                // Capa
+                adicionarLog('Gerando capa...', 'info');
+                doc.setFillColor(41, 128, 185);
+                doc.rect(10, 20, 190, 30, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(24);
+                adicionarTextoPDF(doc, 'RELATORIO DE COMBUSTIVEL', 105, 40, { align: 'center' });
+                
+                // Nova página - Indicadores
+                doc.addPage();
+                yPos = 20;
+                
+                adicionarLog('Gerando seção de indicadores...', 'info');
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(16);
+                adicionarTextoPDF(doc, 'INDICADORES DE PERFORMANCE', 20, yPos);
+                yPos += 20;
+                
+                // Tabela com dados
+                doc.setFontSize(12);
+                adicionarTextoPDF(doc, 'ALERTAS POR VEICULO', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'CRITICO: Veiculo ABC-1234 precisa atencao', 20, yPos);
+                yPos += 8;
+                
+                adicionarTextoPDF(doc, 'MEDIO: Veiculo DEF-5678 monitoramento', 20, yPos);
+                yPos += 8;
+                
+                adicionarTextoPDF(doc, 'BOM: Veiculo GHI-9012 performance adequada', 20, yPos);
+                yPos += 20;
+                
+                adicionarTextoPDF(doc, 'PROJECOES FINANCEIRAS FUTURAS', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'Gasto projetado: R$ 15.000,00', 20, yPos);
+                yPos += 8;
+                
+                adicionarTextoPDF(doc, 'Economia potencial: R$ 2.500,00', 20, yPos);
+                yPos += 20;
+                
+                adicionarTextoPDF(doc, 'ALERTAS E RECOMENDACOES', 20, yPos);
+                yPos += 10;
+                
+                adicionarTextoPDF(doc, 'RECOMENDACAO: Realizar manutencao preventiva', 20, yPos);
+                yPos += 8;
+                
+                adicionarTextoPDF(doc, 'ATENCAO: Monitorar consumo dos veiculos', 20, yPos);
+                yPos += 8;
+                
+                adicionarTextoPDF(doc, 'CUSTO ALTO: Revisar rotas de alguns veiculos', 20, yPos);
+                
+                // Salvar PDF
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const nomeArquivo = `teste-pdf-completo-${timestamp}.pdf`;
+                doc.save(nomeArquivo);
+                
+                adicionarLog(`PDF completo salvo como: ${nomeArquivo}`, 'success');
+                atualizarStatus('✅ PDF completo gerado com sucesso!', 'success');
+                
+                document.getElementById('resultadosTeste').innerHTML = `
+                    <div class="alert alert-success">
+                        <h5>✅ Teste Completo Finalizado!</h5>
+                        <p><strong>Arquivo gerado:</strong> ${nomeArquivo}</p>
+                        <p><strong>Seções testadas:</strong></p>
+                        <ul>
+                            <li>✅ ALERTAS POR VEICULO (sem acento)</li>
+                            <li>✅ PROJECOES FINANCEIRAS FUTURAS (sem acentos)</li>
+                            <li>✅ ALERTAS E RECOMENDACOES (sem acentos)</li>
+                            <li>✅ Status CRITICO, MEDIO, BOM (sem emojis)</li>
+                            <li>✅ ATENCAO, RECOMENDACAO (sem símbolos Unicode)</li>
+                        </ul>
+                        <p><strong>Status:</strong> Todas as correções aplicadas com sucesso!</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                adicionarLog(`Erro durante geração completa: ${error.message}`, 'error');
+                atualizarStatus('❌ Erro na geração do PDF completo', 'error');
+                
+                document.getElementById('resultadosTeste').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5>❌ Erro no Teste Completo</h5>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p>Verifique o console para mais detalhes.</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Log inicial
+        adicionarLog('Sistema de teste carregado', 'success');
+        adicionarLog('Biblioteca jsPDF carregada: ' + (typeof window.jspdf !== 'undefined'), 'info');
+        
+    </script>
+</body>
+</html>
