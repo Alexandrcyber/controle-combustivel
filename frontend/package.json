@@ -7,7 +7,7 @@
     "start:static": "http-server -p 3000 -o",
     "dev": "http-server -p 3000 -o -c-1",
     "build": "npm run build:css && npm run build:js",
-    "build:netlify": "echo 'Frontend build completed - using static files'",
+    "build:netlify": "bash build-netlify.sh",
     "build:css": "postcss src/css/styles.css -o dist/css/styles.min.css",
     "build:js": "terser src/js/*.js -o dist/js/app.min.js",
     "test": "jest",

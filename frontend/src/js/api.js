@@ -1,7 +1,22 @@
 // Configuração da API
 const API_CONFIG = {
-    // Obter URL base de variável global ou usar fallback
-    baseURL: window.API_BASE_URL || '/api', // Usar proxy local para desenvolvimento
+    // Obter URL base de configuração de ambiente ou usar fallback
+    baseURL: (() => {
+        // 1. Primeiro, tentar usar configuração de ambiente
+        if (window.ENV_CONFIG && window.ENV_CONFIG.API_BASE_URL) {
+            return window.ENV_CONFIG.API_BASE_URL;
+        }
+        // 2. Tentar usar variável global
+        if (window.ENV_API_BASE_URL) {
+            return window.ENV_API_BASE_URL;
+        }
+        // 3. Usar proxy local para desenvolvimento
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return '/api';
+        }
+        // 4. Em produção, usar redirecionamento do Netlify
+        return '/api';
+    })(),
     headers: {
         'Content-Type': 'application/json'
     }

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Configuração - Netlify</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Configuração do Frontend</h1>
+    
+    <div id="results"></div>
+    
+    <script src="src/js/env-config.js"></script>
+    <script src="src/js/config.js"></script>
+    <script src="src/js/api.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+        }
+        
+        // Teste 1: Verificar se as configurações de ambiente foram carregadas
+        addResult(
+            '1. Configurações de Ambiente',
+            JSON.stringify(window.ENV_CONFIG || 'Não carregado', null, 2),
+            window.ENV_CONFIG ? 'success' : 'error'
+        );
+        
+        // Teste 2: Verificar configuração da API
+        addResult(
+            '2. Configuração da API',
+            `URL Base: ${window.AppConfig?.api?.baseUrl || 'Não definido'}\nTimeout: ${window.AppConfig?.api?.timeout || 'Não definido'}`,
+            window.AppConfig?.api?.baseUrl ? 'success' : 'error'
+        );
+        
+        // Teste 3: Verificar hostname atual
+        addResult(
+            '3. Informações do Ambiente',
+            `Hostname: ${window.location.hostname}\nURL Completa: ${window.location.href}\nAmbiente detectado: ${window.AppConfig?.environment || 'Não detectado'}`,
+            'info'
+        );
+        
+        // Teste 4: Testar conectividade com a API
+        async function testAPI() {
+            try {
+                addResult('4. Testando Conectividade com API', 'Iniciando teste...', 'info');
+                
+                const response = await fetch('/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(
+                        '4. Conectividade com API',
+                        `✅ Sucesso!\nStatus: ${response.status}\nResposta: ${JSON.stringify(data, null, 2)}`,
+                        'success'
+                    );
+                } else {
+                    addResult(
+                        '4. Conectividade com API',
+                        `❌ Erro HTTP: ${response.status}\nStatus Text: ${response.statusText}`,
+                        'error'
+                    );
+                }
+            } catch (error) {
+                addResult(
+                    '4. Conectividade com API',
+                    `❌ Erro de rede: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+        
+        // Teste 5: Testar endpoint de caminhões
+        async function testCaminhoes() {
+            try {
+                addResult('5. Testando Endpoint Caminhões', 'Iniciando teste...', 'info');
+                
+                const response = await window.apiClient.caminhoes.buscarTodos();
+                addResult(
+                    '5. Endpoint Caminhões',
+                    `✅ Sucesso!\nQuantidade de caminhões: ${response?.length || 0}\nDados: ${JSON.stringify(response?.slice(0, 2), null, 2)}`,
+                    'success'
+                );
+            } catch (error) {
+                addResult(
+                    '5. Endpoint Caminhões',
+                    `❌ Erro: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+        
+        // Executar testes
+        setTimeout(() => {
+            testAPI();
+            setTimeout(() => {
+                testCaminhoes();
+            }, 2000);
+        }, 1000);
+    </script>
+</body>
+</html>
