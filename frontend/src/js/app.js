@@ -11,7 +11,29 @@ window.abastecimentos = abastecimentos;
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Iniciando aplicação do Controle de Combustível');
     
-    // Verificar conexão com a API
+    // Aguardar um pouco para garantir que todos os scripts sejam carregados
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Verificar se window.dbApi está disponível
+    if (!window.dbApi) {
+        console.error('❌ window.dbApi não está disponível!');
+        console.log('🔍 Verificando scripts carregados:', {
+            apiClient: !!window.apiClient,
+            dbApi: !!window.dbApi,
+            localStorageApi: !!window.localStorageApi
+        });
+        
+        // Tentar aguardar mais um pouco e verificar novamente
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (!window.dbApi) {
+            console.error('❌ window.dbApi ainda não está disponível após espera adicional');
+            // Usar localStorage como fallback
+            console.warn('⚠️ Usando localStorage como fallback');
+        }
+    }
+    
+    // Verificar conexão com a API (assíncrono)
     verificarStatusAPI();
     
     // Carregar dados do backend ou localStorage
@@ -122,33 +144,66 @@ async function loadDataFromLocalStorage() {
     try {
         console.log('[LOAD] Iniciando carregamento de dados...');
         
-        // Usar dbApi para buscar dados do backend
-        caminhoes = await window.dbApi.buscarCaminhoes();
-        abastecimentos = await window.dbApi.buscarAbastecimentos();
-        
-        console.log('[LOAD] Dados carregados:', {
-            caminhoes: caminhoes.length,
-            abastecimentos: abastecimentos.length,
-            primeiroAbastecimento: abastecimentos[0] || null
-        });
+        // Verificar se window.dbApi está disponível
+        if (window.dbApi && typeof window.dbApi.buscarCaminhoes === 'function') {
+            console.log('[LOAD] Usando window.dbApi para buscar dados...');
+            
+            // Usar dbApi para buscar dados do backend
+            caminhoes = await window.dbApi.buscarCaminhoes();
+            abastecimentos = await window.dbApi.buscarAbastecimentos();
+            
+            console.log('[LOAD] Dados carregados via API:', {
+                caminhoes: caminhoes.length,
+                abastecimentos: abastecimentos.length,
+                primeiroAbastecimento: abastecimentos[0] || null
+            });
+        } else {
+            console.warn('[LOAD] window.dbApi não disponível, usando localStorage como fallback');
+            
+            // Fallback para localStorage
+            const caminhoesJSON = localStorage.getItem('caminhoes');
+            const abastecimentosJSON = localStorage.getItem('abastecimentos');
+            
+            caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
+            abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
+            
+            console.log('[LOAD] Dados carregados via localStorage:', {
+                caminhoes: caminhoes.length,
+                abastecimentos: abastecimentos.length
+            });
+        }
         
         // Atualizar referências globais para os relatórios
         updateGlobalReferences();
         
-        console.log(`Carregados ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos do backend`);
+        console.log(`✅ Carregamento concluído: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
     } catch (error) {
-        console.error('Erro ao carregar dados do backend:', error);
-        // Fallback para localStorage em caso de erro
-        const caminhoesJSON = localStorage.getItem('caminhoes');
-        const abastecimentosJSON = localStorage.getItem('abastecimentos');
+        console.error('❌ Erro ao carregar dados:', error);
         
-        caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
-        abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
-        
-        console.log('[LOAD] Usando fallback localStorage:', {
-            caminhoes: caminhoes.length,
-            abastecimentos: abastecimentos.length
-        });
+        // Em caso de erro, tentar localStorage como última alternativa
+        console.log('[LOAD] Tentando fallback para localStorage após erro...');
+        try {
+            const caminhoesJSON = localStorage.getItem('caminhoes');
+            const abastecimentosJSON = localStorage.getItem('abastecimentos');
+            
+            caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
+            abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
+            
+            console.log('[LOAD] Fallback localStorage aplicado:', {
+                caminhoes: caminhoes.length,
+                abastecimentos: abastecimentos.length
+            });
+            
+            // Atualizar referências globais
+            updateGlobalReferences();
+        } catch (fallbackError) {
+            console.error('❌ Erro no fallback localStorage:', fallbackError);
+            
+            // Última alternativa: arrays vazios
+            caminhoes = [];
+            abastecimentos = [];
+            updateGlobalReferences();
+        }
         
         // Atualizar referências globais para os relatórios
         updateGlobalReferences();

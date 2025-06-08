@@ -49,11 +49,61 @@ window.apiClient = {
     // CRUD para Caminhões
     caminhoes: {
         async buscarTodos() {
-            return await apiClient.request('/caminhoes');
+            const result = await apiClient.request('/caminhoes');
+            
+            // Mapear campos do backend (snake_case) para frontend (camelCase)
+            return result.map(caminhao => {
+                const { 
+                    created_at, updated_at, ultima_manutencao, proxima_manutencao, 
+                    km_ultima_manutencao, intervalo_manutencao_km, numero_chassi, 
+                    numero_renavam, vencimento_licenciamento, vencimento_seguro, 
+                    numero_apolice_seguro, ...resto 
+                } = caminhao;
+                
+                return {
+                    ...resto,
+                    createdAt: created_at,
+                    updatedAt: updated_at,
+                    ultimaManutencao: ultima_manutencao,
+                    proximaManutencao: proxima_manutencao,
+                    kmUltimaManutencao: km_ultima_manutencao,
+                    intervaloManutencaoKm: intervalo_manutencao_km,
+                    numeroChassi: numero_chassi,
+                    numeroRenavam: numero_renavam,
+                    vencimentoLicenciamento: vencimento_licenciamento,
+                    vencimentoSeguro: vencimento_seguro,
+                    numeroApoliceSeguro: numero_apolice_seguro,
+                    capacidade: parseFloat(caminhao.capacidade) || 0
+                };
+            });
         },
 
         async buscarPorId(id) {
-            return await apiClient.request(`/caminhoes/${id}`);
+            const result = await apiClient.request(`/caminhoes/${id}`);
+            
+            // Mapear campos do backend (snake_case) para frontend (camelCase)
+            const { 
+                created_at, updated_at, ultima_manutencao, proxima_manutencao, 
+                km_ultima_manutencao, intervalo_manutencao_km, numero_chassi, 
+                numero_renavam, vencimento_licenciamento, vencimento_seguro, 
+                numero_apolice_seguro, ...resto 
+            } = result;
+            
+            return {
+                ...resto,
+                createdAt: created_at,
+                updatedAt: updated_at,
+                ultimaManutencao: ultima_manutencao,
+                proximaManutencao: proxima_manutencao,
+                kmUltimaManutencao: km_ultima_manutencao,
+                intervaloManutencaoKm: intervalo_manutencao_km,
+                numeroChassi: numero_chassi,
+                numeroRenavam: numero_renavam,
+                vencimentoLicenciamento: vencimento_licenciamento,
+                vencimentoSeguro: vencimento_seguro,
+                numeroApoliceSeguro: numero_apolice_seguro,
+                capacidade: parseFloat(result.capacidade) || 0
+            };
         },        async salvar(caminhao) {
             console.log('[apiClient.caminhoes] Salvando caminhão:', caminhao);
             
@@ -94,13 +144,14 @@ window.apiClient = {
                     const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = abastecimento;
                     return {
                         ...resto,
-                        ...(caminhao_id && { caminhaoId: caminhao_id }),
-                        ...(periodo_inicio && { periodoInicio: periodo_inicio }),
-                        ...(periodo_fim && { periodoFim: periodo_fim }),
-                        ...(km_inicial !== undefined && { kmInicial: km_inicial }),
-                        ...(km_final !== undefined && { kmFinal: km_final }),
-                        ...(valor_litro !== undefined && { valorLitro: valor_litro }),
-                        ...(valor_total !== undefined && { valorTotal: valor_total })
+                        caminhaoId: caminhao_id,
+                        periodoInicio: periodo_inicio,
+                        periodoFim: periodo_fim,
+                        kmInicial: parseFloat(km_inicial) || 0,
+                        kmFinal: parseFloat(km_final) || 0,
+                        valorLitro: parseFloat(valor_litro) || 0,
+                        valorTotal: parseFloat(valor_total) || 0,
+                        litros: parseFloat(abastecimento.litros) || 0
                     };
                 });
             };
@@ -114,13 +165,14 @@ window.apiClient = {
             const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = result;
             return {
                 ...resto,
-                ...(caminhao_id && { caminhaoId: caminhao_id }),
-                ...(periodo_inicio && { periodoInicio: periodo_inicio }),
-                ...(periodo_fim && { periodoFim: periodo_fim }),
-                ...(km_inicial !== undefined && { kmInicial: km_inicial }),
-                ...(km_final !== undefined && { kmFinal: km_final }),
-                ...(valor_litro !== undefined && { valorLitro: valor_litro }),
-                ...(valor_total !== undefined && { valorTotal: valor_total })
+                caminhaoId: caminhao_id,
+                periodoInicio: periodo_inicio,
+                periodoFim: periodo_fim,
+                kmInicial: parseFloat(km_inicial) || 0,
+                kmFinal: parseFloat(km_final) || 0,
+                valorLitro: parseFloat(valor_litro) || 0,
+                valorTotal: parseFloat(valor_total) || 0,
+                litros: parseFloat(result.litros) || 0
             };
         },
 
@@ -149,13 +201,14 @@ window.apiClient = {
                 const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = obj;
                 return {
                     ...resto,
-                    ...(caminhao_id && { caminhaoId: caminhao_id }),
-                    ...(periodo_inicio && { periodoInicio: periodo_inicio }),
-                    ...(periodo_fim && { periodoFim: periodo_fim }),
-                    ...(km_inicial !== undefined && { kmInicial: km_inicial }),
-                    ...(km_final !== undefined && { kmFinal: km_final }),
-                    ...(valor_litro !== undefined && { valorLitro: valor_litro }),
-                    ...(valor_total !== undefined && { valorTotal: valor_total })
+                    caminhaoId: caminhao_id,
+                    periodoInicio: periodo_inicio,
+                    periodoFim: periodo_fim,
+                    kmInicial: parseFloat(km_inicial) || 0,
+                    kmFinal: parseFloat(km_final) || 0,
+                    valorLitro: parseFloat(valor_litro) || 0,
+                    valorTotal: parseFloat(valor_total) || 0,
+                    litros: parseFloat(obj.litros) || 0
                 };
             };
             
