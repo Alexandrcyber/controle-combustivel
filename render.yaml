@@ -2,23 +2,13 @@ services:
   - type: web
     name: controle-combustivel-backend
     env: node
-    region: oregon # ou sua região preferida
-    plan: free # ou o plano que você está usando
-    buildCommand: npm install
-    startCommand: cd backend && npm start
+    region: oregon
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: BACKEND_PORT
-        value: 3001
-      - key: BACKEND_HOST
-        value: 0.0.0.0
-      - key: DB_TYPE
-        value: postgresql
-      - key: DB_SSL
-        value: true
-      - key: LOG_LEVEL
-        value: info
       - key: RENDER
         value: 1
       # Adicione suas outras variáveis de ambiente aqui
