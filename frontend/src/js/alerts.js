@@ -186,29 +186,79 @@ const AlertInfo = {
         return Swal.fire({
             toast: true,
             position: 'bottom-end',
-            icon: 'info',
-            title: `📊 ${message}`,
-            text: details,
+            html: `
+                <div class="loading-truck-container">
+                    <div class="truck-animation">
+                        <div class="truck-body">
+                            <div class="truck-cab">🚛</div>
+                            <div class="truck-trail">💨</div>
+                        </div>
+                        <div class="road-line"></div>
+                    </div>
+                    <div class="loading-text">
+                        <strong>🚚 ${message}</strong>
+                        <div class="loading-details">${details}</div>
+                        <div class="loading-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            `,
             showConfirmButton: false,
             timer: 30000, // 30 segundos
             timerProgressBar: true,
+            width: '420px',
             didOpen: (toast) => {
-                // Adicionar animação de carregamento
-                const icon = toast.querySelector('.swal2-icon.swal2-info');
-                if (icon) {
-                    icon.style.animation = 'bounce 1.5s infinite';
-                }
-                
-                // Adicionar classe CSS para animação customizada
+                // Adicionar estilo customizado para animação de caminhão
                 toast.style.cssText += `
                     animation: slideInUp 0.5s ease-out;
-                    border-left: 4px solid #28a745;
+                    border-left: 5px solid #28a745;
                     backdrop-filter: blur(5px);
-                    background: rgba(255, 255, 255, 0.95);
+                    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05), rgba(255, 255, 255, 0.95));
+                    box-shadow: 0 8px 32px rgba(40, 167, 69, 0.2);
                 `;
             },
             customClass: {
-                popup: 'loading-data-toast'
+                popup: 'loading-data-toast truck-loading-toast'
+            }
+        });
+    },
+
+    // Alerta de carregamento principal mais visível e profissional
+    loadingSystem: (message = 'Carregando Sistema de Gestão...', details = 'Sincronizando dados de caminhões, abastecimentos e relatórios do banco de dados.') => {
+        return Swal.fire({
+            html: `
+                <div class="system-loading-container">
+                    <div class="fleet-animation">
+                        <div class="truck-convoy">
+                            <div class="truck-unit">🚛</div>
+                            <div class="truck-unit delay-1">🚚</div>
+                            <div class="truck-unit delay-2">🚐</div>
+                        </div>
+                        <div class="loading-highway">
+                            <div class="highway-line"></div>
+                            <div class="highway-line delay"></div>
+                        </div>
+                    </div>
+                    <div class="system-loading-text">
+                        <h3 class="loading-title">🚚 ${message}</h3>
+                        <p class="loading-description">${details}</p>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <div class="progress-text">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            width: '480px',
+            backdrop: 'rgba(0,0,0,0.4)',
+            customClass: {
+                popup: 'system-loading-modal'
             }
         });
     },
@@ -445,6 +495,299 @@ const addCustomCSS = () => {
             animation: spin 1s linear infinite;
             display: inline-block;
             margin-right: 8px;
+        }
+
+        /* Animações para o caminhão de carregamento */
+        .loading-truck-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .truck-animation {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .truck-body {
+            position: relative;
+            display: flex;
+            align-items: center;
+            animation: truckMove 3s ease-in-out infinite;
+        }
+
+        .truck-cab {
+            font-size: 24px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
+            animation: truckBounce 0.5s ease-in-out infinite alternate;
+        }
+
+        .truck-trail {
+            margin-left: -5px;
+            font-size: 16px;
+            opacity: 0.7;
+            animation: trailMove 1s ease-in-out infinite;
+        }
+
+        .road-line {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #ddd 25%, 
+                #999 50%, 
+                #ddd 75%, 
+                transparent 100%);
+            animation: roadMove 2s linear infinite;
+        }
+
+        .loading-text {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .loading-text strong {
+            font-size: 16px;
+            color: #28a745;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .loading-details {
+            font-size: 13px;
+            color: #6c757d;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: dotPulse 1.5s ease-in-out infinite;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes truckMove {
+            0%, 100% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+        }
+
+        @keyframes truckBounce {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-2px); }
+        }
+
+        @keyframes trailMove {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        @keyframes roadMove {
+            0% { transform: translateX(-20px); }
+            100% { transform: translateX(20px); }
+        }
+
+        @keyframes dotPulse {
+            0%, 80%, 100% { 
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Estilo especial para toast de carregamento com caminhão */
+        .truck-loading-toast {
+            background: linear-gradient(135deg, 
+                rgba(40, 167, 69, 0.05), 
+                rgba(255, 255, 255, 0.98)) !important;
+            border: 1px solid rgba(40, 167, 69, 0.2) !important;
+            box-shadow: 0 10px 40px rgba(40, 167, 69, 0.25) !important;
+        }
+
+        .truck-loading-toast .swal2-timer-progress-bar {
+            background: linear-gradient(90deg, #28a745, #20c997) !important;
+            height: 3px !important;
+        }
+
+        /* Estilos para o modal de carregamento do sistema */
+        .system-loading-modal {
+            border-radius: 20px !important;
+            background: linear-gradient(135deg, #f8f9fa, #ffffff) !important;
+            border: none !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+        }
+
+        .system-loading-container {
+            padding: 30px 20px;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .fleet-animation {
+            height: 80px;
+            position: relative;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .truck-convoy {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            animation: convoyMove 4s ease-in-out infinite;
+        }
+
+        .truck-unit {
+            font-size: 28px;
+            filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.2));
+            animation: truckBob 1.5s ease-in-out infinite;
+        }
+
+        .truck-unit.delay-1 {
+            animation-delay: 0.2s;
+        }
+
+        .truck-unit.delay-2 {
+            animation-delay: 0.4s;
+        }
+
+        .loading-highway {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .highway-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #007bff 20%, 
+                #28a745 50%, 
+                #007bff 80%, 
+                transparent 100%);
+            animation: highwayFlow 3s linear infinite;
+        }
+
+        .highway-line.delay {
+            top: 2px;
+            animation-delay: 1.5s;
+            opacity: 0.6;
+        }
+
+        .system-loading-text {
+            color: #2c3e50;
+        }
+
+        .loading-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            color: #28a745;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .loading-description {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 0 0 25px 0;
+            line-height: 1.5;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #28a745, #007bff);
+            background-size: 200% 100%;
+            border-radius: 10px;
+            animation: progressFlow 2s ease-in-out infinite;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+            animation: textPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes convoyMove {
+            0%, 100% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+        }
+
+        @keyframes truckBob {
+            0%, 100% { transform: translateY(0px) rotate(-1deg); }
+            50% { transform: translateY(-3px) rotate(1deg); }
+        }
+
+        @keyframes highwayFlow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            25% { opacity: 1; }
+            75% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes progressFlow {
+            0% { 
+                width: 10%;
+                background-position: 0% 50%;
+            }
+            50% { 
+                width: 80%;
+                background-position: 100% 50%;
+            }
+            100% { 
+                width: 95%;
+                background-position: 200% 50%;
+            }
+        }
+
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
     `;
     document.head.appendChild(styleElement);

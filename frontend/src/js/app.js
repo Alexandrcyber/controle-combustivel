@@ -162,10 +162,10 @@ async function loadDataFromLocalStorage() {
         if (window.dbApi && typeof window.dbApi.buscarCaminhoes === 'function') {
             console.log('[LOAD] Usando window.dbApi para buscar dados...');
             
-            // Mostrar alerta discreto de carregamento de dados
-            loadingAlert = AlertInfo.loadingData(
-                'Carregando dados do sistema...',
-                'Sincronizando caminhões e abastecimentos do banco de dados. Aguarde alguns instantes.'
+            // Mostrar alerta profissional de carregamento do sistema
+            loadingAlert = AlertInfo.loadingSystem(
+                'Carregando Sistema de Gestão Logística',
+                'Sincronizando dados de caminhões, abastecimentos e relatórios do banco de dados. Aguarde alguns instantes.'
             );
             
             // Usar dbApi para buscar dados do backend
@@ -178,7 +178,7 @@ async function loadDataFromLocalStorage() {
             }
             
             // Mostrar toast de sucesso discreto
-            AlertToast.success(`Dados carregados: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
+            AlertToast.success(`✅ Sistema carregado: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
             
             console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
