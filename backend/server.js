@@ -16,7 +16,8 @@ const caminhoesRoutes = require('./routes/caminhoes');
 const abastecimentosRoutes = require('./routes/abastecimentos');
 
 const app = express();
-const PORT = config.backend.port;
+// Configuração da porta - Render requer usar process.env.PORT
+const PORT = process.env.PORT || config.backend.port;
 
 console.log(`[BACKEND] Iniciando servidor em modo: ${config.environment}`);
 console.log(`[BACKEND] Porta configurada: ${PORT}`);
@@ -114,11 +115,12 @@ async function startServer() {
         await runMigrations();
         
         // Iniciar servidor
-        app.listen(PORT, () => {
+        const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : config.backend.host;
+        app.listen(PORT, HOST, () => {
             console.log(`✅ Servidor rodando na porta ${PORT}`);
-            console.log(`🌐 API disponível em: http://localhost:${PORT}/api`);
-            console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-            console.log(`📊 Info: http://localhost:${PORT}/api/info`);
+            console.log(`🌐 API disponível em: http://${HOST}:${PORT}/api`);
+            console.log(`🏥 Health check: http://${HOST}:${PORT}/api/health`);
+            console.log(`📊 Info: http://${HOST}:${PORT}/api/info`);
             
             if (process.env.NODE_ENV === 'development') {
                 console.log('🛠️  Modo de desenvolvimento ativo');
