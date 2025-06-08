@@ -67,7 +67,7 @@
   },
   "homepage": "https://github.com/AlexandreLiberatto/controle-de-combustivel#readme",
   "engines": {
-    "node": ">=16.0.0",
+    "node": "18.x",
     "npm": ">=8.0.0"
   },
   "devDependencies": {
