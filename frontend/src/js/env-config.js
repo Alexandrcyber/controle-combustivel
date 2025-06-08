@@ -4,7 +4,7 @@ window.ENV_CONFIG = {
   BACKEND_URL: 'https://controle-combustivel.onrender.com',
   API_BASE_URL: 'https://controle-combustivel.onrender.com/api',
   NODE_ENV: 'production',
-  NETLIFY: true
+  IS_NETLIFY: true
 };
 
 // Fazer as variáveis disponíveis globalmente

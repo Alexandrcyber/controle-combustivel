@@ -23,6 +23,12 @@ fi
 # Criar diretório src/js se não existir
 mkdir -p src/js
 
+# Detectar se estamos no Netlify
+IS_NETLIFY=false
+if [ -n "$DEPLOY_URL" ] && [ -n "$SITE_ID" ]; then
+    IS_NETLIFY=true
+fi
+
 # Gerar arquivo de configuração dinâmico
 echo "📝 Gerando configuração de ambiente..."
 cat > src/js/env-config.js << EOF
@@ -32,7 +38,7 @@ window.ENV_CONFIG = {
   BACKEND_URL: '${BACKEND_URL}',
   API_BASE_URL: '${API_BASE_URL}',
   NODE_ENV: '${NODE_ENV:-production}',
-  NETLIFY: ${NETLIFY:-true}
+  IS_NETLIFY: ${IS_NETLIFY}
 };
 
 // Fazer as variáveis disponíveis globalmente

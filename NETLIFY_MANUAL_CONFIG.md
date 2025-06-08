@@ -23,14 +23,15 @@ Functions directory: netlify/functions
 
 ### 2. 🌐 Environment Variables (Site Settings > Environment variables)
 
-**Adicione TODAS estas variáveis:**
+**Adicione estas variáveis:**
 
 ```
 NODE_ENV=production
 API_BASE_URL=https://controle-combustivel.onrender.com/api
 BACKEND_URL=https://controle-combustivel.onrender.com
-NETLIFY=1
 ```
+
+**⚠️ NOTA:** Removemos a variável `NETLIFY` pois ela é reservada pelo sistema. O ambiente é detectado automaticamente através de outras variáveis internas do Netlify.
 
 ### 3. 🔄 Redirects & Rewrites (Site Settings > Build & deploy > Redirects)
 
@@ -60,7 +61,8 @@ NETLIFY=1
    - `NODE_ENV` = `production`
    - `API_BASE_URL` = `https://controle-combustivel.onrender.com/api`
    - `BACKEND_URL` = `https://controle-combustivel.onrender.com`
-   - `NETLIFY` = `1`
+
+**⚠️ IMPORTANTE:** Não adicione a variável `NETLIFY` pois ela é reservada pelo sistema.
 
 ### Passo 3: Redirects (Opcional - já está no netlify.toml)
 1. **Site Settings** > **Build & deploy** > **Redirects**
