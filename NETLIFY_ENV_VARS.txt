@@ -1,0 +1,37 @@
+# 🌐 Variáveis de Ambiente para NETLIFY
+# Configure estas variáveis no painel do Netlify: Site Settings > Environment Variables
+
+# ⚠️ IMPORTANTE: Substitua a URL abaixo pela URL real do seu backend no Render
+
+# Ambiente
+NODE_ENV=production
+
+# URL do Backend (SUBSTITUA pela sua URL do Render)
+BACKEND_URL=https://controle-combustivel-backend.onrender.com
+
+# URL da API (SUBSTITUA pela sua URL do Render)
+API_BASE_URL=https://controle-combustivel-backend.onrender.com/api
+
+# Configurações de Build
+PUBLIC_URL=/
+
+# Configurações de Debug (desabilitado em produção)
+DEBUG_MODE=false
+SHOW_LOGS=false
+
+# Configurações de Cache
+CACHE_ENABLED=true
+
+# ===============================================
+# 📋 INSTRUÇÕES DE CONFIGURAÇÃO NO NETLIFY:
+# ===============================================
+# 
+# 1. Acesse seu site no Netlify
+# 2. Vá para Site Settings > Environment Variables
+# 3. Adicione cada uma das variáveis acima
+# 4. ⚠️ IMPORTANTE: Substitua as URLs do backend pela sua URL real do Render
+# 
+# Exemplo da URL do Render:
+# https://seu-app-123abc.onrender.com
+# 
+# ===============================================

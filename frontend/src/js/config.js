@@ -24,13 +24,15 @@ window.AppConfig = {
         return '/api'; // Usar proxy local configurado no servidor Express
       }
       
-      // Configuração baseada no ambiente
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:3001/api';
-      } else {
-        // Em produção, assumir que a API está no mesmo domínio
-        return `${window.location.protocol}//${window.location.hostname.replace('frontend-', 'backend-')}/api`;
+      // Em produção no Netlify, usar redirecionamento configurado
+      if (window.location.hostname.includes('netlify.app') || 
+          window.location.hostname.includes('netlify.com') ||
+          window.location.hostname !== 'localhost') {
+        return '/api'; // Netlify vai redirecionar para o backend no Render
       }
+      
+      // Fallback para desenvolvimento
+      return 'http://localhost:3001/api';
     })(),
     timeout: 30000,
     retries: 3
