@@ -437,31 +437,54 @@ function aplicarFiltroData() {
         return;
     }
 
-    // Filtrar abastecimentos pelo período
-    abastecimentosFiltrados = abastecimentos.filter(abastecimento => {
-        const dataAbastecimento = new Date(abastecimento.data);
-        const dataAbastStr = dataAbastecimento.toISOString().split('T')[0];
+    // Mostrar loading para operação de filtro
+    AlertInfo.loadingData('Aplicando Filtro', 'Filtrando registros por período, aguarde...');
 
-        let dentroDoIntervalo = true;
+    // Usar setTimeout para permitir que o loading apareça antes do processamento
+    setTimeout(() => {
+        try {
+            // Filtrar abastecimentos pelo período
+            abastecimentosFiltrados = abastecimentos.filter(abastecimento => {
+                const dataAbastecimento = new Date(abastecimento.data);
+                const dataAbastStr = dataAbastecimento.toISOString().split('T')[0];
 
-        if (dataInicio) {
-            dentroDoIntervalo = dentroDoIntervalo && dataAbastStr >= dataInicio;
+                let dentroDoIntervalo = true;
+
+                if (dataInicio) {
+                    dentroDoIntervalo = dentroDoIntervalo && dataAbastStr >= dataInicio;
+                }
+
+                if (dataFim) {
+                    dentroDoIntervalo = dentroDoIntervalo && dataAbastStr <= dataFim;
+                }
+
+                return dentroDoIntervalo;
+            });
+
+            filtroAbastecimentoAtivo = true;
+
+            // Atualizar indicador de filtro
+            atualizarIndicadorFiltro(dataInicio, dataFim);
+
+            // Renderizar abastecimentos filtrados
+            renderAbastecimentosFiltrados();
+
+            // Fechar loading
+            AlertUtils.close();
+
+            // Toast de sucesso apenas se houver dados
+            if (abastecimentosFiltrados.length > 0) {
+                AlertToast.success(`Filtro aplicado! ${abastecimentosFiltrados.length} registro(s) encontrado(s).`);
+            } else {
+                AlertWarning.noData('Nenhum registro encontrado para o período selecionado.');
+            }
+
+        } catch (error) {
+            console.error('[FILTRO] Erro ao aplicar filtro:', error);
+            AlertUtils.close();
+            AlertError.show('Erro no Filtro', 'Ocorreu um erro ao aplicar o filtro. Tente novamente.');
         }
-
-        if (dataFim) {
-            dentroDoIntervalo = dentroDoIntervalo && dataAbastStr <= dataFim;
-        }
-
-        return dentroDoIntervalo;
-    });
-
-    filtroAbastecimentoAtivo = true;
-
-    // Atualizar indicador de filtro
-    atualizarIndicadorFiltro(dataInicio, dataFim);
-
-    // Renderizar abastecimentos filtrados
-    renderAbastecimentosFiltrados();
+    }, 100);
 }
 
 // Atualizar indicador visual do filtro ativo
@@ -634,10 +657,16 @@ async function saveCaminhao() {
     
     console.log('[APP] Objeto caminhão preparado:', caminhaoObj);
       try {
+        // Mostrar loading animado
+        const loadingInstance = AlertInfo.loadingData();
+        
         console.log('[APP] Enviando caminhão para API...');
         // Usar dbApi em vez de localStorageApi para garantir que estamos usando a API do backend
         const savedCaminhao = await window.dbApi.salvarCaminhao(caminhaoObj);
         console.log('[APP] Caminhão salvo com sucesso:', savedCaminhao);
+        
+        // Fechar loading
+        AlertUtils.close();
           // Atualizar array local
         if (isEdit) {
             const index = caminhoes.findIndex(c => c.id === caminhaoIdInput.value);
@@ -661,7 +690,13 @@ async function saveCaminhao() {
         // Fechar modal e limpar formulário
         const modal = bootstrap.Modal.getInstance(document.getElementById('addCaminhaoModal'));
         modal.hide();
-        resetCaminhaoForm();} catch (err) {
+        resetCaminhaoForm();
+    } catch (err) {
+        // Fechar loading em caso de erro
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
+        
         console.error('[APP] Erro ao salvar caminhão:', err);
         
         // Exibir mensagem de erro mais detalhada
@@ -775,10 +810,16 @@ async function saveAbastecimento() {
     };
     
     console.log('[APP] Objeto abastecimento preparado:', abastecimentoObj);    try {
+        // Mostrar loading animado
+        const loadingInstance = AlertInfo.loadingData();
+        
         console.log('[APP] Enviando abastecimento para API...');
         // Salvar usando dbApi para conectar ao backend
         const savedAbastecimento = await window.dbApi.salvarAbastecimento(abastecimentoObj);
         console.log('[APP] Abastecimento salvo com sucesso:', savedAbastecimento);
+        
+        // Fechar loading
+        AlertUtils.close();
           // Atualizar array local
         if (isEdit) {
             const index = abastecimentos.findIndex(a => a.id === abastecimentoIdInput.value);
@@ -801,7 +842,13 @@ async function saveAbastecimento() {
         // Fechar modal e limpar formulário
         const modal = bootstrap.Modal.getInstance(document.getElementById('addAbastecimentoModal'));
         modal.hide();
-        resetAbastecimentoForm();} catch (err) {
+        resetAbastecimentoForm();
+    } catch (err) {
+        // Fechar loading em caso de erro
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
+        
         console.error('[APP] Erro ao salvar abastecimento:', err);
         
         // Exibir mensagem de erro mais detalhada
@@ -937,6 +984,9 @@ async function showDeleteConfirmation(id, type) {
 async function confirmDelete(id, type) {
     
     try {
+        // Mostrar loading para operação de exclusão
+        const loadingInstance = AlertInfo.loadingData();
+        
         if (type === 'caminhao') {
             // Verificar se há abastecimentos associados a este caminhão
             const abastecimentosAssociados = abastecimentos.some(a => a.caminhaoId === id);
@@ -977,10 +1027,17 @@ async function confirmDelete(id, type) {
           // Atualizar dashboard
         updateDashboard();
         
+        // Fechar loading
+        AlertUtils.close();
+        
         // Exibir toast de sucesso
         const itemName = type === 'caminhao' ? 'Caminhão' : 'Abastecimento';
         AlertToast.success(`${itemName} excluído com sucesso!`);
     } catch (err) {
+        // Fechar loading em caso de erro
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
         console.error('Erro ao excluir item:', err);
         AlertError.show('Erro ao Excluir', 'Ocorreu um erro ao excluir o item. Por favor, tente novamente.');
     }
@@ -991,6 +1048,12 @@ async function clearAllData() {
     const result = await AlertConfirm.clearData();
     if (result.isConfirmed) {
         try {
+            // Mostrar loading para operação de limpeza
+            const loadingInstance = AlertInfo.loadingSystem(
+                'Removendo Todos os Dados',
+                'Limpando banco de dados e dados locais. Esta operação pode levar alguns instantes.'
+            );
+            
             // Limpar dados usando dbApi
             await window.dbApi.limparTodosDados();
               // Limpar arrays locais
@@ -1006,8 +1069,15 @@ async function clearAllData() {
             updateDashboard();
             populateCaminhaoSelects();
             
+            // Fechar loading
+            AlertUtils.close();
+            
             AlertSuccess.show('Dados Removidos', 'Todos os dados foram removidos com sucesso.');
         } catch (err) {
+            // Fechar loading em caso de erro
+            if (AlertUtils.isOpen()) {
+                AlertUtils.close();
+            }
             console.error('Erro ao limpar dados:', err);
             AlertError.show('Erro ao Limpar', 'Ocorreu um erro ao limpar os dados. Por favor, tente novamente.');
         }
@@ -1019,6 +1089,9 @@ async function testarApiCaminhao() {
     console.log('[TEST] Iniciando teste de API para caminhões');
     
     try {
+        // Mostrar loading para teste da API
+        const loadingInstance = AlertInfo.loadingData();
+        
         // Criar um caminhão de teste com dados aleatórios
         const randomNum = Math.floor(Math.random() * 10000);
         const testCaminhao = {
@@ -1047,6 +1120,9 @@ async function testarApiCaminhao() {
           const data = await response.json();
         console.log('[TEST] Resposta do servidor:', data);
         
+        // Fechar loading
+        AlertUtils.close();
+        
         // Atualizar a interface após o sucesso
         AlertSuccess.detailed(
             'Teste Realizado com Sucesso!',
@@ -1058,6 +1134,10 @@ async function testarApiCaminhao() {
         renderCaminhoes();
         
     } catch (error) {
+        // Fechar loading em caso de erro
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
         console.error('[TEST] Erro no teste da API:', error);
         AlertError.api(error);
     }
@@ -1068,6 +1148,9 @@ async function testarApiAbastecimento() {
     console.log('[TEST] Iniciando teste de API para abastecimentos');
     
     try {
+        // Mostrar loading para teste da API
+        const loadingInstance = AlertInfo.loadingData();
+        
         // Primeiro, precisamos obter um caminhão existente
         const caminhoes = await window.dbApi.buscarCaminhoes();
         
@@ -1115,7 +1198,11 @@ async function testarApiAbastecimento() {
         
         const data = await response.json();
         console.log('[TEST] Resposta do servidor:', data);
-          // Atualizar a interface após o sucesso
+        
+        // Fechar loading
+        AlertUtils.close();
+        
+        // Atualizar a interface após o sucesso
         AlertSuccess.detailed(
             'Teste Realizado com Sucesso!',
             `Abastecimento para o caminhão "${caminhao.placa}" foi criado no banco de dados.`
@@ -1127,6 +1214,10 @@ async function testarApiAbastecimento() {
         updateDashboard();
         
     } catch (error) {
+        // Fechar loading em caso de erro
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
         console.error('[TEST] Erro no teste da API:', error);
         AlertError.api(error);
     }
@@ -1137,6 +1228,9 @@ async function testarMapeamentoCampos() {
     console.log('🧪 [TESTE MAPEAMENTO] Iniciando teste de mapeamento de campos...');
     
     try {
+        // Mostrar loading para teste de mapeamento
+        const loadingInstance = AlertInfo.loadingData();
+        
         // 1. Verificar se há caminhões disponíveis
         console.log('[TESTE MAPEAMENTO] 1️⃣ Buscando caminhões...');
         const caminhoesDisponiveis = await window.dbApi.buscarCaminhoes();
@@ -1222,6 +1316,9 @@ async function testarMapeamentoCampos() {
           console.log('[TESTE MAPEAMENTO] 🎉 TESTE CONCLUÍDO!');
         console.log('[TESTE MAPEAMENTO] Resultado final:', resultadoFinal);
         
+        // Fechar loading
+        AlertUtils.close();
+        
         if (resultadoFinal.camposMapeadosResposta && resultadoFinal.camposMapeadosListagem) {
             AlertSuccess.detailed(
                 '✅ Teste de Mapeamento PASSOU!',
@@ -1237,6 +1334,11 @@ async function testarMapeamentoCampos() {
         return resultadoFinal;
         
     } catch (error) {
+        // Fechar loading em caso de erro
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
+        
         console.error('[TESTE MAPEAMENTO] ❌ ERRO NO TESTE:', error);
         AlertError.detailed(
             '❌ Teste de Mapeamento FALHOU!',
@@ -1325,6 +1427,9 @@ async function updateDashboard() {
     try {
         console.log('[DASHBOARD] Atualizando dashboard...');
         
+        // Mostrar loading para atualização do dashboard
+        AlertInfo.loadingData('Atualizando Dashboard', 'Processando dados e gerando gráficos, aguarde...');
+
         // Obter datas dos filtros do dashboard
         const dataInicio = document.getElementById('dashboardDataInicio').value;
         const dataFim = document.getElementById('dashboardDataFim').value;
@@ -1341,43 +1446,63 @@ async function updateDashboard() {
             
             document.getElementById('dashboardDataInicio').value = primeiroDia;
             document.getElementById('dashboardDataFim').value = ultimoDia;
+            // Fechar loading antes de reexecutar
+            AlertUtils.close();
             return updateDashboard(); // Reexecutar com as datas definidas
         }
         
-        // Filtrar abastecimentos pelo período
-        const inicio = new Date(dataInicio);
-        const fim = new Date(dataFim + 'T23:59:59');
-        
-        let abastecimentosFiltrados = abastecimentos.filter(a => {
-            const dataAbast = new Date(a.data);
-            return dataAbast >= inicio && dataAbast <= fim;
-        });
-        
-        // Filtrar por caminhão específico se selecionado
-        if (caminhaoId && caminhaoId !== 'todos') {
-            abastecimentosFiltrados = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhaoId);
-        }
-        
-        console.log('[DASHBOARD] Abastecimentos filtrados:', abastecimentosFiltrados.length);
-        
-        // Calcular estatísticas
-        const stats = calcularEstatisticas(abastecimentosFiltrados);
-        console.log('[DASHBOARD] Estatísticas calculadas:', stats);
-        
-        // Atualizar cards do dashboard
-        atualizarCards(stats);
-        
-        // Atualizar gráficos
-        if (typeof updateCharts === 'function') {
-            updateCharts();
-        } else {
-            console.warn('[DASHBOARD] Função updateCharts não disponível');
-        }
-        
-        console.log('[DASHBOARD] Dashboard atualizado com sucesso');
+        // Usar setTimeout para permitir que o loading apareça
+        setTimeout(async () => {
+            try {
+                // Filtrar abastecimentos pelo período
+                const inicio = new Date(dataInicio);
+                const fim = new Date(dataFim + 'T23:59:59');
+                
+                let abastecimentosFiltrados = abastecimentos.filter(a => {
+                    const dataAbast = new Date(a.data);
+                    return dataAbast >= inicio && dataAbast <= fim;
+                });
+                
+                // Filtrar por caminhão específico se selecionado
+                if (caminhaoId && caminhaoId !== 'todos') {
+                    abastecimentosFiltrados = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhaoId);
+                }
+                
+                console.log('[DASHBOARD] Abastecimentos filtrados:', abastecimentosFiltrados.length);
+                
+                // Calcular estatísticas
+                const stats = calcularEstatisticas(abastecimentosFiltrados);
+                console.log('[DASHBOARD] Estatísticas calculadas:', stats);
+                
+                // Atualizar cards do dashboard
+                atualizarCards(stats);
+                
+                // Atualizar gráficos
+                if (typeof updateCharts === 'function') {
+                    updateCharts();
+                } else {
+                    console.warn('[DASHBOARD] Função updateCharts não disponível');
+                }
+                
+                console.log('[DASHBOARD] Dashboard atualizado com sucesso');
+                
+                // Fechar loading
+                AlertUtils.close();
+                
+                // Toast de sucesso discreto
+                AlertToast.success(`Dashboard atualizado! ${abastecimentosFiltrados.length} registro(s) processado(s).`);
+                
+            } catch (error) {
+                console.error('[DASHBOARD] Erro ao processar dados:', error);
+                AlertUtils.close();
+                AlertError.show('Erro no Dashboard', 'Ocorreu um erro ao atualizar o dashboard. Tente novamente.');
+            }
+        }, 100);
         
     } catch (error) {
         console.error('[DASHBOARD] Erro ao atualizar dashboard:', error);
+        AlertUtils.close();
+        AlertError.show('Erro no Dashboard', 'Ocorreu um erro ao inicializar a atualização do dashboard.');
     }
 }
 
