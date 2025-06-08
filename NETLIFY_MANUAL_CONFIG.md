@@ -85,13 +85,13 @@ BACKEND_URL=https://controle-combustivel.onrender.com
 ### 2. Testar API
 Abra no navegador:
 ```
-https://SEU-SITE.netlify.app/api/health
+https://gestao-logistica-unidade-sc.netlify.app/api/health
 ```
 Deve retornar dados do backend (não 404)
 
 ### 3. Testar Frontend
 ```
-https://SEU-SITE.netlify.app/test-config.html
+https://gestao-logistica-unidade-sc.netlify.app/test-config.html
 ```
 Deve mostrar configurações carregadas
 
