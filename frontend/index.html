@@ -13,7 +13,6 @@
         // Configurar variável global para API
         window.API_BASE_URL = '/api';
     </script>
-    <script src="src/js/env-config.js"></script>
     <script src="src/js/config.js"></script>
 </head>
 <body>
@@ -499,7 +498,11 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>    <script src="src/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Carregar configuração de ambiente primeiro -->
+    <script src="src/js/env-config.js"></script>
+    <script src="src/js/api.js"></script>
     <script src="src/js/alerts.js"></script>
     <script src="src/js/data.js"></script>
     <script src="src/js/app.js"></script>    <script src="src/js/charts.js"></script>

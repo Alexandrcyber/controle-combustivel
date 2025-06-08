@@ -2,19 +2,36 @@
 const API_CONFIG = {
     // Obter URL base de configuração de ambiente ou usar fallback
     baseURL: (() => {
+        // Log para debug
+        console.log('[API CONFIG] Detectando ambiente:', {
+            hostname: window.location.hostname,
+            ENV_CONFIG: window.ENV_CONFIG,
+            ENV_API_BASE_URL: window.ENV_API_BASE_URL,
+            API_BASE_URL: window.API_BASE_URL
+        });
+        
         // 1. Primeiro, tentar usar configuração de ambiente
         if (window.ENV_CONFIG && window.ENV_CONFIG.API_BASE_URL) {
+            console.log('[API CONFIG] Usando ENV_CONFIG.API_BASE_URL:', window.ENV_CONFIG.API_BASE_URL);
             return window.ENV_CONFIG.API_BASE_URL;
         }
-        // 2. Tentar usar variável global
+        // 2. Tentar usar variável global atualizada
         if (window.ENV_API_BASE_URL) {
+            console.log('[API CONFIG] Usando ENV_API_BASE_URL:', window.ENV_API_BASE_URL);
             return window.ENV_API_BASE_URL;
         }
         // 3. Usar proxy local para desenvolvimento
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('[API CONFIG] Ambiente local detectado, usando /api');
             return '/api';
         }
-        // 4. Em produção, usar redirecionamento do Netlify
+        // 4. Se estiver em domínio Netlify, usar backend direto
+        if (window.location.hostname.includes('netlify.app')) {
+            console.log('[API CONFIG] Netlify detectado, usando backend direto');
+            return 'https://controle-combustivel.onrender.com/api';
+        }
+        // 5. Em produção, usar redirecionamento do Netlify
+        console.log('[API CONFIG] Fallback para redirecionamento /api');
         return '/api';
     })(),
     headers: {
