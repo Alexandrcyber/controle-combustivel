@@ -175,7 +175,8 @@
 
             <!-- Abastecimentos -->
             <div id="abastecimentoSection" style="display: none;">
-                <div class="card">                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Registro de Abastecimentos</h5>
                         <div>
                             <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addAbastecimentoModal">
@@ -184,9 +185,48 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">                            <table class="table table-striped table-hover" id="abastecimentoTable">
+                        <!-- Filtro de Período -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="card border-light bg-light">
+                                    <div class="card-body py-2">
+                                        <form id="filtroAbastecimentoForm" class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label for="filtroDataInicio" class="form-label small">Data Início</label>
+                                                <input type="date" class="form-control form-control-sm" id="filtroDataInicio">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="filtroDataFim" class="form-label small">Data Fim</label>
+                                                <input type="date" class="form-control form-control-sm" id="filtroDataFim">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="btn-group w-100" role="group">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" id="mesAtualBtn">Mês Atual</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="ultimosTrintaDiasBtn">Últimos 30 dias</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm" id="todosRegistrosBtn">Todos</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                    <i class="bi bi-search"></i> Filtrar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicador de Filtro Ativo -->
+                        <div id="indicadorFiltro" class="alert alert-info py-2 mb-3" style="display: none;">
+                            <small><i class="bi bi-info-circle"></i> Exibindo abastecimentos filtrados. <span id="textoFiltro"></span></small>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="abastecimentoTable">
                                 <thead>
-                                    <tr>                                        <th>Placa</th>
+                                    <tr>
+                                        <th>Placa</th>
                                         <th>Período</th>
                                         <th>Modelo</th>
                                         <th>Motorista</th>

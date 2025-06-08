@@ -147,6 +147,92 @@ const AlertInfo = {
                 Swal.showLoading();
             }
         });
+    },
+
+    // Alerta discreto de conexão (não-bloqueante)
+    connecting: (message = 'Conectando com o servidor...', details = 'Isso pode levar até um minuto. Você pode continuar navegando.') => {
+        return Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'info',
+            title: `🔄 ${message}`,
+            text: details,
+            showConfirmButton: false,
+            timer: 60000, // 1 minuto
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                // Adicionar animação de rotação ao ícone
+                const icon = toast.querySelector('.swal2-icon.swal2-info');
+                if (icon) {
+                    icon.style.animation = 'pulse 2s infinite';
+                }
+                
+                // Adicionar classe CSS para animação customizada
+                toast.style.cssText += `
+                    animation: slideInUp 0.5s ease-out;
+                    border-left: 4px solid #17a2b8;
+                    backdrop-filter: blur(5px);
+                    background: rgba(255, 255, 255, 0.95);
+                `;
+            },
+            customClass: {
+                popup: 'connection-toast'
+            }
+        });
+    },
+
+    // Alerta discreto de carregamento de dados (não-bloqueante)
+    loadingData: (message = 'Carregando dados...', details = 'Sincronizando informações do banco de dados. Isso pode levar alguns segundos.') => {
+        return Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'info',
+            title: `📊 ${message}`,
+            text: details,
+            showConfirmButton: false,
+            timer: 30000, // 30 segundos
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                // Adicionar animação de carregamento
+                const icon = toast.querySelector('.swal2-icon.swal2-info');
+                if (icon) {
+                    icon.style.animation = 'bounce 1.5s infinite';
+                }
+                
+                // Adicionar classe CSS para animação customizada
+                toast.style.cssText += `
+                    animation: slideInUp 0.5s ease-out;
+                    border-left: 4px solid #28a745;
+                    backdrop-filter: blur(5px);
+                    background: rgba(255, 255, 255, 0.95);
+                `;
+            },
+            customClass: {
+                popup: 'loading-data-toast'
+            }
+        });
+    },
+
+    // Alerta de reconexão bem-sucedida (discreto)
+    reconnected: (message = 'Conexão restabelecida!') => {
+        return Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'success',
+            title: `✅ ${message}`,
+            text: 'Sistema totalmente funcional.',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.style.cssText += `
+                    animation: slideInUp 0.5s ease-out;
+                    border-left: 4px solid #28a745;
+                    backdrop-filter: blur(5px);
+                    background: rgba(255, 255, 255, 0.95);
+                `;
+            }
+        });
     }
 };
 
@@ -285,5 +371,90 @@ window.customAlert = (message, type = 'info') => {
             return AlertInfo.show('Informação', message);
     }
 };
+
+// Adicionar CSS para animações personalizadas dos alertas discretos
+const addCustomCSS = () => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        /* Animações para alertas discretos */
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Estilos específicos para toasts de conexão */
+        .connection-toast {
+            box-shadow: 0 8px 32px rgba(0, 123, 191, 0.3) !important;
+            border-radius: 12px !important;
+            font-size: 14px !important;
+        }
+
+        .loading-data-toast {
+            box-shadow: 0 8px 32px rgba(40, 167, 69, 0.3) !important;
+            border-radius: 12px !important;
+            font-size: 14px !important;
+        }
+
+        /* Melhorar visual dos toasts bottom-end */
+        .swal2-container.swal2-bottom-end > .swal2-popup {
+            margin-bottom: 20px !important;
+            margin-right: 20px !important;
+            max-width: 350px !important;
+        }
+
+        /* Animação de loading customizada */
+        .custom-loading-spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+    `;
+    document.head.appendChild(styleElement);
+};
+
+// Adicionar CSS quando o script for carregado
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addCustomCSS);
+} else {
+    addCustomCSS();
+}
 
 console.log('✅ Sistema de alertas personalizados carregado com sucesso!');

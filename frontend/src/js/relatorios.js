@@ -17,6 +17,23 @@ function formatarMoeda(valor) {
     return numero.toFixed(2);
 }
 
+// Função para formatar quilometragem (sem decimais desnecessários)
+function formatarQuilometragem(valor) {
+    const numero = garantirNumero(valor, 0);
+    return Math.round(numero).toLocaleString('pt-BR');
+}
+
+// Função para formatar litros (apenas 1 casa decimal quando necessário, sem .00)
+function formatarLitros(valor) {
+    const numero = garantirNumero(valor, 0);
+    // Se for número inteiro, retorna sem decimais
+    if (numero % 1 === 0) {
+        return Math.round(numero).toString();
+    }
+    // Caso contrário, retorna com 1 casa decimal
+    return numero.toFixed(1);
+}
+
 function calcularSeguro(valor1, valor2, operacao = 'soma') {
     const num1 = garantirNumero(valor1, 0);
     const num2 = garantirNumero(valor2, 0);
@@ -260,7 +277,7 @@ async function gerarRelatorioConsumo() {
                         <td>${kmInicial.toLocaleString('pt-BR')}</td>
                         <td>${kmFinal.toLocaleString('pt-BR')}</td>
                         <td>${distancia.toLocaleString('pt-BR')}</td>
-                        <td>${formatarMoeda(litros)}</td>
+                        <td>${formatarLitros(litros)}</td>
                         <td>${consumo} km/l</td>
                         <td>R$ ${formatarMoeda(valorTotal)}</td>
                     </tr>
@@ -320,7 +337,7 @@ async function gerarRelatorioConsumo() {
             const valorTotal = getNumField(a, 'valor_total', 'valorTotal');
             
             const distancia = kmFinal - kmInicial;
-            const consumo = formatarMoeda(distancia / litros);
+            const consumo = formatarNumero(distancia / litros, 2);
             
             html += `
                 <tr>
@@ -329,7 +346,7 @@ async function gerarRelatorioConsumo() {
                     <td>${kmInicial.toLocaleString('pt-BR')}</td>
                     <td>${kmFinal.toLocaleString('pt-BR')}</td>
                     <td>${distancia.toLocaleString('pt-BR')}</td>
-                    <td>${formatarMoeda(litros)}</td>
+                    <td>${formatarLitros(litros)}</td>
                     <td>${consumo} km/l</td>
                     <td>R$ ${formatarMoeda(valorTotal)}</td>
                 </tr>
@@ -513,9 +530,9 @@ async function gerarRelatorioCustos() {
     Object.values(dadosPorCaminhao).forEach(d => {
         html += `            <tr>
                 <td>${d.placa} - ${d.modelo}</td>
-                <td>${formatarNumero(d.totalLitros, 2)}</td>
+                <td>${formatarLitros(d.totalLitros)}</td>
                 <td>R$ ${formatarMoeda(d.totalGasto)}</td>
-                <td>${d.totalKm.toLocaleString('pt-BR')}</td>
+                <td>${formatarQuilometragem(d.totalKm)}</td>
                 <td>R$ ${d.valorMedioLitro}</td>
                 <td>${d.mediaConsumo} km/l</td>
                 <td>R$ ${d.custoMedio}</td>
@@ -524,9 +541,9 @@ async function gerarRelatorioCustos() {
     });
     html += `            <tr class="table-success fw-bold">
                 <td>TOTAL GERAL</td>
-                <td>${formatarNumero(totalLitrosGeral, 2)}</td>
+                <td>${formatarLitros(totalLitrosGeral)}</td>
                 <td>R$ ${formatarMoeda(totalGastoGeral)}</td>
-                <td>${totalKmGeral.toLocaleString('pt-BR')}</td>
+                <td>${formatarQuilometragem(totalKmGeral)}</td>
                 <td>-</td>
                 <td>${consumoMedioGeral}</td>
                 <td>R$ ${custoPorKmGeral}</td>
@@ -789,9 +806,9 @@ function criarPlanilhaDashboard(wb, dados) {
         ['Métrica', 'Valor', 'Unidade'],
         ['Total de Caminhoes', Object.keys(dados.dadosPorCaminhao).length, 'veiculos'],
         ['Distancia Total', totais.totalKm.toLocaleString('pt-BR'), 'km'],
-        ['Combustível Total', formatarMoeda(totais.totalLitros), 'litros'],
+        ['Combustível Total', formatarLitros(totais.totalLitros), 'litros'],
         ['Gasto Total', `R$ ${formatarMoeda(totais.totalGasto)}`, 'reais'],
-        ['Consumo Médio Geral', formatarMoeda(totais.consumoMedio), 'km/l'],
+        ['Consumo Médio Geral', formatarNumero(totais.consumoMedio, 2), 'km/l'],
         ['Custo por Quilômetro', `R$ ${formatarMoeda(totais.custoPorKm)}`, 'reais/km'],
         ['Valor Médio do Litro', `R$ ${formatarMoeda(totais.valorMedioLitro)}`, 'reais/litro'],
         [''],
@@ -810,7 +827,7 @@ function criarPlanilhaDashboard(wb, dados) {
         const status = caminhao.mediaConsumo >= totais.consumoMedio ? 'Eficiente' : 'Atenção';
         XLSX.utils.sheet_add_aoa(ws, [
             [index + 1, `${caminhao.placa} - ${caminhao.modelo}`, 
-             formatarMoeda(caminhao.mediaConsumo), `R$ ${formatarMoeda(caminhao.custoMedio)}`, status]
+             formatarNumero(caminhao.mediaConsumo, 2), `R$ ${formatarMoeda(caminhao.custoMedio)}`, status]
         ], { origin: `A${linha}` });
         linha++;
     });
@@ -840,8 +857,8 @@ function criarPlanilhaResumoExecutivo(wb, dados) {
     Object.values(dados.dadosPorCaminhao).forEach(caminhao => {
         XLSX.utils.sheet_add_aoa(ws, [
             [caminhao.placa, caminhao.placa, caminhao.modelo, 
-             caminhao.totalKm, formatarMoeda(caminhao.totalLitros),
-             formatarMoeda(caminhao.totalGasto), formatarMoeda(caminhao.mediaConsumo),
+             formatarQuilometragem(caminhao.totalKm), formatarLitros(caminhao.totalLitros),
+             formatarMoeda(caminhao.totalGasto), formatarNumero(caminhao.mediaConsumo, 2),
              formatarMoeda(caminhao.custoMedio), formatarMoeda(caminhao.valorMedioLitro),
              caminhao.abastecimentos.length]
         ], { origin: `A${linha}` });
@@ -885,9 +902,9 @@ function criarPlanilhaDadosDetalhados(wb, dados) {
         
         XLSX.utils.sheet_add_aoa(ws, [
             [formatDate(abast.data), `${caminhao.placa} - ${caminhao.modelo}`, caminhao.placa,
-             abast.motorista, abast.kmInicial, abast.kmFinal, distancia,
-             formatarMoeda(abast.litros), formatarMoeda(abast.valorTotal), 
-             formatarMoeda(valorPorLitro), formatarMoeda(consumo)]
+             abast.motorista, formatarQuilometragem(abast.kmInicial), formatarQuilometragem(abast.kmFinal), formatarQuilometragem(distancia),
+             formatarLitros(abast.litros), formatarMoeda(abast.valorTotal), 
+             formatarMoeda(valorPorLitro), formatarNumero(consumo, 2)]
         ], { origin: `A${linha}` });
         linha++;
     });
@@ -912,9 +929,9 @@ function criarPlanilhaAnaliseCustos(wb, dados) {
     let linha = 4;
     analiseTemporalData.forEach(periodo => {
         XLSX.utils.sheet_add_aoa(ws, [
-            [periodo.periodo, periodo.abastecimentos, periodo.distancia,
-             formatarMoeda(periodo.combustivel), formatarMoeda(periodo.gasto),
-             formatarMoeda(periodo.consumoMedio), formatarMoeda(periodo.custoPorKm)]
+            [periodo.periodo, periodo.abastecimentos, formatarQuilometragem(periodo.distancia),
+             formatarLitros(periodo.combustivel), formatarMoeda(periodo.gasto),
+             formatarNumero(periodo.consumoMedio, 2), formatarMoeda(periodo.custoPorKm)]
         ], { origin: `A${linha}` });
         linha++;
     });
@@ -951,14 +968,14 @@ function criarPlanilhaIndicadores(wb, dados) {
         [''],
         ['Indicador', 'Valor Atual', 'Meta Sugerida', 'Status', 'Observação'],
         [''],
-        ['Consumo Médio Geral (km/l)', formatarMoeda(totais.consumoMedio), '12.0', 
+        ['Consumo Médio Geral (km/l)', formatarNumero(totais.consumoMedio, 2), '12.0', 
          totais.consumoMedio >= 12 ? 'OK' : 'Atenção', 
          totais.consumoMedio >= 12 ? 'Dentro da meta' : 'Abaixo da meta recomendada'],
         ['Custo por Quilômetro (R$/km)', formatarMoeda(totais.custoPorKm), '0.60',
          totais.custoPorKm <= 0.6 ? 'OK' : 'Atenção',
          totais.custoPorKm <= 0.6 ? 'Custo controlado' : 'Custo elevado'],
         ['Variacao Consumo Entre Veiculos (%)', 
-         calcularVariacaoConsumoformatarMoeda(dados.dadosPorCaminhao), '15.0',
+         formatarNumero(calcularVariacaoConsumo(dados.dadosPorCaminhao), 1), '15.0',
          calcularVariacaoConsumo(dados.dadosPorCaminhao) <= 15 ? 'OK' : 'Atenção',
          'Quanto menor, mais homogênea a frota'],
         [''],
@@ -974,7 +991,7 @@ function criarPlanilhaIndicadores(wb, dados) {
         
         XLSX.utils.sheet_add_aoa(ws, [
             [`${caminhao.placa} - ${caminhao.modelo}`, 
-             formatarMoeda(caminhao.mediaConsumo),
+             formatarNumero(caminhao.mediaConsumo, 2),
              `${variacaoConsumo > 0 ? '+' : ''}${formatarNumero(variacaoConsumo, 1)}%`,
              `R$ ${formatarMoeda(caminhao.custoMedio)}`,
              classificacao]
@@ -1131,8 +1148,8 @@ function criarCapaPdf(doc, dados, cores) {
       // Principais indicadores
     const items = [
         `Total Gasto: R$ ${dados.totais.gasto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-        `Total Consumido: ${dados.totais.consumo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} L`,
-        `Distancia Total: ${dados.totais.distancia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} km`,
+        `Total Consumido: ${formatarLitros(dados.totais.consumo)} L`,
+        `Distancia Total: ${formatarQuilometragem(dados.totais.distancia)} km`,
         `Media de Consumo: ${formatarNumero(dados.medias.consumo)} km/L`,
         `Custo por km: R$ ${formatarMoeda(dados.medias.custoPorKm)}`
     ];
@@ -1248,7 +1265,7 @@ function criarDashboardExecutivoPdf(doc, dados, cores) {    // Cabeçalho da pá
         dados.totais.consumo / dados.totalCaminhoes : 0;    
     const tendencias = [
         `Gasto medio por veiculo: R$ ${formatarMoeda(gastoPorVeiculo)}`,
-        `Consumo medio por veiculo: ${formatarMoeda(consumoPorVeiculo)} L`,
+        `Consumo medio por veiculo: ${formatarLitros(consumoPorVeiculo)}`,
         `Custo médio por litro: R$ ${((dados.totais.gasto && dados.totais.consumo > 0) ? 
             (dados.totais.gasto / dados.totais.consumo) : 0).toFixed(2)}`,
         `Quilometragem media por veiculo: R$ ${((dados.totais.distancia && dados.totalCaminhoes > 0) ? 
@@ -1325,8 +1342,8 @@ function criarIndicadoresPdf(doc, dados, cores) {
           doc.setTextColor(...cores.texto);
         doc.setFontSize(9);
         adicionarTextoPDF(doc, caminhao.placa, 15, yPos + 3);
-        adicionarTextoPDF(doc, formatarNumero(caminhao.totalLitros, 1), 55, yPos + 3);
-        adicionarTextoPDF(doc, formatarNumero(caminhao.totalKm, 1), 95, yPos + 3);
+        adicionarTextoPDF(doc, formatarLitros(caminhao.totalLitros), 55, yPos + 3);
+        adicionarTextoPDF(doc, formatarQuilometragem(caminhao.totalKm), 95, yPos + 3);
         adicionarTextoPDF(doc, formatarMoeda(eficiencia), 145, yPos + 3);
         
         // Status colorido
@@ -1418,10 +1435,10 @@ function criarAnaliseDetalhadaPdf(doc, dados, cores) {
         doc.setFontSize(10);
         
         // Dados do caminhão
-        const consumo = caminhao.totalKm > 0 ? formatarMoeda(caminhao.totalLitros / caminhao.totalKm * 100) : 0;
+        const consumo = caminhao.totalKm > 0 ? formatarNumero(caminhao.totalLitros / caminhao.totalKm * 100, 2) : 0;
         const custoPorKm = caminhao.totalKm > 0 ? formatarMoeda(caminhao.totalGasto / caminhao.totalKm) : 0;
-          adicionarTextoPDF(doc, `Quilometragem Total: ${formatarNumero(caminhao.totalKm, 0)} km`, 20, yPos);
-        adicionarTextoPDF(doc, `Combustivel Total: ${formatarNumero(caminhao.totalLitros, 0)} litros`, 110, yPos);
+          adicionarTextoPDF(doc, `Quilometragem Total: ${formatarQuilometragem(caminhao.totalKm)} km`, 20, yPos);
+        adicionarTextoPDF(doc, `Combustivel Total: ${formatarLitros(caminhao.totalLitros)} litros`, 110, yPos);
         yPos += 7;
         adicionarTextoPDF(doc, `Gasto Total: R$ ${formatarMoeda(caminhao.totalGasto)}`, 20, yPos);
         adicionarTextoPDF(doc, `Consumo: ${consumo} L/100km`, 110, yPos);
@@ -1471,7 +1488,7 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     yPos += 8;
     adicionarTextoPDF(doc, `Preco Medio do Litro: R$ ${formatarMoeda(totais.valorMedioLitro)}`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `Consumo Medio da Frota: ${formatarMoeda(totais.consumoMedio)} km/l`, 20, yPos);
+    adicionarTextoPDF(doc, `Consumo Medio da Frota: ${formatarNumero(totais.consumoMedio, 2)} km/l`, 20, yPos);
     
     yPos += 20;
       // Projeções
@@ -1491,9 +1508,9 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
     const gastoAnual = gastoMensal * 12;
     const litrosMensais = totais.totalLitros;
     const litrosAnuais = litrosMensais * 12;
-      adicionarTextoPDF(doc, `Projecao Mensal: R$ ${formatarMoeda(gastoMensal)} / ${formatarNumero(litrosMensais, 0)} litros`, 20, yPos);
+      adicionarTextoPDF(doc, `Projecao Mensal: R$ ${formatarMoeda(gastoMensal)} / ${formatarLitros(litrosMensais)} litros`, 20, yPos);
     yPos += 8;
-    adicionarTextoPDF(doc, `Projecao Anual: R$ ${formatarMoeda(gastoAnual)} / ${formatarNumero(litrosAnuais, 0)} litros`, 20, yPos);
+    adicionarTextoPDF(doc, `Projecao Anual: R$ ${formatarMoeda(gastoAnual)} / ${formatarLitros(litrosAnuais)} litros`, 20, yPos);
     yPos += 8;
     adicionarTextoPDF(doc, `Economia potencial com 10% de melhoria: R$ ${formatarMoeda(gastoAnual * 0.1)}/ano`, 20, yPos);
     
@@ -1554,7 +1571,7 @@ function criarDadosDetalhadosPdf(doc, dados, cores) {
         return [
             new Date(a.data).toLocaleDateString('pt-BR'),
             caminhao ? caminhao.placa : 'N/A',
-            `${formatarNumero(a.litros, 1)}L`,
+            `${formatarLitros(a.litros)}L`,
             `R$ ${formatarMoeda(a.valorTotal)}`,
             a.posto || 'N/A'
         ];
@@ -1697,7 +1714,9 @@ async function exportarPdfCustos() {
             totalKmGeral += d.totalKm;
         });
         const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
-        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';        // Criar PDF profissional
+        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';
+
+        // Criar PDF profissional
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
@@ -1796,7 +1815,7 @@ async function exportarPdfCustos() {
         doc.setFontSize(8);
         doc.setTextColor(...cores.cinzaEscuro);
         adicionarTextoPDF(doc, `Veiculos: ${Object.keys(dadosPorCaminhao).length}`, 22, yPos + 8);
-        adicionarTextoPDF(doc, `Combustivel: ${formatarNumero(totalLitrosGeral, 1)} L`, 22, yPos + 12);
+        adicionarTextoPDF(doc, `Combustivel: ${formatarLitros(totalLitrosGeral)} L`, 22, yPos + 12);
         adicionarTextoPDF(doc, `Consumo Medio: ${consumoMedioGeral} km/L`, 22, yPos + 16);
         
         // Card 2: Financeiro
@@ -1828,9 +1847,9 @@ async function exportarPdfCustos() {
         adicionarTextoPDF(doc, 'DESEMPENHO OPERACIONAL', 47.5 + (espacoCard * 2), yPos + 4, { align: 'center' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
-        doc.setTextColor(...cores.cinzaEscuro);        adicionarTextoPDF(doc, `Quilometragem total: ${totalKmGeral.toLocaleString('pt-BR')} km`, 22 + (espacoCard * 2), yPos + 8);
+        doc.setTextColor(...cores.cinzaEscuro);        adicionarTextoPDF(doc, `Quilometragem total: ${formatarQuilometragem(totalKmGeral)} km`, 22 + (espacoCard * 2), yPos + 8);
         const mediaKmPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? Math.round(totalKmGeral / Object.keys(dadosPorCaminhao).length) : 0;
-        adicionarTextoPDF(doc, `Media por veículo: ${mediaKmPorVeiculo} km`, 22 + (espacoCard * 2), yPos + 12);
+        adicionarTextoPDF(doc, `Media por veículo: ${formatarQuilometragem(mediaKmPorVeiculo)} km`, 22 + (espacoCard * 2), yPos + 12);
         const abastecimentosPeriodo = filtrados.length;
         adicionarTextoPDF(doc, `Abastecimentos: ${abastecimentosPeriodo}`, 22 + (espacoCard * 2), yPos + 16);
         
@@ -1934,7 +1953,7 @@ async function exportarPdfCustos() {
             // Valores com formatação condicional
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            adicionarTextoPDF(doc, formatarNumero(d.totalLitros, 1), 75, yPos + 4.5);
+            adicionarTextoPDF(doc, formatarLitros(d.totalLitros), 75, yPos + 4.5);
             
             // Cor baseada no gasto (verde para menor, vermelho para maior)
             const maiorGasto = Math.max(...dadosOrdenados.map(v => v.totalGasto));
@@ -1949,7 +1968,7 @@ async function exportarPdfCustos() {
             adicionarTextoPDF(doc, formatarMoeda(d.totalGasto), 98, yPos + 4.5);
             
             doc.setTextColor(...cores.cinzaEscuro);
-            adicionarTextoPDF(doc, d.totalKm.toLocaleString('pt-BR'), 123, yPos + 4.5);
+            adicionarTextoPDF(doc, formatarQuilometragem(d.totalKm), 123, yPos + 4.5);
             
             // Consumo com código de cores
             if (d.mediaConsumo >= 8) {

@@ -3,6 +3,10 @@ let caminhoes = [];
 let abastecimentos = [];
 let currentSection = 'dashboardSection';
 
+// Variáveis para controle de filtros de abastecimentos
+let filtroAbastecimentoAtivo = false;
+let abastecimentosFiltrados = [];
+
 // Disponibilizar dados globalmente para os relatórios
 window.caminhoes = caminhoes;
 window.abastecimentos = abastecimentos;
@@ -48,6 +52,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Renderizar dados iniciais
     renderCaminhoes();
     renderAbastecimentos();
+    
+    // Inicializar gráficos
+    if (typeof initCharts === 'function') {
+        initCharts();
+    }
+    
     updateDashboard();
     populateCaminhaoSelects();
 
@@ -79,13 +89,11 @@ async function verificarStatusAPI() {
     try {
         console.log('[APP] Verificando conexão com a API...');
         
-        // Mostrar loading se não for a primeira verificação e a API estava desconectada
+        // Mostrar alerta discreto de conexão se não for a primeira verificação e a API estava desconectada
         if (!isFirstConnection && window.apiWasDisconnected) {
-            AlertInfo.show(
-                'Conectando...',
-                'Tentando conectar com o servidor...',
-                false, // sem botão OK
-                0 // sem timeout
+            AlertInfo.connecting(
+                'Reconectando ao servidor...',
+                'Tentando restabelecer a conexão. Isso pode levar até um minuto. Você pode continuar navegando normalmente.'
             );
         }
         
@@ -99,9 +107,15 @@ async function verificarStatusAPI() {
         if (conexao) {
             console.log('[APP] API conectada com sucesso');
             
-            // Mostrar alerta de sucesso por 5 segundos na primeira conexão ou reconexão
+            // Mostrar alerta de sucesso discreto na primeira conexão ou reconexão
             if (isFirstConnection || window.apiWasDisconnected) {
-                AlertToast.success('API conectada com sucesso!');
+                if (window.apiWasDisconnected) {
+                    // Reconexão bem-sucedida
+                    AlertInfo.reconnected('Conexão restabelecida!');
+                } else {
+                    // Primeira conexão
+                    AlertToast.success('Sistema conectado e pronto para uso!');
+                }
                 window.apiWasDisconnected = false;
             }
             
@@ -111,7 +125,7 @@ async function verificarStatusAPI() {
             window.apiConnected = false;
             window.apiWasDisconnected = true;
             
-            // Mostrar animação de tentativa de conexão
+            // Mostrar animação de tentativa de conexão discreta
             showConnectionAttempt();
         }
     } catch (error) {
@@ -119,7 +133,7 @@ async function verificarStatusAPI() {
         window.apiConnected = false;
         window.apiWasDisconnected = true;
         
-        // Mostrar animação de tentativa de conexão
+        // Mostrar animação de tentativa de conexão discreta
         showConnectionAttempt();
     }
     
@@ -129,18 +143,18 @@ async function verificarStatusAPI() {
     setTimeout(verificarStatusAPI, 30000);
 }
 
-// Função para mostrar animação de tentativa de conexão
+// Função para mostrar animação de tentativa de conexão discreta
 function showConnectionAttempt() {
-    AlertInfo.show(
-        '🔄 Tentando Conectar',
-        'Estamos tentando se conectar com o servidor. Por favor, aguarde...',
-        false, // sem botão OK
-        8000 // fechar após 8 segundos
+    AlertInfo.connecting(
+        'Tentando conectar ao servidor...',
+        'Verificando conectividade. Isso pode demorar até um minuto. Você pode continuar usando o sistema normalmente.'
     );
 }
 
 // Carregar dados do localStorage
 async function loadDataFromLocalStorage() {
+    let loadingAlert = null;
+    
     try {
         console.log('[LOAD] Iniciando carregamento de dados...');
         
@@ -148,9 +162,23 @@ async function loadDataFromLocalStorage() {
         if (window.dbApi && typeof window.dbApi.buscarCaminhoes === 'function') {
             console.log('[LOAD] Usando window.dbApi para buscar dados...');
             
+            // Mostrar alerta discreto de carregamento de dados
+            loadingAlert = AlertInfo.loadingData(
+                'Carregando dados do sistema...',
+                'Sincronizando caminhões e abastecimentos do banco de dados. Aguarde alguns instantes.'
+            );
+            
             // Usar dbApi para buscar dados do backend
             caminhoes = await window.dbApi.buscarCaminhoes();
             abastecimentos = await window.dbApi.buscarAbastecimentos();
+            
+            // Fechar alerta de carregamento
+            if (AlertUtils.isOpen()) {
+                AlertUtils.close();
+            }
+            
+            // Mostrar toast de sucesso discreto
+            AlertToast.success(`Dados carregados: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
             
             console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
@@ -167,6 +195,9 @@ async function loadDataFromLocalStorage() {
             caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
             abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
             
+            // Mostrar toast informativo para fallback
+            AlertToast.info('Usando dados locais (modo offline)');
+            
             console.log('[LOAD] Dados carregados via localStorage:', {
                 caminhoes: caminhoes.length,
                 abastecimentos: abastecimentos.length
@@ -179,6 +210,11 @@ async function loadDataFromLocalStorage() {
         console.log(`✅ Carregamento concluído: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
     } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
+        
+        // Fechar alerta de carregamento se estiver aberto
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
         
         // Em caso de erro, tentar localStorage como última alternativa
         console.log('[LOAD] Tentando fallback para localStorage após erro...');
@@ -194,6 +230,9 @@ async function loadDataFromLocalStorage() {
                 abastecimentos: abastecimentos.length
             });
             
+            // Mostrar toast de aviso sobre fallback
+            AlertToast.warning('Conectividade limitada - usando dados locais');
+            
             // Atualizar referências globais
             updateGlobalReferences();
         } catch (fallbackError) {
@@ -203,6 +242,9 @@ async function loadDataFromLocalStorage() {
             caminhoes = [];
             abastecimentos = [];
             updateGlobalReferences();
+            
+            // Mostrar aviso sobre dados vazios
+            AlertToast.error('Não foi possível carregar os dados');
         }
         
         // Atualizar referências globais para os relatórios
@@ -311,64 +353,137 @@ function setupEventHandlers() {
         e.preventDefault();
         gerarRelatorioCustos();
     });
+    
+    // Configurar filtros de data para abastecimentos
+    configurarFiltrosAbastecimento();
 }
 
-// Atualizar dados do dashboard
-function updateDashboard() {
-    console.log('[DASHBOARD] Atualizando dashboard...', {
-        caminhoes: caminhoes.length,
-        abastecimentos: abastecimentos.length
-    });
-    
-    // Atualizar contadores
-    document.getElementById('totalCaminhoes').textContent = caminhoes.length;
-    
-    // Calcular abastecimentos do mês atual
-    const hoje = new Date();
-    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const abastecimentosMes = abastecimentos.filter(a => {
-        const dataAbastecimento = new Date(a.data);
-        return dataAbastecimento >= primeiroDiaMes;
-    });
-    
-    // Obter filtros do dashboard
-    const dataInicio = document.getElementById('dashboardDataInicio').value;
-    const dataFim = document.getElementById('dashboardDataFim').value;
-    const inicio = new Date(dataInicio);
-    const fim = new Date(dataFim + 'T23:59:59');
-    // Filtrar abastecimentos pelo período
-    const abastecimentosFiltrados = abastecimentos.filter(a => {
-        const dt = new Date(a.data);
-        return dt >= inicio && dt <= fim;
-    });
-    // Atualizar contadores usando dados filtrados
-    document.getElementById('totalAbastecimentos').textContent = abastecimentosFiltrados.length;    // Calcular média de consumo no período
-    let totalKmPeriodo = 0;
-    let totalLitrosPeriodo = 0;
-    abastecimentosFiltrados.forEach(a => {
-        // Suportar tanto camelCase quanto snake_case
-        const kmInicial = parseFloat(a.kmInicial || a.km_inicial || 0);
-        const kmFinal = parseFloat(a.kmFinal || a.km_final || 0);
-        const litros = parseFloat(a.litros || 0);
-        
-        totalKmPeriodo += (kmFinal - kmInicial);
-        totalLitrosPeriodo += litros;
-    });
-    const mediaConsumoPeriodo = totalLitrosPeriodo > 0 ? (totalKmPeriodo / totalLitrosPeriodo).toFixed(2) : '0.00';
-    document.getElementById('mediaConsumo').textContent = `${mediaConsumoPeriodo} km/l`;
+// ===== FUNÇÕES DE FILTRO DE ABASTECIMENTOS =====
 
-    // Calcular gasto total no período
-    let gastoPeriodo = 0;
-    abastecimentosFiltrados.forEach(a => { 
-        // Suportar tanto camelCase quanto snake_case
-        const valorTotal = parseFloat(a.valorTotal || a.valor_total || 0);
-        gastoPeriodo += valorTotal;
+// Configurar filtros de data para abastecimentos
+function configurarFiltrosAbastecimento() {
+    const filtroForm = document.getElementById('filtroAbastecimentoForm');
+    const dataInicioInput = document.getElementById('filtroDataInicio');
+    const dataFimInput = document.getElementById('filtroDataFim');
+    const mesAtualBtn = document.getElementById('mesAtualBtn');
+    const ultimosTrintaDiasBtn = document.getElementById('ultimosTrintaDiasBtn');
+    const todosRegistrosBtn = document.getElementById('todosRegistrosBtn');
+
+    // Definir mês atual como padrão
+    definirMesAtual();
+
+    // Event listeners para botões de período pré-definido
+    mesAtualBtn.addEventListener('click', definirMesAtual);
+    ultimosTrintaDiasBtn.addEventListener('click', definirUltimosTrintaDias);
+    todosRegistrosBtn.addEventListener('click', removerFiltros);
+
+    // Event listener para formulário de filtro
+    filtroForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        aplicarFiltroData();
     });
-    document.getElementById('gastoTotal').textContent = `R$ ${gastoPeriodo.toFixed(2)}`;// Atualizar gráficos
-    updateCharts();
+
+    // Event listeners para mudança automática nos campos de data
+    dataInicioInput.addEventListener('change', aplicarFiltroData);
+    dataFimInput.addEventListener('change', aplicarFiltroData);
+}
+
+// Definir período para mês atual
+function definirMesAtual() {
+    const agora = new Date();
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
+
+    document.getElementById('filtroDataInicio').value = inicioMes.toISOString().split('T')[0];
+    document.getElementById('filtroDataFim').value = fimMes.toISOString().split('T')[0];
     
-    // Mostrar alerta de sucesso
-    AlertToast.info('Dashboard atualizado com sucesso!');
+    aplicarFiltroData();
+}
+
+// Definir período para últimos 30 dias
+function definirUltimosTrintaDias() {
+    const hoje = new Date();
+    const trintaDiasAtras = new Date();
+    trintaDiasAtras.setDate(hoje.getDate() - 30);
+
+    document.getElementById('filtroDataInicio').value = trintaDiasAtras.toISOString().split('T')[0];
+    document.getElementById('filtroDataFim').value = hoje.toISOString().split('T')[0];
+    
+    aplicarFiltroData();
+}
+
+// Remover todos os filtros
+function removerFiltros() {
+    document.getElementById('filtroDataInicio').value = '';
+    document.getElementById('filtroDataFim').value = '';
+    
+    filtroAbastecimentoAtivo = false;
+    abastecimentosFiltrados = [];
+    
+    // Esconder indicador de filtro
+    document.getElementById('indicadorFiltro').style.display = 'none';
+    
+    // Renderizar todos os abastecimentos
+    renderAbastecimentos();
+}
+
+// Aplicar filtro de data
+function aplicarFiltroData() {
+    const dataInicio = document.getElementById('filtroDataInicio').value;
+    const dataFim = document.getElementById('filtroDataFim').value;
+
+    if (!dataInicio && !dataFim) {
+        removerFiltros();
+        return;
+    }
+
+    // Filtrar abastecimentos pelo período
+    abastecimentosFiltrados = abastecimentos.filter(abastecimento => {
+        const dataAbastecimento = new Date(abastecimento.data);
+        const dataAbastStr = dataAbastecimento.toISOString().split('T')[0];
+
+        let dentroDoIntervalo = true;
+
+        if (dataInicio) {
+            dentroDoIntervalo = dentroDoIntervalo && dataAbastStr >= dataInicio;
+        }
+
+        if (dataFim) {
+            dentroDoIntervalo = dentroDoIntervalo && dataAbastStr <= dataFim;
+        }
+
+        return dentroDoIntervalo;
+    });
+
+    filtroAbastecimentoAtivo = true;
+
+    // Atualizar indicador de filtro
+    atualizarIndicadorFiltro(dataInicio, dataFim);
+
+    // Renderizar abastecimentos filtrados
+    renderAbastecimentosFiltrados();
+}
+
+// Atualizar indicador visual do filtro ativo
+function atualizarIndicadorFiltro(dataInicio, dataFim) {
+    const indicador = document.getElementById('indicadorFiltro');
+    const textoFiltro = document.getElementById('textoFiltro');
+    
+    let texto = '';
+    if (dataInicio && dataFim) {
+        const inicio = new Date(dataInicio).toLocaleDateString('pt-BR');
+        const fim = new Date(dataFim).toLocaleDateString('pt-BR');
+        texto = `Período: ${inicio} a ${fim} (${abastecimentosFiltrados.length} registros)`;
+    } else if (dataInicio) {
+        const inicio = new Date(dataInicio).toLocaleDateString('pt-BR');
+        texto = `A partir de: ${inicio} (${abastecimentosFiltrados.length} registros)`;
+    } else if (dataFim) {
+        const fim = new Date(dataFim).toLocaleDateString('pt-BR');
+        texto = `Até: ${fim} (${abastecimentosFiltrados.length} registros)`;
+    }
+
+    textoFiltro.textContent = texto;
+    indicador.style.display = 'block';
 }
 
 // Renderizar tabela de caminhões
@@ -456,9 +571,9 @@ function renderAbastecimentos() {
             <td>${periodoText}</td>
             <td>${modeloCaminhao}</td>
             <td>${abastecimento.motorista}</td>
-            <td>${abastecimento.kmInicial.toLocaleString('pt-BR')}</td>
-            <td>${abastecimento.kmFinal.toLocaleString('pt-BR')}</td>
-            <td>${parseFloat(abastecimento.litros).toFixed(2)}</td>
+            <td>${formatarQuilometragem(abastecimento.kmInicial)}</td>
+            <td>${formatarQuilometragem(abastecimento.kmFinal)}</td>
+            <td>${formatarLitros(abastecimento.litros)}</td>
             <td>R$ ${parseFloat(abastecimento.valorLitro).toFixed(2)}</td>
             <td>R$ ${parseFloat(abastecimento.valorTotal).toFixed(2)}</td>
             <td>${consumo} km/l</td>
@@ -1134,4 +1249,211 @@ async function testarMapeamentoCampos() {
     }
 }
 
-// Manter as funções restantes do arquivo original (updateCharts, exportarRelatorioExcel, etc.)
+// Renderizar tabela de abastecimentos filtrados
+function renderAbastecimentosFiltrados() {
+    const tableBody = document.getElementById('abastecimentoTableBody');
+    tableBody.innerHTML = '';
+    
+    // Usar abastecimentos filtrados ou todos se não houver filtro ativo
+    const dadosParaRenderizar = filtroAbastecimentoAtivo ? abastecimentosFiltrados : abastecimentos;
+    
+    // Ordenar abastecimentos por data (mais recentes primeiro)
+    const sortedAbastecimentos = [...dadosParaRenderizar].sort((a, b) => {
+        return new Date(b.data) - new Date(a.data);
+    });
+    
+    sortedAbastecimentos.forEach(abastecimento => {
+        const row = document.createElement('tr');
+        // Encontrar o caminhão correspondente
+        const caminhao = caminhoes.find(c => c.id === abastecimento.caminhaoId);
+        const placaCaminhao = caminhao ? caminhao.placa : 'Desconhecido';
+        const modeloCaminhao = caminhao ? caminhao.modelo : 'Desconhecido';
+        
+        // Calcular consumo
+        const distancia = abastecimento.kmFinal - abastecimento.kmInicial;
+        const consumo = (distancia / abastecimento.litros).toFixed(2);
+        
+        // Formatar período, se existir
+        let periodoText = '';
+        if (abastecimento.periodoInicio && abastecimento.periodoFim) {
+            const inicio = new Date(abastecimento.periodoInicio).toLocaleDateString('pt-BR');
+            const fim = new Date(abastecimento.periodoFim).toLocaleDateString('pt-BR');
+            periodoText = `${inicio} a ${fim}`;
+        }
+        
+        row.innerHTML = `
+            <td>${placaCaminhao}</td>
+            <td>${periodoText}</td>
+            <td>${modeloCaminhao}</td>
+            <td>${abastecimento.motorista}</td>
+            <td>${formatarQuilometragem(abastecimento.kmInicial)}</td>
+            <td>${formatarQuilometragem(abastecimento.kmFinal)}</td>
+            <td>${formatarLitros(abastecimento.litros)}</td>
+            <td>R$ ${parseFloat(abastecimento.valorLitro).toFixed(2)}</td>
+            <td>R$ ${parseFloat(abastecimento.valorTotal).toFixed(2)}</td>
+            <td>${consumo} km/l</td>
+            <td class="action-buttons">
+                <button class="btn btn-sm btn-primary edit-abastecimento" data-id="${abastecimento.id}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-danger delete-abastecimento" data-id="${abastecimento.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+    
+    // Adicionar manipuladores de eventos para botões de edição e exclusão
+    document.querySelectorAll('.edit-abastecimento').forEach(button => {
+        button.addEventListener('click', () => editAbastecimento(button.getAttribute('data-id')));
+    });
+    
+    document.querySelectorAll('.delete-abastecimento').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = button.getAttribute('data-id');
+            showDeleteConfirmation(id, 'abastecimento');
+        });
+    });
+}
+
+// ===== FUNÇÃO DO DASHBOARD =====
+
+// Atualizar dados do dashboard
+async function updateDashboard() {
+    try {
+        console.log('[DASHBOARD] Atualizando dashboard...');
+        
+        // Obter datas dos filtros do dashboard
+        const dataInicio = document.getElementById('dashboardDataInicio').value;
+        const dataFim = document.getElementById('dashboardDataFim').value;
+        const caminhaoId = document.getElementById('dashboardCaminhaoSelect').value;
+        
+        console.log('[DASHBOARD] Filtros aplicados:', { dataInicio, dataFim, caminhaoId });
+        
+        // Validar se as datas estão definidas
+        if (!dataInicio || !dataFim) {
+            console.warn('[DASHBOARD] Datas não definidas, usando valores padrão');
+            const hoje = new Date();
+            const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+            const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
+            
+            document.getElementById('dashboardDataInicio').value = primeiroDia;
+            document.getElementById('dashboardDataFim').value = ultimoDia;
+            return updateDashboard(); // Reexecutar com as datas definidas
+        }
+        
+        // Filtrar abastecimentos pelo período
+        const inicio = new Date(dataInicio);
+        const fim = new Date(dataFim + 'T23:59:59');
+        
+        let abastecimentosFiltrados = abastecimentos.filter(a => {
+            const dataAbast = new Date(a.data);
+            return dataAbast >= inicio && dataAbast <= fim;
+        });
+        
+        // Filtrar por caminhão específico se selecionado
+        if (caminhaoId && caminhaoId !== 'todos') {
+            abastecimentosFiltrados = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhaoId);
+        }
+        
+        console.log('[DASHBOARD] Abastecimentos filtrados:', abastecimentosFiltrados.length);
+        
+        // Calcular estatísticas
+        const stats = calcularEstatisticas(abastecimentosFiltrados);
+        console.log('[DASHBOARD] Estatísticas calculadas:', stats);
+        
+        // Atualizar cards do dashboard
+        atualizarCards(stats);
+        
+        // Atualizar gráficos
+        if (typeof updateCharts === 'function') {
+            updateCharts();
+        } else {
+            console.warn('[DASHBOARD] Função updateCharts não disponível');
+        }
+        
+        console.log('[DASHBOARD] Dashboard atualizado com sucesso');
+        
+    } catch (error) {
+        console.error('[DASHBOARD] Erro ao atualizar dashboard:', error);
+    }
+}
+
+// Calcular estatísticas para o dashboard
+function calcularEstatisticas(abastecimentosFiltrados) {
+    // Estatísticas básicas
+    const totalCaminhoesAtivos = caminhoes.filter(c => c.status === 'ativo' || !c.status).length;
+    const totalAbastecimentos = abastecimentosFiltrados.length;
+    
+    // Calcular totais
+    let totalLitros = 0;
+    let totalGasto = 0;
+    let totalKm = 0;
+    
+    abastecimentosFiltrados.forEach(a => {
+        totalLitros += parseFloat(a.litros) || 0;
+        totalGasto += parseFloat(a.valorTotal) || 0;
+        const distancia = (parseFloat(a.kmFinal) || 0) - (parseFloat(a.kmInicial) || 0);
+        if (distancia > 0) {
+            totalKm += distancia;
+        }
+    });
+    
+    // Calcular média de consumo (km/l)
+    const mediaConsumo = totalLitros > 0 ? (totalKm / totalLitros) : 0;
+    
+    return {
+        totalCaminhoes: totalCaminhoesAtivos,
+        totalAbastecimentos,
+        totalLitros,
+        totalGasto,
+        totalKm,
+        mediaConsumo
+    };
+}
+
+// Atualizar cards do dashboard com as estatísticas
+function atualizarCards(stats) {
+    try {
+        // Card: Total Caminhões
+        const totalCaminhoesEl = document.getElementById('totalCaminhoes');
+        if (totalCaminhoesEl) {
+            totalCaminhoesEl.textContent = stats.totalCaminhoes;
+        }
+        
+        // Card: Total Abastecimentos
+        const totalAbastecimentosEl = document.getElementById('totalAbastecimentos');
+        if (totalAbastecimentosEl) {
+            totalAbastecimentosEl.textContent = stats.totalAbastecimentos;
+        }
+        
+        // Card: Média de Consumo
+        const mediaConsumoEl = document.getElementById('mediaConsumo');
+        if (mediaConsumoEl) {
+            const consumoFormatado = stats.mediaConsumo > 0 ? 
+                `${stats.mediaConsumo.toFixed(2)} km/l` : '0 km/l';
+            mediaConsumoEl.textContent = consumoFormatado;
+        }
+        
+        // Card: Gasto Total
+        const gastoTotalEl = document.getElementById('gastoTotal');
+        if (gastoTotalEl) {
+            const gastoFormatado = stats.totalGasto > 0 ? 
+                `R$ ${stats.totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
+                'R$ 0,00';
+            gastoTotalEl.textContent = gastoFormatado;
+        }
+        
+        console.log('[DASHBOARD] Cards atualizados:', {
+            caminhoes: stats.totalCaminhoes,
+            abastecimentos: stats.totalAbastecimentos,
+            consumo: stats.mediaConsumo.toFixed(2),
+            gasto: stats.totalGasto.toFixed(2)
+        });
+        
+    } catch (error) {
+        console.error('[DASHBOARD] Erro ao atualizar cards:', error);
+    }
+}
