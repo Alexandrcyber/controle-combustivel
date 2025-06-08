@@ -3,7 +3,10 @@
  * Este arquivo carrega as variáveis de ambiente e define configurações padrão
  */
 
-require('dotenv').config();
+// Só carrega dotenv se as variáveis não estiverem já definidas (para Render)
+if (!process.env.NODE_ENV && !process.env.RENDER) {
+  require('dotenv').config();
+}
 
 const config = {
   // Ambiente
