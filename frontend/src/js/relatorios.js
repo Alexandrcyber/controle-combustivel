@@ -162,7 +162,7 @@ async function gerarRelatorioConsumo() {
     // let totalGasto = 0;    // Calcular consumo médio e outros indicadores
     Object.values(dadosPorCaminhao).forEach(dadosCaminhao => {
         dadosCaminhao.mediaConsumo = dadosCaminhao.totalLitros > 0 ? 
-            formatarNumero(dadosCaminhao.totalKm / dadosCaminhao.totalLitros, 2) : 'N/A';
+            formatarNumero(dadosCaminhao.totalKm / dadosCaminhao.totalLitros, 1) : 'N/A';
         dadosCaminhao.custoMedio = dadosCaminhao.totalKm > 0 ? 
             formatarMoeda(dadosCaminhao.totalGasto / dadosCaminhao.totalKm) : 'N/A';
             
@@ -197,7 +197,7 @@ async function gerarRelatorioConsumo() {
             <tr>
                 <td>${dados.placa} - ${dados.modelo}</td>
                 <td>${dados.totalKm.toLocaleString('pt-BR')}</td>
-                <td>${formatarNumero(dados.totalLitros, 2)}</td>
+                <td>${formatarNumero(dados.totalLitros, 1)}</td>
                 <td>${dados.mediaConsumo}</td>
                 <td>R$ ${formatarMoeda(dados.totalGasto)}</td>
                 <td>R$ ${dados.custoMedio}</td>
@@ -205,13 +205,13 @@ async function gerarRelatorioConsumo() {
         `;
     });
       // Adicionar linha de totais
-    const consumoMedioGeral = totalConsumo > 0 ? formatarNumero(totalDistancia / totalConsumo, 2) : 'N/A';
+    const consumoMedioGeral = totalConsumo > 0 ? formatarNumero(totalDistancia / totalConsumo, 1) : 'N/A';
     const custoPorKmGeral = totalDistancia > 0 ? formatarMoeda(totalGasto / totalDistancia) : 'N/A';
     
     html += `        <tr class="table-success fw-bold">
             <td>TOTAL GERAL</td>
             <td>${totalDistancia.toLocaleString('pt-BR')}</td>
-            <td>${formatarNumero(totalConsumo, 2)}</td>
+            <td>${formatarNumero(totalConsumo, 1)}</td>
             <td>${consumoMedioGeral}</td>
             <td>R$ ${formatarMoeda(totalGasto)}</td>
             <td>R$ ${custoPorKmGeral}</td>
@@ -224,78 +224,8 @@ async function gerarRelatorioConsumo() {
             </table>
         </div>
     `;
-      // Adicionar detalhamento por caminhão se houver mais de um
-    if (Object.keys(dadosPorCaminhao).length > 1) {
-        // Criar tabela de detalhamento para cada caminhão
-        html += `<div class="accordion mb-4" id="detalhamentoCaminhoes">`;
-        
-        Object.values(dadosPorCaminhao).forEach((dados, index) => {
-            html += `
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${dados.id}">
-                            ${dados.placa} - ${dados.modelo} (${dados.abastecimentos.length} abastecimentos)
-                        </button>
-                    </h2>
-                    <div id="collapse${dados.id}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" data-bs-parent="#detalhamentoCaminhoes">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Data</th>
-                                            <th>Motorista</th>
-                                            <th>Km Inicial</th>
-                                            <th>Km Final</th>
-                                            <th>Distância</th>
-                                            <th>Litros</th>
-                                            <th>Consumo</th>
-                                            <th>Valor Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-            `;
-            
-            // Ordenar abastecimentos por data (mais recentes primeiro)
-            const abastecimentosOrdenados = [...dados.abastecimentos].sort((a, b) => {
-                return new Date(b.data) - new Date(a.data);
-            });
-            
-            abastecimentosOrdenados.forEach(a => {
-                const kmInicial = getNumField(a, 'km_inicial', 'kmInicial');
-                const kmFinal = getNumField(a, 'km_final', 'kmFinal');
-                const litros = getNumField(a, 'litros', 'litros');
-                const valorTotal = getNumField(a, 'valor_total', 'valorTotal');
-                
-                const distancia = kmFinal - kmInicial;
-                const consumo = formatarNumero(distancia / litros, 2);
-                
-                html += `
-                    <tr>
-                        <td>${formatDate(a.data)}</td>
-                        <td>${a.motorista}</td>
-                        <td>${kmInicial.toLocaleString('pt-BR')}</td>
-                        <td>${kmFinal.toLocaleString('pt-BR')}</td>
-                        <td>${distancia.toLocaleString('pt-BR')}</td>
-                        <td>${formatarLitros(litros)}</td>
-                        <td>${consumo} km/l</td>
-                        <td>R$ ${formatarMoeda(valorTotal)}</td>
-                    </tr>
-                `;
-            });
-            
-            html += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-    } else if (Object.keys(dadosPorCaminhao).length === 1) {
+    
+    if (Object.keys(dadosPorCaminhao).length === 1) {
         // Se for apenas um caminhão, mostrar gráfico de evolução do consumo
         const dadosCaminhao = Object.values(dadosPorCaminhao)[0];
         
@@ -306,57 +236,7 @@ async function gerarRelatorioConsumo() {
                     <canvas id="graficoEvolucaoConsumo"></canvas>
                 </div>
             </div>
-            
-            <div class="table-responsive mb-4">
-                <h5>Detalhamento dos Abastecimentos</h5>
-                <table class="table table-striped table-bordered table-sm">
-                    <thead class="table-primary">
-                        <tr>
-                            <th>Data</th>
-                            <th>Motorista</th>
-                            <th>Km Inicial</th>
-                            <th>Km Final</th>
-                            <th>Distância</th>
-                            <th>Litros</th>
-                            <th>Consumo</th>
-                            <th>Valor Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
         `;
-        
-        // Ordenar abastecimentos por data (mais recentes primeiro)
-        const abastecimentosOrdenados = [...dadosCaminhao.abastecimentos].sort((a, b) => {
-            return new Date(b.data) - new Date(a.data);
-        });
-        
-        abastecimentosOrdenados.forEach(a => {
-            const kmInicial = getNumField(a, 'km_inicial', 'kmInicial');
-            const kmFinal = getNumField(a, 'km_final', 'kmFinal');
-            const litros = getNumField(a, 'litros', 'litros');
-            const valorTotal = getNumField(a, 'valor_total', 'valorTotal');
-            
-            const distancia = kmFinal - kmInicial;
-            const consumo = formatarNumero(distancia / litros, 2);
-            
-            html += `
-                <tr>
-                    <td>${formatDate(a.data)}</td>
-                    <td>${a.motorista}</td>
-                    <td>${kmInicial.toLocaleString('pt-BR')}</td>
-                    <td>${kmFinal.toLocaleString('pt-BR')}</td>
-                    <td>${distancia.toLocaleString('pt-BR')}</td>
-                    <td>${formatarLitros(litros)}</td>
-                    <td>${consumo} km/l</td>
-                    <td>R$ ${formatarMoeda(valorTotal)}</td>
-                </tr>
-            `;
-        });
-        
-        html += `
-                    </tbody>
-                </table>
-            </div>        `;
     }
     
     console.log('📋 HTML gerado:', html.substring(0, 500) + '...');
@@ -499,14 +379,14 @@ async function gerarRelatorioCustos() {
     });    // Calcular totais e indicadores
     let totalLitrosGeral = 0, totalGastoGeral = 0, totalKmGeral = 0;
     Object.values(dadosPorCaminhao).forEach(d => {
-        d.mediaConsumo = d.totalLitros > 0 ? formatarNumero(d.totalKm / d.totalLitros, 2) : 'N/A';
+        d.mediaConsumo = d.totalLitros > 0 ? formatarNumero(d.totalKm / d.totalLitros, 1) : 'N/A';
         d.custoMedio = d.totalKm > 0 ? formatarMoeda(d.totalGasto / d.totalKm) : 'N/A';
         d.valorMedioLitro = d.totalLitros > 0 ? formatarMoeda(d.totalGasto / d.totalLitros) : 'N/A';
         totalLitrosGeral += d.totalLitros;
         totalGastoGeral += d.totalGasto;
         totalKmGeral += d.totalKm;
     });
-    const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
+    const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 1) : 'N/A';
     const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';
 
     // Montar HTML de resultado

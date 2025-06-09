@@ -10,10 +10,12 @@ const config = require('../config');
 
 const { testConnection, initDatabase } = require('./database');
 const { runMigrations } = require('./migrations');
+const { createDefaultAdmin } = require('./controllers/authController');
 
 // Importar rotas
 const caminhoesRoutes = require('./routes/caminhoes');
 const abastecimentosRoutes = require('./routes/abastecimentos');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 // Configuração da porta - Render requer usar process.env.PORT
@@ -45,6 +47,7 @@ if (config.debug) {
 }
 
 // Rotas da API
+app.use('/api/auth', authRoutes);
 app.use('/api/caminhoes', caminhoesRoutes);
 app.use('/api/abastecimentos', abastecimentosRoutes);
 
@@ -113,6 +116,10 @@ async function startServer() {
         // Executar migrações pendentes
         console.log('🔄 Verificando migrações...');
         await runMigrations();
+        
+        // Criar usuário admin padrão
+        console.log('👤 Criando usuário admin padrão...');
+        await createDefaultAdmin();
         
         // Iniciar servidor
         const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : config.backend.host;

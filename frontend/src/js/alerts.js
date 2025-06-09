@@ -333,6 +333,41 @@ const AlertConfirm = {
                 confirmButton: 'btn btn-danger me-2'
             }
         });
+    },
+    
+    // Confirmação de exclusão de caminhão com abastecimentos
+    deleteWithAbastecimentos: () => {
+        return Swal.fire({
+            ...defaultConfig,
+            icon: 'warning',
+            title: '⚠️ Caminhão Possui Abastecimentos',
+            html: `
+                <div style="text-align: left; padding: 10px;">
+                    <p style="margin-bottom: 15px; color: #6c757d;">
+                        <strong>Este caminhão possui abastecimentos registrados.</strong>
+                    </p>
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin-bottom: 15px;">
+                        <p style="margin: 0; color: #856404;">
+                            <i class="bi bi-exclamation-triangle-fill" style="color: #fd7e14; margin-right: 8px;"></i>
+                            <strong>Atenção:</strong> A exclusão removerá também <strong>todos os abastecimentos associados</strong> a este caminhão.
+                        </p>
+                    </div>
+                    <p style="margin: 0; color: #6c757d;">
+                        <i class="bi bi-info-circle-fill" style="color: #0dcaf0; margin-right: 8px;"></i>
+                        Esta ação <strong>não pode ser desfeita</strong>. Deseja continuar?
+                    </p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir tudo',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                ...defaultConfig.customClass,
+                confirmButton: 'btn btn-danger me-2',
+                popup: 'swal2-warning-popup'
+            },
+            width: '480px'
+        });
     }
 };
 

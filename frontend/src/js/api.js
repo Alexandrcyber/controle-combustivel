@@ -42,25 +42,48 @@ const API_CONFIG = {
 // Imprimir a URL da API para depuração
 console.log('[API] URL base da API configurada para:', API_CONFIG.baseURL);
 
+// Função auxiliar para fazer requisições com autenticação
+async function authenticatedRequest(url, options = {}) {
+    // Verificar se o sistema de autenticação está disponível
+    if (window.authManager && window.authManager.isAuthenticated()) {
+        return await window.authManager.authenticatedFetch(url, options);
+    } else {
+        // Fallback: fazer requisição normal se autenticação não estiver disponível
+        return await fetch(url, options);
+    }
+}
+
 // API para comunicação com o backend
 window.apiClient = {
     // Função auxiliar para fazer requisições
     async request(endpoint, options = {}) {
         try {
             const url = `${API_CONFIG.baseURL}${endpoint}`;
-            const config = {
-                ...options,
-                headers: {
-                    ...API_CONFIG.headers,
-                    ...options.headers
-                }
-            };
+            
+            // Usar requisição autenticada se disponível
+            let response;
+            if (window.authManager && window.authManager.isAuthenticated()) {
+                response = await window.authManager.authenticatedFetch(url, {
+                    ...options,
+                    headers: {
+                        ...API_CONFIG.headers,
+                        ...options.headers
+                    }
+                });
+            } else {
+                const config = {
+                    ...options,
+                    headers: {
+                        ...API_CONFIG.headers,
+                        ...options.headers
+                    }
+                };
+                response = await fetch(url, config);
+            }
 
             // Log detalhado para depuração
             console.log(`[API REQUEST] ${options.method || 'GET'} ${url}`, 
                         options.body ? JSON.parse(options.body) : '');
-
-            const response = await fetch(url, config);
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));

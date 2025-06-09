@@ -96,6 +96,56 @@ const migrations = [
                 CREATE INDEX IF NOT EXISTS idx_documentos_vencimento ON documentos(data_vencimento);
             `);
         }
+    },
+    {
+        version: '1.4.0',
+        description: 'Criação da tabela de usuários para autenticação',
+        up: async () => {
+            console.log('🔄 Aplicando migração 1.4.0 - Tabela de usuários...');
+            
+            // Criar tabela de usuários
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id VARCHAR(50) PRIMARY KEY,
+                    nome VARCHAR(100) NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    senha VARCHAR(255) NOT NULL,
+                    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+                    ativo BOOLEAN DEFAULT true,
+                    ultimo_login TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+            
+            // Criar índices para a tabela de usuários
+            await pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+            `);
+            
+            await pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_usuarios_role ON usuarios(role);
+            `);
+            
+            // Criar trigger para updated_at
+            await pool.query(`
+                CREATE OR REPLACE FUNCTION update_usuarios_updated_at()
+                RETURNS TRIGGER AS $$
+                BEGIN
+                    NEW.updated_at = CURRENT_TIMESTAMP;
+                    RETURN NEW;
+                END;
+                $$ language 'plpgsql';
+            `);
+            
+            await pool.query(`
+                DROP TRIGGER IF EXISTS trigger_usuarios_updated_at ON usuarios;
+                CREATE TRIGGER trigger_usuarios_updated_at 
+                    BEFORE UPDATE ON usuarios 
+                    FOR EACH ROW 
+                    EXECUTE PROCEDURE update_usuarios_updated_at();
+            `);
+        }
     }
 ];
 

@@ -8,13 +8,16 @@ const {
     excluirCaminhao,
     listarCaminhoesAtivos
 } = require('../controllers/caminhoesController');
+const { authenticateToken, requireAdmin, optionalAuth } = require('../controllers/authController');
 
-// Rotas para caminhões
-router.get('/', listarCaminhoes);
-router.get('/ativos', listarCaminhoesAtivos);
-router.get('/:id', buscarCaminhaoPorId);
-router.post('/', criarCaminhao);
-router.put('/:id', atualizarCaminhao);
-router.delete('/:id', excluirCaminhao);
+// Rotas públicas (apenas visualização)
+router.get('/', optionalAuth, listarCaminhoes);
+router.get('/ativos', optionalAuth, listarCaminhoesAtivos);
+router.get('/:id', optionalAuth, buscarCaminhaoPorId);
+
+// Rotas protegidas (administrativas)
+router.post('/', authenticateToken, requireAdmin, criarCaminhao);
+router.put('/:id', authenticateToken, requireAdmin, atualizarCaminhao);
+router.delete('/:id', authenticateToken, requireAdmin, excluirCaminhao);
 
 module.exports = router;

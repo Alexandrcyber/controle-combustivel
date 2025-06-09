@@ -9,14 +9,17 @@ const {
     relatorioConsumo,
     relatorioCustos
 } = require('../controllers/abastecimentosController');
+const { authenticateToken, requireAdmin, optionalAuth } = require('../controllers/authController');
 
-// Rotas para abastecimentos
-router.get('/', listarAbastecimentos);
-router.get('/relatorio/consumo', relatorioConsumo);
-router.get('/relatorio/custos', relatorioCustos);
-router.get('/:id', buscarAbastecimentoPorId);
-router.post('/', criarAbastecimento);
-router.put('/:id', atualizarAbastecimento);
-router.delete('/:id', excluirAbastecimento);
+// Rotas públicas (apenas visualização)
+router.get('/', optionalAuth, listarAbastecimentos);
+router.get('/relatorio/consumo', optionalAuth, relatorioConsumo);
+router.get('/relatorio/custos', optionalAuth, relatorioCustos);
+router.get('/:id', optionalAuth, buscarAbastecimentoPorId);
+
+// Rotas protegidas (administrativas)
+router.post('/', authenticateToken, requireAdmin, criarAbastecimento);
+router.put('/:id', authenticateToken, requireAdmin, atualizarAbastecimento);
+router.delete('/:id', authenticateToken, requireAdmin, excluirAbastecimento);
 
 module.exports = router;

@@ -11,12 +11,34 @@ let abastecimentosFiltrados = [];
 window.caminhoes = caminhoes;
 window.abastecimentos = abastecimentos;
 
+// Função para aguardar sistema de autenticação estar pronto
+async function waitForAuth() {
+    let attempts = 0;
+    const maxAttempts = 50; // 5 segundos máximo
+    
+    while (attempts < maxAttempts) {
+        if (window.authManager) {
+            console.log('✅ Sistema de autenticação carregado');
+            return true;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    
+    console.warn('⚠️ Sistema de autenticação não carregou, continuando sem autenticação');
+    return false;
+}
+
 // Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Iniciando aplicação do Controle de Combustível');
     
     // Aguardar um pouco para garantir que todos os scripts sejam carregados
     await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Aguardar sistema de autenticação estar pronto
+    await waitForAuth();
     
     // Verificar se window.dbApi está disponível
     if (!window.dbApi) {
@@ -76,6 +98,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Após inicialização, exibir dashboard automaticamente
     if (currentSection === 'dashboardSection') {
         updateDashboard();
+    }
+    
+    // Aplicar visibilidade padrão para usuários não autenticados
+    // Se o sistema de auth não carregou, aplicar visibilidade de convidado
+    if (!window.authManager || !window.authManager.isAuthenticated()) {
+        if (window.applyRoleVisibility) {
+            window.applyRoleVisibility('guest');
+        }
+        
+        // Garantir que o botão de login esteja visível
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+            loginBtn.style.display = 'block';
+        }
+        
+        // Garantir que o menu do usuário esteja oculto
+        const userMenu = document.getElementById('userMenu');
+        if (userMenu) {
+            userMenu.style.display = 'none';
+        }
     }
     
     console.log('Aplicação inicializada com sucesso');
@@ -339,7 +381,12 @@ function setupEventHandlers() {
     document.getElementById('valorLitro').addEventListener('input', calcularValorTotal);
     
     // Manipulador para confirmação de exclusão
-    document.getElementById('confirmDelete').addEventListener('click', confirmDelete);    // Manipuladores para exportação
+    document.getElementById('confirmDelete').addEventListener('click', confirmDelete);
+
+    // Event listeners para limpeza de backdrop dos modais
+    setupModalCleanupListeners();
+
+    // Manipuladores para exportação
     document.getElementById('exportarPdfCompleto').addEventListener('click', exportarPdfCompleto);
     document.getElementById('exportarPdf').addEventListener('click', exportarPdfCustos);
     
@@ -356,6 +403,35 @@ function setupEventHandlers() {
     
     // Configurar filtros de data para abastecimentos
     configurarFiltrosAbastecimento();
+}
+
+// Configurar event listeners para limpeza de backdrop dos modais
+function setupModalCleanupListeners() {
+    // Modal de caminhão
+    const addCaminhaoModal = document.getElementById('addCaminhaoModal');
+    if (addCaminhaoModal) {
+        addCaminhaoModal.addEventListener('hidden.bs.modal', () => {
+            AuthManager.cleanupModalBackdropStatic();
+            resetCaminhaoForm();
+        });
+    }
+
+    // Modal de abastecimento  
+    const addAbastecimentoModal = document.getElementById('addAbastecimentoModal');
+    if (addAbastecimentoModal) {
+        addAbastecimentoModal.addEventListener('hidden.bs.modal', () => {
+            AuthManager.cleanupModalBackdropStatic();
+            resetAbastecimentoForm();
+        });
+    }
+
+    // Modal de confirmação de exclusão
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    if (deleteConfirmModal) {
+        deleteConfirmModal.addEventListener('hidden.bs.modal', () => {
+            AuthManager.cleanupModalBackdropStatic();
+        });
+    }
 }
 
 // ===== FUNÇÕES DE FILTRO DE ABASTECIMENTOS =====
@@ -535,7 +611,7 @@ function renderCaminhoes() {
             <td>${caminhao.capacidade}</td>
             <td>${mediaConsumo}</td>
             <td>${caminhao.motorista || 'Não atribuído'}</td>
-            <td class="action-buttons">
+            <td class="action-buttons admin-only">
                 <button class="btn btn-sm btn-primary edit-caminhao" data-id="${caminhao.id}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -600,7 +676,7 @@ function renderAbastecimentos() {
             <td>R$ ${parseFloat(abastecimento.valorLitro).toFixed(2)}</td>
             <td>R$ ${parseFloat(abastecimento.valorTotal).toFixed(2)}</td>
             <td>${consumo} km/l</td>
-            <td class="action-buttons">
+            <td class="action-buttons admin-only">
                 <button class="btn btn-sm btn-primary edit-abastecimento" data-id="${abastecimento.id}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -676,7 +752,7 @@ async function saveCaminhao() {
         } else {
             caminhoes.push(savedCaminhao);
         }
-          // Atualizar referências globais para os relatórios
+         
         updateGlobalReferences();
         
         // Atualizar interface
@@ -687,10 +763,8 @@ async function saveCaminhao() {
         // Exibir toast de sucesso
         AlertToast.success(isEdit ? 'Caminhão atualizado com sucesso!' : 'Caminhão cadastrado com sucesso!');
         
-        // Fechar modal e limpar formulário
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addCaminhaoModal'));
-        modal.hide();
-        resetCaminhaoForm();
+        // Fechar modal e limpar formulário com limpeza completa do backdrop
+        AuthManager.closeModalSafely('addCaminhaoModal', resetCaminhaoForm);
     } catch (err) {
         // Fechar loading em caso de erro
         if (AlertUtils.isOpen()) {
@@ -839,10 +913,8 @@ async function saveAbastecimento() {
         // Exibir toast de sucesso
         AlertToast.success(isEdit ? 'Abastecimento atualizado com sucesso!' : 'Abastecimento cadastrado com sucesso!');
         
-        // Fechar modal e limpar formulário
-        const modal = bootstrap.Modal.getInstance(document.getElementById('addAbastecimentoModal'));
-        modal.hide();
-        resetAbastecimentoForm();
+        // Fechar modal e limpar formulário com limpeza completa do backdrop
+        AuthManager.closeModalSafely('addAbastecimentoModal', resetAbastecimentoForm);
     } catch (err) {
         // Fechar loading em caso de erro
         if (AlertUtils.isOpen()) {
@@ -992,9 +1064,18 @@ async function confirmDelete(id, type) {
             const abastecimentosAssociados = abastecimentos.some(a => a.caminhaoId === id);
             
             if (abastecimentosAssociados) {
-                if (!confirm('Este caminhão possui abastecimentos registrados. A exclusão removerá também todos os abastecimentos associados. Deseja continuar?')) {
-                    return;
+                // Fechar loading temporariamente para mostrar confirmação
+                AlertUtils.close();
+                
+                // Mostrar alerta estilizado de confirmação
+                const result = await AlertConfirm.deleteWithAbastecimentos();
+                
+                if (!result.isConfirmed) {
+                    return; // Usuário cancelou
                 }
+                
+                // Mostrar loading novamente após confirmação
+                AlertInfo.loadingData();
                 
                 // Remover abastecimentos associados
                 abastecimentos.filter(a => a.caminhaoId === id).forEach(async (a) => {
@@ -1394,7 +1475,7 @@ function renderAbastecimentosFiltrados() {
             <td>R$ ${parseFloat(abastecimento.valorLitro).toFixed(2)}</td>
             <td>R$ ${parseFloat(abastecimento.valorTotal).toFixed(2)}</td>
             <td>${consumo} km/l</td>
-            <td class="action-buttons">
+            <td class="action-buttons admin-only">
                 <button class="btn btn-sm btn-primary edit-abastecimento" data-id="${abastecimento.id}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -1582,3 +1663,56 @@ function atualizarCards(stats) {
         console.error('[DASHBOARD] Erro ao atualizar cards:', error);
     }
 }
+
+// ===== FUNÇÃO GLOBAL PARA INTEGRAÇÃO COM AUTENTICAÇÃO =====
+
+// Função global para carregar o dashboard - será chamada pelo sistema de autenticação
+window.loadDashboard = async function() {
+    try {
+        console.log('[APP] Carregando dashboard...');
+        
+        // A aplicação principal já está sempre visível
+        // Garantir que esteja visível (por compatibilidade)
+        const mainApp = document.getElementById('mainApp');
+        if (mainApp) {
+            mainApp.style.display = 'block';
+        }
+        
+        // Carregar todos os dados iniciais
+        await loadDataFromLocalStorage();
+        
+        // Renderizar dados na interface
+        renderCaminhoes();
+        renderAbastecimentos();
+        updateDashboard();
+        populateCaminhaoSelects();
+        
+        // Mostrar a seção dashboard por padrão
+        showSection('dashboardSection');
+        
+        console.log('[APP] Dashboard carregado com sucesso');
+    } catch (error) {
+        console.error('[APP] Erro ao carregar dashboard:', error);
+        AlertError.show('Erro', 'Erro ao carregar o sistema. Recarregue a página.');
+    }
+};
+
+// Função para aplicar visibilidade baseada em papel do usuário
+window.applyRoleVisibility = function(userRole) {
+    console.log('[APP] Aplicando visibilidade para papel:', userRole);
+    
+    // Remover classes de papel existentes do body
+    document.body.classList.remove('role-admin', 'role-user', 'role-guest');
+    
+    // Adicionar a classe correspondente ao papel do usuário
+    if (userRole === 'admin') {
+        document.body.classList.add('role-admin');
+    } else if (userRole === 'user') {
+        document.body.classList.add('role-user');
+    } else {
+        // Usuário não autenticado (convidado)
+        document.body.classList.add('role-guest');
+    }
+    
+    console.log('[APP] Visibilidade aplicada. Classes do body:', document.body.className);
+};
