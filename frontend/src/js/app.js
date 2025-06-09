@@ -34,7 +34,64 @@ async function waitForAuth() {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Iniciando aplicação do Controle de Combustível');
     
-    // Aguardar um pouco para garantir que todos os scripts sejam carregados
+    // PRIMEIRO: Mostrar loading IMEDIATAMENTE
+    let loadingAlert = null;
+    try {
+        // Aguardar SweetAlert2 carregar se necessário
+        let attempts = 0;
+        while (typeof Swal === 'undefined' && attempts < 20) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (typeof Swal !== 'undefined') {
+            console.log('🚛 [INIT] Mostrando loading inicial...');
+            loadingAlert = Swal.fire({
+                html: `
+                    <div class="system-loading-container">
+                        <div class="fleet-animation">
+                            <div class="truck-convoy">
+                                <div class="truck-unit">🚛</div>
+                                <div class="truck-unit delay-1">🚚</div>
+                                <div class="truck-unit delay-2">🚐</div>
+                            </div>
+                            <div class="loading-highway">
+                                <div class="highway-line"></div>
+                                <div class="highway-line delay"></div>
+                            </div>
+                        </div>
+                        <div class="system-loading-text">
+                            <h3 class="loading-title">🚚 Inicializando Sistema Logístico</h3>
+                            <p class="loading-description">Carregando componentes, verificando conectividade e sincronizando dados...</p>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <div class="progress-text">Inicializando...</div>
+                                <div class="loading-status">
+                                    <div class="status-item">🔧 Carregando scripts</div>
+                                    <div class="status-item" style="animation-delay: 1s;">📡 Verificando API</div>
+                                    <div class="status-item" style="animation-delay: 2s;">💾 Sincronizando dados</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                width: '520px',
+                backdrop: 'rgba(0,0,0,0.8)',
+                customClass: {
+                    popup: 'system-loading-modal'
+                }
+            });
+        }
+    } catch (error) {
+        console.warn('⚠️ [INIT] Erro ao mostrar loading inicial:', error);
+    }
+    
+    // Aguardar scripts carregarem
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // Aguardar sistema de autenticação estar pronto
@@ -63,7 +120,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     verificarStatusAPI();
     
     // Carregar dados do backend ou localStorage
+    console.log('🔄 [INIT] Iniciando carregamento de dados...');
     await loadDataFromLocalStorage();
+    console.log('✅ [INIT] Carregamento de dados concluído');
     
     // Configurar navegação
     setupNavigation();
@@ -89,6 +148,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
     document.getElementById('dashboardDataInicio').value = primeiroDia;
     document.getElementById('dashboardDataFim').value = ultimoDia;
+    
+    // FECHAR O LOADING APÓS TUDO ESTAR PRONTO
+    try {
+        if (loadingAlert && typeof Swal !== 'undefined') {
+            // Aguardar um pouco para que o usuário veja que o carregamento terminou
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            console.log('🎯 [INIT] Fechando loading - inicialização completa!');
+            Swal.close();
+        }
+    } catch (error) {
+        console.warn('⚠️ [INIT] Erro ao fechar loading:', error);
+    }
+    
+    console.log('🎉 [INIT] === APLICAÇÃO TOTALMENTE INICIALIZADA ===');
+    
     // Evento para atualizar dashboard
     document.getElementById('atualizarDashboard').addEventListener('click', e => {
         e.preventDefault();
@@ -195,29 +269,26 @@ function showConnectionAttempt() {
 
 // Carregar dados do localStorage
 async function loadDataFromLocalStorage() {
-    let loadingAlert = null;
+    console.log('📊 [LOAD] Iniciando carregamento de dados...');
     
     try {
-        console.log('[LOAD] Iniciando carregamento de dados...');
+        // Simular um processo de carregamento mais realista
+        console.log('📦 [LOAD] Carregando dados de caminhões...');
+        await new Promise(resolve => setTimeout(resolve, 800));
         
-        // Mostrar alerta de carregamento do sistema mais proeminente e persistente
-        loadingAlert = AlertInfo.loadingSystem(
-            'Carregando Sistema de Gestão Logística',
-            'Sincronizando dados de caminhões, abastecimentos e relatórios. Este processo garante que você tenha as informações mais atualizadas disponíveis.'
-        );
+        console.log('⛽ [LOAD] Carregando dados de abastecimentos...');
+        await new Promise(resolve => setTimeout(resolve, 600));
         
-        // Aguardar um momento para o alerta aparecer antes de iniciar o carregamento
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('📈 [LOAD] Processando estatísticas...');
+        await new Promise(resolve => setTimeout(resolve, 400));
         
         // Verificar se window.dbApi está disponível
         if (window.dbApi && typeof window.dbApi.buscarCaminhoes === 'function') {
             console.log('[LOAD] Usando window.dbApi para buscar dados...');
             
-            // Usar dbApi para buscar dados do backend com aguardo entre operações
             console.log('[LOAD] 🚛 Carregando caminhões...');
             caminhoes = await window.dbApi.buscarCaminhoes();
             
-            // Pequena pausa para dar tempo de visualizar o progresso
             await new Promise(resolve => setTimeout(resolve, 300));
             
             console.log('[LOAD] ⛽ Carregando abastecimentos...');
@@ -225,14 +296,11 @@ async function loadDataFromLocalStorage() {
             
             console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
-                abastecimentos: abastecimentos.length,
-                primeiroAbastecimento: abastecimentos[0] || null
+                abastecimentos: abastecimentos.length
             });
         } else {
-            console.warn('[LOAD] window.dbApi não disponível, usando localStorage como fallback');
+            console.warn('[LOAD] window.dbApi não disponível, usando localStorage');
             
-            // Fallback para localStorage
-            console.log('[LOAD] 📦 Acessando dados locais...');
             const caminhoesJSON = localStorage.getItem('caminhoes');
             const abastecimentosJSON = localStorage.getItem('abastecimentos');
             
@@ -245,39 +313,17 @@ async function loadDataFromLocalStorage() {
             });
         }
         
-        // Aguardar um momento para processar os dados
         console.log('[LOAD] 📊 Processando e organizando dados...');
         await new Promise(resolve => setTimeout(resolve, 400));
         
-        // Atualizar referências globais para os relatórios
         updateGlobalReferences();
         
-        console.log(`✅ Carregamento concluído: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
-        
-        // Aguardar um pouco mais para garantir que todo o processo foi visualizado
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Fechar alerta de carregamento
-        if (AlertUtils.isOpen()) {
-            AlertUtils.close();
-        }
-        
-        // Mostrar toast de sucesso discreto após um momento
-        setTimeout(() => {
-            const fonte = window.dbApi ? 'banco de dados' : 'dados locais';
-            AlertToast.success(`✅ Sistema carregado: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos (${fonte})`);
-        }, 200);
+        console.log('✅ [LOAD] Carregamento concluído com sucesso!');
         
     } catch (error) {
-        console.error('❌ Erro ao carregar dados:', error);
+        console.error('❌ [LOAD] Erro ao carregar dados:', error);
         
-        // Fechar alerta de carregamento se estiver aberto
-        if (AlertUtils.isOpen()) {
-            AlertUtils.close();
-        }
-        
-        // Em caso de erro, tentar localStorage como última alternativa
-        console.log('[LOAD] Tentando fallback para localStorage após erro...');
+        // Fallback para localStorage em caso de erro
         try {
             const caminhoesJSON = localStorage.getItem('caminhoes');
             const abastecimentosJSON = localStorage.getItem('abastecimentos');
@@ -285,32 +331,14 @@ async function loadDataFromLocalStorage() {
             caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
             abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
             
-            console.log('[LOAD] Fallback localStorage aplicado:', {
-                caminhoes: caminhoes.length,
-                abastecimentos: abastecimentos.length
-            });
-            
-            // Mostrar toast de aviso sobre fallback
-            AlertToast.warning('Conectividade limitada - usando dados locais');
-            
-            // Atualizar referências globais
             updateGlobalReferences();
+            console.log('✅ [LOAD] Dados carregados via fallback');
         } catch (fallbackError) {
-            console.error('❌ Erro no fallback localStorage:', fallbackError);
-            
-            // Última alternativa: arrays vazios
+            console.error('❌ [LOAD] Erro no fallback:', fallbackError);
             caminhoes = [];
             abastecimentos = [];
             updateGlobalReferences();
-            
-            // Mostrar aviso sobre dados vazios
-            AlertToast.error('Não foi possível carregar os dados');
         }
-        
-        // Atualizar referências globais para os relatórios
-        updateGlobalReferences();
-        
-        console.log(`Usando dados do localStorage como fallback: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
     }
 }
 

@@ -445,3 +445,308 @@ body.no-auth .user-only {
         padding: 1.5rem;
     }
 }
+
+/* ================================
+   ANIMAÇÕES DE CARREGAMENTO COM CAMINHÕES
+   ================================ */
+
+/* Container principal do sistema de loading */
+.system-loading-container {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animação da frota de caminhões */
+.fleet-animation {
+    position: relative;
+    height: 80px;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(to right, #87CEEB 0%, #4682B4 100%);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.truck-convoy {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    position: relative;
+    z-index: 2;
+}
+
+.truck-unit {
+    font-size: 2.5rem;
+    margin: 0 0.5rem;
+    animation: truckMove 3s infinite ease-in-out;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.truck-unit.delay-1 {
+    animation-delay: 0.5s;
+}
+
+.truck-unit.delay-2 {
+    animation-delay: 1s;
+}
+
+/* Estrada animada */
+.loading-highway {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #333;
+}
+
+.highway-line {
+    position: absolute;
+    height: 2px;
+    background: #ffeb3b;
+    width: 40px;
+    animation: roadMove 2s infinite linear;
+}
+
+.highway-line.delay {
+    animation-delay: 1s;
+}
+
+/* Textos do sistema */
+.system-loading-text {
+    margin-top: 1rem;
+}
+
+.loading-title {
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.loading-description {
+    color: #555;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+}
+
+/* Barra de progresso */
+.progress-container {
+    background: rgba(255,255,255,0.9);
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    background: #e9ecef;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+    height: 100%;
+    width: 0;
+    animation: progressFill 4s infinite ease-in-out;
+    border-radius: 4px;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+/* Status de carregamento */
+.loading-status {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.status-item {
+    padding: 0.5rem 1rem;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 20px;
+    border: 2px solid rgba(40, 167, 69, 0.2);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #155724;
+    animation: statusPulse 1.5s infinite;
+    transition: all 0.3s ease;
+}
+
+/* Toast de carregamento com caminhão */
+.loading-data-toast {
+    border-left: 5px solid #28a745 !important;
+}
+
+.truck-loading-toast {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05), rgba(255, 255, 255, 0.95)) !important;
+}
+
+.loading-truck-animation {
+    display: inline-block;
+    margin-right: 0.5rem;
+    animation: truckBounce 2s infinite ease-in-out;
+}
+
+.loading-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 0.5rem;
+}
+
+.loading-dots span {
+    width: 6px;
+    height: 6px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: dotPulse 1.4s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/* Modal de sistema com destaque */
+.system-loading-modal {
+    border-radius: 16px !important;
+    border: 3px solid #28a745 !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+}
+
+/* ================================
+   KEYFRAMES PARA ANIMAÇÕES
+   ================================ */
+
+@keyframes truckMove {
+    0%, 100% { 
+        transform: translateX(0) translateY(0) scale(1); 
+    }
+    25% { 
+        transform: translateX(10px) translateY(-5px) scale(1.05); 
+    }
+    50% { 
+        transform: translateX(0) translateY(-8px) scale(1.1); 
+    }
+    75% { 
+        transform: translateX(-10px) translateY(-5px) scale(1.05); 
+    }
+}
+
+@keyframes truckBounce {
+    0%, 100% { 
+        transform: translateY(0) scale(1); 
+    }
+    50% { 
+        transform: translateY(-8px) scale(1.1); 
+    }
+}
+
+@keyframes roadMove {
+    0% { 
+        left: -50px; 
+        opacity: 0; 
+    }
+    25% { 
+        opacity: 1; 
+    }
+    75% { 
+        opacity: 1; 
+    }
+    100% { 
+        left: 100%; 
+        opacity: 0; 
+    }
+}
+
+@keyframes progressFill {
+    0% { 
+        width: 0%; 
+    }
+    50% { 
+        width: 75%; 
+    }
+    100% { 
+        width: 100%; 
+    }
+}
+
+@keyframes statusPulse {
+    0%, 100% { 
+        opacity: 0.6; 
+        transform: scale(1); 
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.05); 
+        background-color: rgba(40, 167, 69, 0.2);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+}
+
+@keyframes dotPulse {
+    0%, 80%, 100% { 
+        transform: scale(0.8); 
+        opacity: 0.5; 
+    }
+    40% { 
+        transform: scale(1.2); 
+        opacity: 1; 
+    }
+}
+
+@keyframes slideInUp {
+    from { 
+        transform: translateY(100px); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0); 
+        opacity: 1; 
+    }
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .truck-unit {
+        font-size: 2rem;
+        margin: 0 0.25rem;
+    }
+    
+    .loading-title {
+        font-size: 1.2rem;
+    }
+    
+    .loading-description {
+        font-size: 0.9rem;
+    }
+    
+    .status-item {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    .system-loading-container {
+        padding: 1.5rem 0.75rem;
+    }
+}
