@@ -229,6 +229,48 @@ async function initDatabase() {
 
             await registerMigration('1.1.0', 'Adição de colunas status e observações, triggers de updated_at');
             console.log('✅ Migração 1.1.0 aplicada com sucesso!');
+        }        // Migração 1.2.0 - Criação da tabela de despesas
+        if (!(await migrationApplied('1.2.0'))) {
+            console.log('🔄 Aplicando migração 1.2.0 - Criação da tabela de despesas...');
+            
+            // Criar tabela de despesas
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS despesas (
+                    id VARCHAR(50) PRIMARY KEY,
+                    data DATE NOT NULL,
+                    fornecedor VARCHAR(200) NOT NULL,
+                    descricao TEXT NOT NULL,
+                    valor DECIMAL(10,2) NOT NULL,
+                    categoria VARCHAR(100),
+                    observacoes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+
+            // Criar índices para melhor performance
+            await pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_despesas_data ON despesas(data);
+            `);
+            
+            await pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_despesas_fornecedor ON despesas(fornecedor);
+            `);
+            
+            await pool.query(`
+                CREATE INDEX IF NOT EXISTS idx_despesas_categoria ON despesas(categoria);
+            `);
+
+            // Criar trigger para atualizar updated_at automaticamente
+            await pool.query(`
+                DROP TRIGGER IF EXISTS update_despesas_updated_at ON despesas;
+                CREATE TRIGGER update_despesas_updated_at 
+                    BEFORE UPDATE ON despesas 
+                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+            `);
+
+            await registerMigration('1.2.0', 'Criação da tabela de despesas');
+            console.log('✅ Migração 1.2.0 aplicada com sucesso!');
         }
 
         // Aqui você pode adicionar futuras migrações usando o sistema em migrations.js

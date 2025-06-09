@@ -435,13 +435,22 @@ const AlertToast = {
     }
 };
 
-// Função para fechar alertas programaticamente
+// Utilitários genéricos de alertas para compatibilidade com AlertUtils
 const AlertUtils = {
+    showLoading: (title = 'Processando...', text = '') => {
+        return Swal.fire({
+            ...defaultConfig,
+            title: title,
+            text: text,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading()
+        });
+    },
     close: () => {
         Swal.close();
     },
-
-    // Verifica se há um alerta aberto
     isOpen: () => {
         return Swal.isVisible();
     }

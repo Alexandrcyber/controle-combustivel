@@ -294,6 +294,80 @@ async function migrarDadosLocalStorageParaAPI() {
     }
 }
 
+// Função para buscar despesas via API
+async function buscarDespesas() {
+    try {
+        if (window.dbApi) {
+            return await window.dbApi.buscarDespesas();
+        } else {
+            // Fallback para localStorage
+            console.warn('API não disponível, usando localStorage como fallback');
+            const savedDespesas = localStorage.getItem('despesas');
+            return savedDespesas ? JSON.parse(savedDespesas) : [];
+        }
+    } catch (error) {
+        console.error('Erro ao buscar despesas:', error);
+        // Fallback para localStorage em caso de erro
+        if (USE_FALLBACK) {
+            const savedDespesas = localStorage.getItem('despesas');
+            return savedDespesas ? JSON.parse(savedDespesas) : [];
+        }
+        return [];
+    }
+}
+
+// Função para salvar despesa via API
+async function salvarDespesa(despesa) {
+    try {
+        if (window.dbApi) {
+            return await window.dbApi.salvarDespesa(despesa);
+        } else {
+            // Fallback para localStorage
+            console.warn('API não disponível, usando localStorage como fallback');
+            const despesas = await buscarDespesas();
+            
+            if (despesa.id) {
+                // Editar despesa existente
+                const index = despesas.findIndex(d => d.id === despesa.id);
+                if (index !== -1) {
+                    despesas[index] = despesa;
+                }
+            } else {
+                // Nova despesa
+                despesa.id = generateId();
+                despesa.data_criacao = new Date().toISOString();
+                despesas.push(despesa);
+            }
+            
+            localStorage.setItem('despesas', JSON.stringify(despesas));
+            return despesa;
+        }
+    } catch (error) {
+        console.error('Erro ao salvar despesa:', error);
+        throw new Error('Erro ao salvar despesa: ' + error.message);
+    }
+}
+
+// Função para excluir despesa via API
+async function excluirDespesa(id) {
+    try {
+        if (window.dbApi) {
+            await window.dbApi.excluirDespesa(id);
+            return true;
+        } else {
+            // Fallback para localStorage
+            console.warn('API não disponível, usando localStorage como fallback');
+            const despesas = await buscarDespesas();
+            const despesasFilter = despesas.filter(d => d.id !== id);
+            localStorage.setItem('despesas', JSON.stringify(despesasFilter));
+            return true;
+        }
+    } catch (error) {
+        console.error('Erro ao excluir despesa:', error);
+        return false;
+    }
+}
+
 // Exportar funções para uso no aplicativo (mantendo compatibilidade)
 window.localStorageApi = {
     buscarCaminhoes,
@@ -302,6 +376,9 @@ window.localStorageApi = {
     buscarAbastecimentos,
     salvarAbastecimento,
     excluirAbastecimento,
+    buscarDespesas,
+    salvarDespesa,
+    excluirDespesa,
     limparTodosDados,
     fazerBackupDados,
     restaurarBackupDados,

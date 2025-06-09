@@ -34,9 +34,11 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#" id="caminhaoLink">Caminhões</a>
+                        </li>                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="abastecimentoLink">Abastecimentos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="abastecimentoLink">Abastecimentos</a>
+                            <a class="nav-link" href="#" id="despesasLink">Despesas</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#" id="relatoriosLink">Relatórios</a>
@@ -264,6 +266,75 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>                </div>
+            </div>
+
+            <!-- Despesas -->
+            <div id="despesasSection" style="display: none;">
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Controle de Despesas</h5>
+                        <div class="admin-only">
+                            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addDespesaModal">
+                                <i class="bi bi-plus-circle"></i> Nova Despesa
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filtro de Período -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="card border-light bg-light">
+                                    <div class="card-body py-2">
+                                        <form id="filtroDespesaForm" class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label for="filtroDespesaDataInicio" class="form-label small">Data Início</label>
+                                                <input type="date" class="form-control form-control-sm" id="filtroDespesaDataInicio">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="filtroDespesaDataFim" class="form-label small">Data Fim</label>
+                                                <input type="date" class="form-control form-control-sm" id="filtroDespesaDataFim">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="btn-group w-100" role="group">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" id="despesaMesAtualBtn">Mês Atual</button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="despesaUltimosTrintaDiasBtn">Últimos 30 dias</button>
+                                                    <button type="button" class="btn btn-outline-info btn-sm" id="despesaTodosRegistrosBtn">Todos</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                    <i class="bi bi-search"></i> Filtrar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicador de Filtro Ativo -->
+                        <div id="indicadorFiltroDespesas" class="alert alert-info py-2 mb-3" style="display: none;">
+                            <small><i class="bi bi-info-circle"></i> Exibindo despesas filtradas. <span id="textoFiltroDespesas"></span></small>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="despesaTable">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Fornecedor</th>
+                                        <th>Descrição</th>
+                                        <th>Categoria</th>
+                                        <th>Valor</th>
+                                        <th class="admin-only">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="despesaTableBody">
+                                    <!-- Dados serão inseridos via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -458,6 +529,60 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" id="saveAbastecimento">Salvar</button>
+                </div>
+            </div>
+        </div>    </div>
+
+    <!-- Modal Adicionar Despesa -->
+    <div class="modal fade" id="addDespesaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Registrar Despesa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="despesaForm">
+                        <input type="hidden" id="despesaId">
+                        <div class="mb-3">
+                            <label for="dataDespesa" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="dataDespesa" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fornecedorDespesa" class="form-label">Fornecedor</label>
+                            <input type="text" class="form-control" id="fornecedorDespesa" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricaoDespesa" class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="descricaoDespesa" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoriaDespesa" class="form-label">Categoria</label>
+                            <select class="form-select" id="categoriaDespesa" required>
+                                <option value="">Selecione uma categoria</option>
+                                <option value="oficina">Oficina</option>
+                                <option value="pecas">Peças</option>
+                                <option value="lavacao">Lavação</option>
+                                <option value="combustivel">Combustível</option>
+                                <option value="manutencao">Manutenção</option>
+                                <option value="seguro">Seguro</option>
+                                <option value="documentacao">Documentação</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valorDespesa" class="form-label">Valor (R$)</label>
+                            <input type="number" class="form-control" id="valorDespesa" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="observacoesDespesa" class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacoesDespesa" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveDespesa">Salvar</button>
                 </div>
             </div>
         </div>

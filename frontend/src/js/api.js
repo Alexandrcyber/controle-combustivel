@@ -92,6 +92,12 @@ window.apiClient = {
                 throw new Error(errorMessage);
             }
 
+            // Tratar respostas sem conteúdo (No Content)
+            if (response.status === 204) {
+                console.log(`[API RESPONSE] No content for ${url}`);
+                return null;
+            }
+
             const data = await response.json();
             console.log(`[API RESPONSE]`, data);
             return data;
@@ -298,7 +304,66 @@ window.apiClient = {
                 method: 'DELETE'
             });
         }
-    },    // Funções de utilidade
+    },
+
+    // CRUD para Despesas
+    despesas: {
+        async buscarTodos() {
+            console.log('[apiClient.despesas] Buscando todas as despesas');
+            const result = await apiClient.request('/despesas');
+            
+            // Mapear campos do backend (snake_case) para frontend (camelCase) se necessário
+            return result.map(despesa => ({
+                ...despesa,
+                valor: parseFloat(despesa.valor) || 0
+            }));
+        },
+
+        async buscarPorId(id) {
+            console.log('[apiClient.despesas] Buscando despesa por ID:', id);
+            const result = await apiClient.request(`/despesas/${id}`);
+            
+            return {
+                ...result,
+                valor: parseFloat(result.valor) || 0
+            };
+        },
+
+        async salvar(despesa) {
+            console.log('[apiClient.despesas] Salvando despesa:', despesa);
+            
+            let result;
+            if (despesa.id && despesa.id !== 'novo') {
+                // Atualizar existente
+                console.log(`[apiClient.despesas] Atualizando despesa existente ID=${despesa.id}`);
+                result = await apiClient.request(`/despesas/${despesa.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(despesa)
+                });
+            } else {
+                // Criar nova
+                console.log('[apiClient.despesas] Criando nova despesa');
+                const { id, ...despesaSemId } = despesa;
+                result = await apiClient.request('/despesas', {
+                    method: 'POST',
+                    body: JSON.stringify(despesaSemId)
+                });
+            }
+            
+            return {
+                ...result,
+                valor: parseFloat(result.valor) || 0
+            };
+        },
+
+        async excluir(id) {
+            return await apiClient.request(`/despesas/${id}`, {
+                method: 'DELETE'
+            });
+        }
+    },
+
+    // Funções de utilidade
     async health() {
         console.log('[apiClient] Verificando health da API...');
         const resultado = await apiClient.request('/health');
@@ -372,6 +437,32 @@ window.dbApi = {
         }
     },
 
+    // Despesas
+    async buscarDespesas() {
+        try {
+            return await window.apiClient.despesas.buscarTodos();
+        } catch (error) {
+            console.error('Erro ao buscar despesas:', error);
+            return [];
+        }
+    },
+    async salvarDespesa(despesa) {
+        try {
+            return await window.apiClient.despesas.salvar(despesa);
+        } catch (error) {
+            console.error('Erro ao salvar despesa:', error);
+            throw error;
+        }
+    },
+    async excluirDespesa(id) {
+        try {
+            return await window.apiClient.despesas.excluir(id);
+        } catch (error) {
+            console.error('Erro ao excluir despesa:', error);
+            throw error;
+        }
+    },
+
     // Funções de limpeza (para compatibilidade)
     async limparTodosDados() {
         try {
@@ -392,17 +483,87 @@ window.dbApi = {
             return true;
         } catch (error) {
             console.error('Erro ao limpar dados:', error);
+            throw error;        }
+    },
+
+    // Funções de Despesas
+    async buscarDespesas() {
+        try {
+            console.log('[dbApi] Buscando despesas...');
+            return await window.apiClient.despesas.buscarTodos();
+        } catch (error) {
+            console.error('Erro ao buscar despesas:', error);
+            return [];
+        }
+    },
+
+    async salvarDespesa(despesa) {
+        try {
+            console.log('[dbApi] Salvando despesa:', despesa);
+            return await window.apiClient.despesas.salvar(despesa);
+        } catch (error) {
+            console.error('Erro ao salvar despesa:', error);
             throw error;
         }
-    },    // Função para verificar conexão com a API
+    },
+
+    async excluirDespesa(id) {
+        try {
+            return await window.apiClient.despesas.excluir(id);
+        } catch (error) {
+            console.error('Erro ao excluir despesa:', error);
+            throw error;
+        }
+    },
+
+    // Funções de limpeza (para compatibilidade)
+    async limparTodosDados() {
+        try {
+            // Buscar todos os abastecimentos, caminhões e despesas para excluir
+            const abastecimentos = await this.buscarAbastecimentos();
+            const caminhoes = await this.buscarCaminhoes();
+            const despesas = await this.buscarDespesas();
+
+            // Excluir todos os abastecimentos
+            for (const abastecimento of abastecimentos) {
+                await this.excluirAbastecimento(abastecimento.id);
+            }
+
+            // Excluir todos os caminhões
+            for (const caminhao of caminhoes) {
+                await this.excluirCaminhao(caminhao.id);
+            }
+
+            // Excluir todas as despesas
+            for (const despesa of despesas) {
+                await this.excluirDespesa(despesa.id);
+            }
+
+            return true;        } catch (error) {
+            console.error('Erro ao limpar dados:', error);
+            throw error;
+        }
+    },
+
+    // Função para testar conexão com a API
     async testarConexao() {
         try {
             console.log('[dbApi] Testando conexão com a API...');
-            const resultado = await window.apiClient.health();
-            console.log('[dbApi] Resultado do teste de conexão:', resultado);
-            return resultado;
+            const response = await fetch(`${API_CONFIG.baseURL}/health`, {
+                method: 'GET',
+                headers: API_CONFIG.headers
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('[dbApi] Conexão com a API bem-sucedida:', data);
+                return true;
+            } else {
+                console.warn('[dbApi] API respondeu com erro:', response.status);
+                return false;
+            }
         } catch (error) {
-            console.error('[dbApi] Erro na conexão com a API:', error);
+            console.error('[dbApi] Erro ao testar conexão:', error);
             return false;
         }
     }

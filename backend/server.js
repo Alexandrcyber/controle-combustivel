@@ -15,6 +15,7 @@ const { createDefaultAdmin } = require('./controllers/authController');
 // Importar rotas
 const caminhoesRoutes = require('./routes/caminhoes');
 const abastecimentosRoutes = require('./routes/abastecimentos');
+const despesasRoutes = require('./routes/despesas');
 const authRoutes = require('./routes/auth');
 
 const app = express();
@@ -49,6 +50,8 @@ if (config.debug) {
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/caminhoes', caminhoesRoutes);
+app.use('/api/abastecimentos', abastecimentosRoutes);
+app.use('/api/despesas', despesasRoutes);
 app.use('/api/abastecimentos', abastecimentosRoutes);
 
 // Rota de health check

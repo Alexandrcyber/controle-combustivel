@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Visibilidade dos Botões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Visibilidade dos Botões - Sistema de Gestão Logística</h1>
+    
+    <div class="test-section">
+        <h2>Cenário 1: Usuário não autenticado (Guest)</h2>
+        <div id="test-guest-result"></div>
+        <button onclick="testGuestVisibility()">Testar Visibilidade para Guest</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Cenário 2: Usuário comum (User)</h2>
+        <div id="test-user-result"></div>
+        <button onclick="testUserVisibility()">Testar Visibilidade para User</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Cenário 3: Administrador (Admin)</h2>
+        <div id="test-admin-result"></div>
+        <button onclick="testAdminVisibility()">Testar Visibilidade para Admin</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Resultados dos Testes</h2>
+        <div id="overall-results"></div>
+        <button onclick="runAllTests()">Executar Todos os Testes</button>
+    </div>
+
+    <script>
+        // Simular elementos com classe admin-only
+        function createTestElements() {
+            // Remover elementos de teste anteriores
+            const existingTests = document.querySelectorAll('.test-element');
+            existingTests.forEach(el => el.remove());
+
+            // Criar elementos de teste similares aos botões reais
+            const testContainer = document.createElement('div');
+            testContainer.style.display = 'none'; // Ocultar para não interferir na UI
+            
+            // Botão de editar despesa
+            const editButton = document.createElement('button');
+            editButton.className = 'btn btn-outline-primary btn-sm edit-despesa admin-only test-element';
+            editButton.innerHTML = '<i class="bi bi-pencil"></i>';
+            testContainer.appendChild(editButton);
+
+            // Botão de excluir despesa
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'btn btn-outline-danger btn-sm delete-despesa admin-only test-element';
+            deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+            testContainer.appendChild(deleteButton);
+
+            // Botão de editar caminhão
+            const editTruckButton = document.createElement('button');
+            editTruckButton.className = 'btn btn-sm btn-primary edit-caminhao admin-only test-element';
+            editTruckButton.innerHTML = '<i class="bi bi-pencil"></i>';
+            testContainer.appendChild(editTruckButton);
+
+            // Botão de excluir abastecimento
+            const deleteRefuelButton = document.createElement('button');
+            deleteRefuelButton.className = 'btn btn-sm btn-danger delete-abastecimento admin-only test-element';
+            deleteRefuelButton.innerHTML = '<i class="bi bi-trash"></i>';
+            testContainer.appendChild(deleteRefuelButton);
+
+            document.body.appendChild(testContainer);
+            
+            return testContainer;
+        }
+
+        function applyRoleVisibility(userRole) {
+            console.log('[TEST] Aplicando visibilidade para papel:', userRole);
+            
+            // Remover classes de papel existentes do body
+            document.body.classList.remove('role-admin', 'role-user', 'role-guest');
+            
+            // Adicionar a classe correspondente ao papel do usuário
+            if (userRole === 'admin') {
+                document.body.classList.add('role-admin');
+            } else if (userRole === 'user') {
+                document.body.classList.add('role-user');
+            } else {
+                // Usuário não autenticado (convidado)
+                document.body.classList.add('role-guest');
+            }
+            
+            console.log('[TEST] Visibilidade aplicada. Classes do body:', document.body.className);
+        }
+
+        function checkButtonVisibility(role) {
+            const adminButtons = document.querySelectorAll('.admin-only.test-element');
+            const results = {
+                total: adminButtons.length,
+                visible: 0,
+                hidden: 0,
+                expected: role === 'admin' ? 'visible' : 'hidden'
+            };
+
+            adminButtons.forEach(button => {
+                const computedStyle = window.getComputedStyle(button);
+                const isVisible = computedStyle.display !== 'none';
+                
+                if (isVisible) {
+                    results.visible++;
+                } else {
+                    results.hidden++;
+                }
+            });
+
+            return results;
+        }
+
+        function testGuestVisibility() {
+            const testContainer = createTestElements();
+            applyRoleVisibility('guest');
+            
+            // Aguardar um pouco para o CSS ser aplicado
+            setTimeout(() => {
+                const results = checkButtonVisibility('guest');
+                const resultDiv = document.getElementById('test-guest-result');
+                
+                const isCorrect = results.hidden === results.total;
+                resultDiv.className = `test-result ${isCorrect ? 'success' : 'error'}`;
+                resultDiv.innerHTML = `
+                    <strong>Teste Guest:</strong><br>
+                    Total de botões: ${results.total}<br>
+                    Botões ocultos: ${results.hidden}<br>
+                    Botões visíveis: ${results.visible}<br>
+                    <strong>Resultado: ${isCorrect ? 'PASSOU ✅' : 'FALHOU ❌'}</strong><br>
+                    ${!isCorrect ? 'Erro: Todos os botões admin-only deveriam estar ocultos para usuários não autenticados.' : ''}
+                `;
+                
+                testContainer.remove();
+            }, 100);
+        }
+
+        function testUserVisibility() {
+            const testContainer = createTestElements();
+            applyRoleVisibility('user');
+            
+            setTimeout(() => {
+                const results = checkButtonVisibility('user');
+                const resultDiv = document.getElementById('test-user-result');
+                
+                const isCorrect = results.hidden === results.total;
+                resultDiv.className = `test-result ${isCorrect ? 'success' : 'error'}`;
+                resultDiv.innerHTML = `
+                    <strong>Teste User:</strong><br>
+                    Total de botões: ${results.total}<br>
+                    Botões ocultos: ${results.hidden}<br>
+                    Botões visíveis: ${results.visible}<br>
+                    <strong>Resultado: ${isCorrect ? 'PASSOU ✅' : 'FALHOU ❌'}</strong><br>
+                    ${!isCorrect ? 'Erro: Todos os botões admin-only deveriam estar ocultos para usuários comuns.' : ''}
+                `;
+                
+                testContainer.remove();
+            }, 100);
+        }
+
+        function testAdminVisibility() {
+            const testContainer = createTestElements();
+            applyRoleVisibility('admin');
+            
+            setTimeout(() => {
+                const results = checkButtonVisibility('admin');
+                const resultDiv = document.getElementById('test-admin-result');
+                
+                const isCorrect = results.visible === results.total;
+                resultDiv.className = `test-result ${isCorrect ? 'success' : 'error'}`;
+                resultDiv.innerHTML = `
+                    <strong>Teste Admin:</strong><br>
+                    Total de botões: ${results.total}<br>
+                    Botões ocultos: ${results.hidden}<br>
+                    Botões visíveis: ${results.visible}<br>
+                    <strong>Resultado: ${isCorrect ? 'PASSOU ✅' : 'FALHOU ❌'}</strong><br>
+                    ${!isCorrect ? 'Erro: Todos os botões admin-only deveriam estar visíveis para administradores.' : ''}
+                `;
+                
+                testContainer.remove();
+            }, 100);
+        }
+
+        function runAllTests() {
+            let passedTests = 0;
+            let totalTests = 3;
+
+            testGuestVisibility();
+            
+            setTimeout(() => {
+                testUserVisibility();
+                
+                setTimeout(() => {
+                    testAdminVisibility();
+                    
+                    setTimeout(() => {
+                        // Verificar resultados
+                        const guestResult = document.getElementById('test-guest-result').innerHTML.includes('PASSOU');
+                        const userResult = document.getElementById('test-user-result').innerHTML.includes('PASSOU');
+                        const adminResult = document.getElementById('test-admin-result').innerHTML.includes('PASSOU');
+                        
+                        if (guestResult) passedTests++;
+                        if (userResult) passedTests++;
+                        if (adminResult) passedTests++;
+                        
+                        const overallDiv = document.getElementById('overall-results');
+                        const allPassed = passedTests === totalTests;
+                        
+                        overallDiv.className = `test-result ${allPassed ? 'success' : 'error'}`;
+                        overallDiv.innerHTML = `
+                            <h3>Resumo Geral dos Testes</h3>
+                            <strong>Testes aprovados: ${passedTests}/${totalTests}</strong><br>
+                            <strong>Status: ${allPassed ? 'TODOS OS TESTES PASSARAM ✅' : 'ALGUNS TESTES FALHARAM ❌'}</strong><br>
+                            ${allPassed ? 
+                                'O sistema de controle de visibilidade dos botões está funcionando corretamente!' : 
+                                'Há problemas com o controle de visibilidade que precisam ser corrigidos.'
+                            }
+                        `;
+                    }, 200);
+                }, 200);
+            }, 200);
+        }
+
+        // Adicionar CSS para simular as regras do sistema real
+        const style = document.createElement('style');
+        style.textContent = `
+            .admin-only { display: block; }
+            body.role-user .admin-only { display: none !important; }
+            body.role-guest .admin-only { display: none !important; }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

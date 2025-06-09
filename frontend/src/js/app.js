@@ -1,6 +1,7 @@
 // Variáveis globais
 let caminhoes = [];
 let abastecimentos = [];
+let despesas = [];
 let currentSection = 'dashboardSection';
 
 // Variáveis para controle de filtros de abastecimentos
@@ -10,6 +11,7 @@ let abastecimentosFiltrados = [];
 // Disponibilizar dados globalmente para os relatórios
 window.caminhoes = caminhoes;
 window.abastecimentos = abastecimentos;
+window.despesas = despesas;
 
 // Função para aguardar sistema de autenticação estar pronto
 async function waitForAuth() {
@@ -129,10 +131,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Configurar manipuladores de eventos
     setupEventHandlers();
-    
-    // Renderizar dados iniciais
+      // Renderizar dados iniciais
     renderCaminhoes();
-    renderAbastecimentos();
+    renderAbastecimentos();    renderDespesas();
+    
+    // Configurar filtros após renderizar dados
+    configurarFiltrosAbastecimento();
+    configurarFiltrosDespesas();
     
     // Inicializar gráficos
     if (typeof initCharts === 'function') {
@@ -290,26 +295,33 @@ async function loadDataFromLocalStorage() {
             caminhoes = await window.dbApi.buscarCaminhoes();
             
             await new Promise(resolve => setTimeout(resolve, 300));
-            
-            console.log('[LOAD] ⛽ Carregando abastecimentos...');
+              console.log('[LOAD] ⛽ Carregando abastecimentos...');
             abastecimentos = await window.dbApi.buscarAbastecimentos();
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            console.log('[LOAD] 💰 Carregando despesas...');
+            despesas = await window.dbApi.buscarDespesas();
             
             console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
-                abastecimentos: abastecimentos.length
-            });
-        } else {
+                abastecimentos: abastecimentos.length,
+                despesas: despesas.length
+            });        } else {
             console.warn('[LOAD] window.dbApi não disponível, usando localStorage');
             
             const caminhoesJSON = localStorage.getItem('caminhoes');
             const abastecimentosJSON = localStorage.getItem('abastecimentos');
+            const despesasJSON = localStorage.getItem('despesas');
             
             caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
             abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
+            despesas = despesasJSON ? JSON.parse(despesasJSON) : [];
             
             console.log('[LOAD] Dados carregados via localStorage:', {
                 caminhoes: caminhoes.length,
-                abastecimentos: abastecimentos.length
+                abastecimentos: abastecimentos.length,
+                despesas: despesas.length
             });
         }
         
@@ -346,9 +358,11 @@ async function loadDataFromLocalStorage() {
 function updateGlobalReferences() {
     window.caminhoes = caminhoes;
     window.abastecimentos = abastecimentos;
+    window.despesas = despesas;
     console.log('[UPDATE] Referências globais atualizadas:', {
         caminhoes: caminhoes.length,
-        abastecimentos: abastecimentos.length
+        abastecimentos: abastecimentos.length,
+        despesas: despesas.length
     });
 }
 
@@ -357,27 +371,28 @@ function setupNavigation() {
     document.getElementById('dashboardLink').addEventListener('click', () => showSection('dashboardSection'));
     document.getElementById('caminhaoLink').addEventListener('click', () => showSection('caminhaoSection'));
     document.getElementById('abastecimentoLink').addEventListener('click', () => showSection('abastecimentoSection'));
+    document.getElementById('despesasLink').addEventListener('click', () => showSection('despesasSection'));
     document.getElementById('relatoriosLink').addEventListener('click', () => showSection('relatoriosSection'));
 }
 
 // Mostrar seção específica e ocultar as demais
-function showSection(sectionId) {
-    // Ocultar todas as seções
+function showSection(sectionId) {    // Ocultar todas as seções
     document.getElementById('dashboardSection').style.display = 'none';
     document.getElementById('caminhaoSection').style.display = 'none';
     document.getElementById('abastecimentoSection').style.display = 'none';
+    document.getElementById('despesasSection').style.display = 'none';
     document.getElementById('relatoriosSection').style.display = 'none';
     
     // Remover classe active de todos os links
     document.getElementById('dashboardLink').classList.remove('active');
     document.getElementById('caminhaoLink').classList.remove('active');
     document.getElementById('abastecimentoLink').classList.remove('active');
+    document.getElementById('despesasLink').classList.remove('active');
     document.getElementById('relatoriosLink').classList.remove('active');
     
     // Mostrar a seção selecionada
     document.getElementById(sectionId).style.display = 'block';
-    
-    // Adicionar classe active ao link correspondente
+      // Adicionar classe active ao link correspondente
     if (sectionId === 'dashboardSection') {
         document.getElementById('dashboardLink').classList.add('active');
         updateDashboard(); // Atualizar dashboard quando for exibido
@@ -385,6 +400,9 @@ function showSection(sectionId) {
         document.getElementById('caminhaoLink').classList.add('active');
     } else if (sectionId === 'abastecimentoSection') {
         document.getElementById('abastecimentoLink').classList.add('active');
+    } else if (sectionId === 'despesasSection') {
+        document.getElementById('despesasLink').classList.add('active');
+        loadDespesas(); // Carregar despesas quando a seção for exibida
     } else if (sectionId === 'relatoriosSection') {
         document.getElementById('relatoriosLink').classList.add('active');
     }
@@ -414,9 +432,11 @@ function setupEventHandlers() {
     if (btnTestMapeamento) {
         btnTestMapeamento.addEventListener('click', testarMapeamentoCampos);
     }
-    
-    // Manipuladores para abastecimentos
+      // Manipuladores para abastecimentos
     document.getElementById('saveAbastecimento').addEventListener('click', saveAbastecimento);
+    
+    // Manipuladores para despesas
+    document.getElementById('saveDespesa').addEventListener('click', saveDespesa);
     
     // Manipulador para eventos de km que calcula automaticamente a distância
     document.getElementById('kmInicial').addEventListener('input', calcularDistancia);
@@ -441,14 +461,10 @@ function setupEventHandlers() {
         e.preventDefault();
         gerarRelatorioConsumo();
     });
-    
-    document.getElementById('relatorioCustosForm').addEventListener('submit', (e) => {
+      document.getElementById('relatorioCustosForm').addEventListener('submit', (e) => {
         e.preventDefault();
         gerarRelatorioCustos();
     });
-    
-    // Configurar filtros de data para abastecimentos
-    configurarFiltrosAbastecimento();
 }
 
 // Configurar event listeners para limpeza de backdrop dos modais
@@ -460,14 +476,21 @@ function setupModalCleanupListeners() {
             AuthManager.cleanupModalBackdropStatic();
             resetCaminhaoForm();
         });
-    }
-
-    // Modal de abastecimento  
+    }    // Modal de abastecimento
     const addAbastecimentoModal = document.getElementById('addAbastecimentoModal');
     if (addAbastecimentoModal) {
         addAbastecimentoModal.addEventListener('hidden.bs.modal', () => {
             AuthManager.cleanupModalBackdropStatic();
             resetAbastecimentoForm();
+        });
+    }
+
+    // Modal de despesa
+    const addDespesaModal = document.getElementById('addDespesaModal');
+    if (addDespesaModal) {
+        addDespesaModal.addEventListener('hidden.bs.modal', () => {
+            AuthManager.cleanupModalBackdropStatic();
+            resetDespesaForm();
         });
     }
 
@@ -508,6 +531,70 @@ function configurarFiltrosAbastecimento() {
     // Event listeners para mudança automática nos campos de data
     dataInicioInput.addEventListener('change', aplicarFiltroData);
     dataFimInput.addEventListener('change', aplicarFiltroData);
+}
+
+// Configurar filtros de data para despesas
+function configurarFiltrosDespesas() {
+    console.log('[DESPESAS] Configurando filtros...');
+    
+    const filtroForm = document.getElementById('filtroDespesaForm');
+    const dataInicioInput = document.getElementById('filtroDespesaDataInicio');
+    const dataFimInput = document.getElementById('filtroDespesaDataFim');
+    const mesAtualBtn = document.getElementById('despesaMesAtualBtn');
+    const ultimosTrintaDiasBtn = document.getElementById('despesaUltimosTrintaDiasBtn');
+    const todosRegistrosBtn = document.getElementById('despesaTodosRegistrosBtn');
+
+    // Verificar se todos os elementos existem
+    if (!filtroForm || !dataInicioInput || !dataFimInput || !mesAtualBtn || !ultimosTrintaDiasBtn || !todosRegistrosBtn) {
+        console.error('[DESPESAS] Alguns elementos de filtro não foram encontrados:', {
+            filtroForm: !!filtroForm,
+            dataInicioInput: !!dataInicioInput,
+            dataFimInput: !!dataFimInput,
+            mesAtualBtn: !!mesAtualBtn,
+            ultimosTrintaDiasBtn: !!ultimosTrintaDiasBtn,
+            todosRegistrosBtn: !!todosRegistrosBtn
+        });
+        
+        // Tentar novamente após um tempo
+        console.log('[DESPESAS] Tentando reconfigurar filtros em 2 segundos...');
+        setTimeout(() => {
+            configurarFiltrosDespesas();
+        }, 2000);
+        return;
+    }
+
+    console.log('[DESPESAS] Todos os elementos encontrados, configurando eventos...');
+
+    // Limpar listeners existentes primeiro (prevenção contra duplicação)
+    const novoMesAtualBtn = mesAtualBtn.cloneNode(true);
+    const novoUltimosTrintaDiasBtn = ultimosTrintaDiasBtn.cloneNode(true);
+    const novoTodosRegistrosBtn = todosRegistrosBtn.cloneNode(true);
+    
+    mesAtualBtn.parentNode.replaceChild(novoMesAtualBtn, mesAtualBtn);
+    ultimosTrintaDiasBtn.parentNode.replaceChild(novoUltimosTrintaDiasBtn, ultimosTrintaDiasBtn);
+    todosRegistrosBtn.parentNode.replaceChild(novoTodosRegistrosBtn, todosRegistrosBtn);
+
+    // Event listeners para botões de período pré-definido (nos elementos novos)
+    novoMesAtualBtn.addEventListener('click', definirDespesaMesAtual);
+    novoUltimosTrintaDiasBtn.addEventListener('click', definirDespesaUltimosTrintaDias);
+    novoTodosRegistrosBtn.addEventListener('click', removerFiltrosDespesas);
+
+    // Event listener para formulário de filtro
+    filtroForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        aplicarFiltroDespesaData();
+    });
+
+    // Event listeners para mudança automática nos campos de data
+    dataInicioInput.addEventListener('change', aplicarFiltroDespesaData);
+    dataFimInput.addEventListener('change', aplicarFiltroDespesaData);    // Definir mês atual como padrão (após configurar os listeners)
+    setTimeout(() => {
+        if (document.getElementById('filtroDespesaDataInicio') && document.getElementById('filtroDespesaDataFim')) {
+            definirDespesaMesAtual();
+        }
+    }, 500);
+    
+    console.log('[DESPESAS] Filtros configurados com sucesso!');
 }
 
 // Definir período para mês atual
@@ -630,6 +717,179 @@ function atualizarIndicadorFiltro(dataInicio, dataFim) {
         texto = `Até: ${fim} (${abastecimentosFiltrados.length} registros)`;
     }
 
+    textoFiltro.textContent = texto;    indicador.style.display = 'block';
+}
+
+// ============ FUNÇÕES DE FILTRO PARA DESPESAS ============
+
+// Variáveis globais para filtros de despesas
+let filtrosDespesasAtivos = false;
+let despesasFiltradas = [];
+
+// Definir período para mês atual - Despesas
+function definirDespesaMesAtual() {
+    console.log('[DESPESAS] Definindo filtro para mês atual...');
+    
+    const dataInicioInput = document.getElementById('filtroDespesaDataInicio');
+    const dataFimInput = document.getElementById('filtroDespesaDataFim');
+    
+    if (!dataInicioInput || !dataFimInput) {
+        console.error('[DESPESAS] Campos de data não encontrados para definir mês atual');
+        return;
+    }
+    
+    const agora = new Date();
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0);
+
+    dataInicioInput.value = inicioMes.toISOString().split('T')[0];    dataFimInput.value = fimMes.toISOString().split('T')[0];
+    
+    // Aplicar filtro sempre, mesmo se não houver dados ainda
+    aplicarFiltroDespesaData();
+}
+
+// Definir período para últimos 30 dias - Despesas
+function definirDespesaUltimosTrintaDias() {
+    console.log('[DESPESAS] Definindo filtro para últimos 30 dias...');
+    
+    const dataInicioInput = document.getElementById('filtroDespesaDataInicio');
+    const dataFimInput = document.getElementById('filtroDespesaDataFim');
+    
+    if (!dataInicioInput || !dataFimInput) {
+        console.error('[DESPESAS] Campos de data não encontrados para definir últimos 30 dias');
+        return;
+    }
+    
+    const hoje = new Date();
+    const trintaDiasAtras = new Date();
+    trintaDiasAtras.setDate(hoje.getDate() - 30);
+
+    dataInicioInput.value = trintaDiasAtras.toISOString().split('T')[0];
+    dataFimInput.value = hoje.toISOString().split('T')[0];
+    
+    aplicarFiltroDespesaData();
+}
+
+// Remover todos os filtros - Despesas
+function removerFiltrosDespesas() {
+    console.log('[DESPESAS] Removendo filtros...');
+    
+    const dataInicioInput = document.getElementById('filtroDespesaDataInicio');
+    const dataFimInput = document.getElementById('filtroDespesaDataFim');
+    
+    if (dataInicioInput) dataInicioInput.value = '';
+    if (dataFimInput) dataFimInput.value = '';
+    
+    filtrosDespesasAtivos = false;
+    despesasFiltradas = [];
+    
+    // Esconder indicador de filtro
+    const indicador = document.getElementById('indicadorFiltroDespesas');
+    if (indicador) {
+        indicador.style.display = 'none';    }
+    
+    renderDespesas();
+}
+
+// Aplicar filtro de data nas despesas
+function aplicarFiltroDespesaData() {
+    console.log('[DEBUG] iniciar aplicarFiltroDespesaData');
+    setTimeout(() => {
+        console.log('[DEBUG] mostrar loading de filtro despesas');
+        AlertUtils.showLoading('🔍 Aplicando filtros...');
+
+        setTimeout(async () => {
+            console.log('[DEBUG] processar filtro despesas');
+            try {
+                const dataInicioEl = document.getElementById('filtroDespesaDataInicio');
+                const dataFimEl = document.getElementById('filtroDespesaDataFim');
+                
+                if (!dataInicioEl || !dataFimEl) {
+                    console.error('[FILTRO DESPESAS] Elementos de data não encontrados');
+                    return;
+                }
+                
+                const dataInicio = dataInicioEl.value;
+                const dataFim = dataFimEl.value;
+                
+                if (!dataInicio && !dataFim) {
+                    removerFiltrosDespesas();
+                    return;
+                }
+
+                // Verificar se o array de despesas existe
+                if (!Array.isArray(despesas)) {
+                    console.warn('[FILTRO DESPESAS] Array de despesas não carregado ainda');
+                    return;
+                }
+
+                console.log('[FILTRO DESPESAS] Aplicando filtro:', { dataInicio, dataFim, totalDespesas: despesas.length });
+
+                // Filtrar despesas por data
+                despesasFiltradas = despesas.filter(despesa => {
+                    const dataDespesa = new Date(despesa.data);
+                    let incluir = true;
+
+                    if (dataInicio) {
+                        const dataInicioFiltro = new Date(dataInicio);
+                        incluir = incluir && dataDespesa >= dataInicioFiltro;
+                    }
+
+                    if (dataFim) {
+                        const dataFimFiltro = new Date(dataFim);
+                        dataFimFiltro.setHours(23, 59, 59, 999); // Incluir o dia inteiro
+                        incluir = incluir && dataDespesa <= dataFimFiltro;
+                    }
+
+                    return incluir;
+                });
+
+                filtrosDespesasAtivos = true;
+                console.log('[FILTRO DESPESAS] Despesas filtradas:', despesasFiltradas.length);
+
+                // Atualizar indicador e renderizar tabela
+                atualizarIndicadorFiltroDespesas(dataInicio, dataFim);
+                renderDespesas();
+
+                setTimeout(() => {
+                    // Fechar loading
+                    AlertUtils.close();
+
+                    // Toast de sucesso apenas se houver dados
+                    if (despesasFiltradas.length > 0) {
+                        AlertToast.success(`✅ Filtro aplicado! ${despesasFiltradas.length} registro(s) encontrado(s).`);
+                    } else {
+                        AlertWarning.noData('🔍 Nenhum registro encontrado para o período selecionado.');
+                    }
+                }, 300);
+
+            } catch (error) {
+                console.error('[FILTRO DESPESAS] Erro ao aplicar filtro:', error);
+                AlertUtils.close();
+                AlertError.show('Erro no Filtro', 'Ocorreu um erro ao aplicar o filtro. Tente novamente.');
+            }
+        }, 400);
+    });
+}
+
+// Atualizar indicador visual do filtro ativo - Despesas
+function atualizarIndicadorFiltroDespesas(dataInicio, dataFim) {
+    const indicador = document.getElementById('indicadorFiltroDespesas');
+    const textoFiltro = document.getElementById('textoFiltroDespesas');
+    
+    let texto = '';
+    if (dataInicio && dataFim) {
+        const inicio = new Date(dataInicio).toLocaleDateString('pt-BR');
+        const fim = new Date(dataFim).toLocaleDateString('pt-BR');
+        texto = `Período: ${inicio} a ${fim} (${despesasFiltradas.length} registros)`;
+    } else if (dataInicio) {
+        const inicio = new Date(dataInicio).toLocaleDateString('pt-BR');
+        texto = `A partir de: ${inicio} (${despesasFiltradas.length} registros)`;
+    } else if (dataFim) {
+        const fim = new Date(dataFim).toLocaleDateString('pt-BR');
+        texto = `Até: ${fim} (${despesasFiltradas.length} registros)`;
+    }
+
     textoFiltro.textContent = texto;
     indicador.style.display = 'block';
 }
@@ -677,13 +937,20 @@ function renderCaminhoes() {
     document.querySelectorAll('.edit-caminhao').forEach(button => {
         button.addEventListener('click', () => editCaminhao(button.getAttribute('data-id')));
     });
-    
-    document.querySelectorAll('.delete-caminhao').forEach(button => {
+      document.querySelectorAll('.delete-caminhao').forEach(button => {
         button.addEventListener('click', () => {
             const id = button.getAttribute('data-id');
             showDeleteConfirmation(id, 'caminhao');
         });
     });
+
+    // Aplicar visibilidade baseada no papel do usuário
+    if (window.authManager && window.authManager.getUser()) {
+        const userRole = window.authManager.getUser().role;
+        window.applyRoleVisibility(userRole);
+    } else {
+        window.applyRoleVisibility('guest');
+    }
 }
 
 // Renderizar tabela de abastecimentos
@@ -737,8 +1004,7 @@ function renderAbastecimentos() {
         
         tableBody.appendChild(row);
     });
-    
-    // Adicionar manipuladores de eventos para botões de edição e exclusão
+      // Adicionar manipuladores de eventos para botões de edição e exclusão
     document.querySelectorAll('.edit-abastecimento').forEach(button => {
         button.addEventListener('click', () => editAbastecimento(button.getAttribute('data-id')));
     });
@@ -749,6 +1015,14 @@ function renderAbastecimentos() {
             showDeleteConfirmation(id, 'abastecimento');
         });
     });
+
+    // Aplicar visibilidade baseada no papel do usuário
+    if (window.authManager && window.authManager.getUser()) {
+        const userRole = window.authManager.getUser().role;
+        window.applyRoleVisibility(userRole);
+    } else {
+        window.applyRoleVisibility('guest');
+    }
 }
 
 // Salvar caminhão (novo ou editado)
@@ -1093,7 +1367,7 @@ function populateCaminhaoSelects() {
 
 // Mostrar modal de confirmação de exclusão
 async function showDeleteConfirmation(id, type) {
-    const itemName = type === 'caminhao' ? 'caminhão' : 'abastecimento';
+    const itemName = type === 'caminhao' ? 'caminhão' : type === 'abastecimento' ? 'abastecimento' : 'despesa';
     
     const result = await AlertConfirm.delete(itemName);
     if (result.isConfirmed) {
@@ -1150,9 +1424,12 @@ async function confirmDelete(id, type) {
             
             // Atualizar referências globais para os relatórios
             updateGlobalReferences();
-            
-            // Atualizar interface
+              // Atualizar interface
             renderAbastecimentos();
+        } else if (type === 'despesa') {
+            // Excluir despesa
+            await deleteDespesa(id);
+            return; // A função deleteDespesa já atualiza a interface
         }
           // Atualizar dashboard
         updateDashboard();
@@ -1536,18 +1813,288 @@ function renderAbastecimentosFiltrados() {
         
         tableBody.appendChild(row);
     });
+}
+
+// ============ FUNÇÕES DE DESPESAS ============
+
+// Carregar despesas do backend
+async function loadDespesas() {
+    try {
+        console.log('[APP] Carregando despesas...');
+        const loadingInstance = AlertInfo.loadingData();
+        
+        despesas = await window.dbApi.buscarDespesas();
+        console.log('[APP] Despesas carregadas:', despesas);
+        
+        // Atualizar referências globais
+        window.despesas = despesas;
+        
+        // Renderizar na interface
+        renderDespesas();
+        
+        // Fechar loading
+        AlertUtils.close();
+        
+        console.log('[APP] Despesas carregadas com sucesso!');
+    } catch (error) {
+        console.error('[APP] Erro ao carregar despesas:', error);
+        AlertUtils.close();
+        AlertError.show('Erro ao Carregar', 'Não foi possível carregar as despesas. Verifique a conexão.');
+    }
+}
+
+// Salvar despesa (criar ou editar)
+async function saveDespesa() {
+    console.log('[APP] Iniciando salvamento de despesa...');
     
-    // Adicionar manipuladores de eventos para botões de edição e exclusão
-    document.querySelectorAll('.edit-abastecimento').forEach(button => {
-        button.addEventListener('click', () => editAbastecimento(button.getAttribute('data-id')));
+    const despesaIdInput = document.getElementById('despesaId');
+    const dataInput = document.getElementById('dataDespesa');
+    const fornecedorInput = document.getElementById('fornecedorDespesa');
+    const descricaoInput = document.getElementById('descricaoDespesa');
+    const categoriaSelect = document.getElementById('categoriaDespesa');
+    const valorInput = document.getElementById('valorDespesa');
+    const observacoesInput = document.getElementById('observacoesDespesa');
+
+    // Validar campos obrigatórios
+    if (!dataInput.value || !fornecedorInput.value || !descricaoInput.value || 
+        !categoriaSelect.value || !valorInput.value) {
+        AlertError.validation('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+
+    // Validar valor
+    const valor = parseFloat(valorInput.value);
+    if (valor <= 0) {
+        AlertError.validation('O valor deve ser maior que zero.');
+        return;
+    }
+
+    // Verificar se é uma edição ou um novo registro
+    const isEdit = despesaIdInput.value !== '';
+    console.log(`[APP] Tipo de operação: ${isEdit ? 'Edição' : 'Nova despesa'}`);
+
+    // Preparar objeto da despesa
+    const despesaObj = {
+        id: isEdit ? despesaIdInput.value : null,
+        data: dataInput.value,
+        fornecedor: fornecedorInput.value,
+        descricao: descricaoInput.value,
+        categoria: categoriaSelect.value,
+        valor: valor,
+        observacoes: observacoesInput.value || null
+    };
+
+    console.log('[APP] Objeto despesa preparado:', despesaObj);
+
+    try {
+        // Mostrar loading animado
+        const loadingInstance = AlertInfo.loadingData();
+
+        console.log('[APP] Enviando despesa para API...');
+        // Salvar usando dbApi para conectar ao backend
+        const savedDespesa = await window.dbApi.salvarDespesa(despesaObj);
+        console.log('[APP] Despesa salva com sucesso:', savedDespesa);
+
+        // Fechar loading
+        AlertUtils.close();
+
+        // Atualizar array local
+        if (isEdit) {
+            const index = despesas.findIndex(d => d.id === despesaIdInput.value);
+            if (index !== -1) {
+                despesas[index] = savedDespesa;
+            }
+        } else {
+            despesas.push(savedDespesa);
+        }
+
+        // Atualizar referências globais
+        window.despesas = despesas;
+
+        // Atualizar interface
+        renderDespesas();
+        updateDashboard();
+
+        // Exibir toast de sucesso
+        AlertToast.success(isEdit ? 'Despesa atualizada com sucesso!' : 'Despesa cadastrada com sucesso!');
+
+        // Fechar modal e limpar formulário
+        AuthManager.closeModalSafely('addDespesaModal', resetDespesaForm);
+
+    } catch (error) {
+        console.error('[APP] Erro ao salvar despesa:', error);
+        AlertUtils.close();
+        AlertError.show('Erro ao Salvar', 'Ocorreu um erro ao salvar a despesa. Tente novamente.');
+    }
+}
+
+// Renderizar tabela de despesas
+function renderDespesas() {
+    const tableBody = document.getElementById('despesaTableBody');
+    tableBody.innerHTML = '';
+
+    // Usar dados filtrados se houver filtros ativos, senão usar todos
+    const despesasParaExibir = filtrosDespesasAtivos ? despesasFiltradas : despesas;
+
+    if (despesasParaExibir.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="6" class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                ${filtrosDespesasAtivos ? 'Nenhuma despesa encontrada para os filtros aplicados.' : 'Nenhuma despesa cadastrada.'}
+            </td>
+        `;
+        tableBody.appendChild(row);
+        return;
+    }
+
+    despesasParaExibir.forEach(despesa => {
+        const row = document.createElement('tr');
+        
+        // Formatar data
+        const dataFormatada = new Date(despesa.data).toLocaleDateString('pt-BR');
+        
+        // Formatar valor
+        const valorFormatado = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(despesa.valor);
+
+        row.innerHTML = `
+            <td>${dataFormatada}</td>
+            <td>${despesa.fornecedor}</td>
+            <td>${despesa.descricao}</td>            <td><span class="badge bg-secondary">${despesa.categoria}</span></td>
+            <td class="fw-bold text-primary">${valorFormatado}</td>            <td>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary btn-sm edit-despesa admin-only" data-id="${despesa.id}" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm delete-despesa admin-only" data-id="${despesa.id}" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
     });
-    
-    document.querySelectorAll('.delete-abastecimento').forEach(button => {
+
+    // Adicionar event listeners para botões de ação
+    document.querySelectorAll('.edit-despesa').forEach(button => {
         button.addEventListener('click', () => {
             const id = button.getAttribute('data-id');
-            showDeleteConfirmation(id, 'abastecimento');
+            editDespesa(id);
+        });
+    });    document.querySelectorAll('.delete-despesa').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = button.getAttribute('data-id');
+            showDeleteConfirmation(id, 'despesa');
         });
     });
+
+    // Aplicar visibilidade baseada no papel do usuário
+    if (window.authManager && window.authManager.getUser()) {
+        const userRole = window.authManager.getUser().role;
+        window.applyRoleVisibility(userRole);
+    } else {
+        window.applyRoleVisibility('guest');
+    }
+}
+
+// Editar despesa
+function editDespesa(id) {
+    const despesa = despesas.find(d => d.id == id);
+    if (!despesa) {
+        AlertError.show('Erro', 'Despesa não encontrada.');
+        return;
+    }
+
+    console.log('[EDIT DESPESA] Dados da despesa:', despesa);
+
+    // Preencher formulário
+    document.getElementById('despesaId').value = despesa.id;
+    
+    // Converter data para formato correto do input date (YYYY-MM-DD)
+    let dataFormatada = '';
+    if (despesa.data) {
+        const dataObj = new Date(despesa.data);
+        if (!isNaN(dataObj.getTime())) {
+            // Garantir que a data está no formato YYYY-MM-DD
+            dataFormatada = dataObj.toISOString().split('T')[0];
+        }
+    }
+    document.getElementById('dataDespesa').value = dataFormatada;
+    console.log('[EDIT DESPESA] Data original:', despesa.data, 'Data formatada:', dataFormatada);
+    
+    document.getElementById('fornecedorDespesa').value = despesa.fornecedor || '';
+    document.getElementById('descricaoDespesa').value = despesa.descricao || '';
+    document.getElementById('categoriaDespesa').value = despesa.categoria || '';
+    document.getElementById('valorDespesa').value = despesa.valor || '';
+    document.getElementById('observacoesDespesa').value = despesa.observacoes || '';
+
+    // Alterar título do modal para edição
+    const modalTitle = document.querySelector('#addDespesaModal .modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Atualizar Despesa';
+    }
+
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('addDespesaModal'));
+    modal.show();
+}
+
+// Excluir despesa
+async function deleteDespesa(id) {
+    try {
+        console.log(`[APP] Excluindo despesa ID: ${id}`);
+        
+        // Mostrar loading
+        const loadingInstance = AlertInfo.loadingData();
+        
+        // Excluir do backend
+        await window.dbApi.excluirDespesa(id);
+        
+        // Remover do array local
+        const index = despesas.findIndex(d => d.id == id);
+        if (index !== -1) {
+            despesas.splice(index, 1);
+        }
+
+        // Atualizar referências globais
+        window.despesas = despesas;
+
+        // Atualizar interface
+        renderDespesas();
+        updateDashboard();
+
+        // Fechar loading
+        AlertUtils.close();
+
+        // Toast de sucesso
+        AlertToast.success('Despesa excluída com sucesso!');
+        
+    } catch (error) {
+        console.error('[APP] Erro ao excluir despesa:', error);
+        AlertUtils.close();
+        AlertError.show('Erro ao Excluir', 'Não foi possível excluir a despesa. Tente novamente.');
+    }
+}
+
+// Resetar formulário de despesa
+function resetDespesaForm() {
+    document.getElementById('despesaId').value = '';
+    document.getElementById('dataDespesa').value = new Date().toISOString().split('T')[0];
+    document.getElementById('fornecedorDespesa').value = '';
+    document.getElementById('descricaoDespesa').value = '';
+    document.getElementById('categoriaDespesa').value = '';
+    document.getElementById('valorDespesa').value = '';
+    document.getElementById('observacoesDespesa').value = '';
+    
+    // Resetar título do modal para criação
+    const modalTitle = document.querySelector('#addDespesaModal .modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Registrar Despesa';
+    }
 }
 
 // ===== FUNÇÃO DO DASHBOARD =====

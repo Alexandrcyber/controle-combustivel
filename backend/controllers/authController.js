@@ -122,11 +122,9 @@ async function verifyToken(req, res) {
         const decoded = jwt.verify(
             token, 
             process.env.JWT_SECRET || 'controle_combustivel_jwt_secret_2025'
-        );
-
-        // Buscar usuário atualizado
+        );        // Buscar usuário atualizado
         const result = await pool.query(
-            'SELECT id, email, role, name, created_at, last_login FROM usuarios WHERE id = $1',
+            'SELECT id, email, role, nome, created_at, last_login FROM usuarios WHERE id = $1',
             [decoded.userId]
         );
 
