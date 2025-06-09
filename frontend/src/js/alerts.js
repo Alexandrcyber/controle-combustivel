@@ -247,7 +247,12 @@ const AlertInfo = {
                             <div class="progress-bar">
                                 <div class="progress-fill"></div>
                             </div>
-                            <div class="progress-text">Carregando...</div>
+                            <div class="progress-text">Carregando sistema...</div>
+                            <div class="loading-status">
+                                <div class="status-item">📦 Preparando dados</div>
+                                <div class="status-item" style="animation-delay: 1s;">🔄 Sincronizando</div>
+                                <div class="status-item" style="animation-delay: 2s;">✅ Finalizando</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,10 +260,18 @@ const AlertInfo = {
             allowOutsideClick: false,
             allowEscapeKey: false,
             showConfirmButton: false,
-            width: '480px',
-            backdrop: 'rgba(0,0,0,0.4)',
+            width: '520px',
+            backdrop: 'rgba(0,0,0,0.7)',
             customClass: {
                 popup: 'system-loading-modal'
+            },
+            didOpen: () => {
+                // Adicionar destaque visual extra
+                const popup = Swal.getPopup();
+                if (popup) {
+                    popup.style.transform = 'scale(1.02)';
+                    popup.style.transition = 'transform 0.3s ease';
+                }
             }
         });
     },
@@ -823,6 +836,38 @@ const addCustomCSS = () => {
         @keyframes textPulse {
             0%, 100% { opacity: 0.7; }
             50% { opacity: 1; }
+        }
+
+        /* Estilos para os indicadores de status de carregamento */
+        .loading-status {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            font-size: 12px;
+            color: #6c757d;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+            animation: statusPulse 3s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { 
+                opacity: 0.6;
+                transform: scale(0.95);
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1);
+                background: rgba(40, 167, 69, 0.15);
+            }
         }
     `;
     document.head.appendChild(styleElement);

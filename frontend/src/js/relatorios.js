@@ -67,8 +67,8 @@ function getNumField(obj, snakeCase, camelCase, defaultValue = 0) {
 async function gerarRelatorioConsumo() {
     console.log('Iniciando geracao de relatorio de consumo...');
     
-    // Mostrar alerta de loading
-    AlertInfo.loading('Gerando Relatorio de Consumo', 'Processando dados, aguarde...');
+    // Mostrar alerta de loading do sistema para relatórios importantes
+    AlertInfo.loadingSystem('Gerando Relatório de Consumo', 'Processando dados de caminhões e abastecimentos para gerar análises detalhadas de consumo e eficiência.');
     
     // Mostrar loading enquanto processa
     const resultadosElement = document.getElementById('relatorioResultados');
@@ -79,7 +79,7 @@ async function gerarRelatorioConsumo() {
         return;
     }
     
-    resultadosElement.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Gerando relatório...</p></div>';
+    resultadosElement.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Gerando relatório de consumo...</p></div>';
     
     const dataInicio = document.getElementById('dataInicio').value;
     const dataFim = document.getElementById('dataFim').value;
@@ -307,8 +307,8 @@ async function gerarRelatorioConsumo() {
 async function gerarRelatorioCustos() {
     console.log('🔄 Iniciando geração de relatório de custos diário...');
     
-    // Mostrar alerta de loading
-    AlertInfo.loading('Gerando Relatório de Custos', 'Processando dados diários, aguarde...');
+    // Mostrar alerta de loading do sistema para relatórios de custos
+    AlertInfo.loadingSystem('Gerando Relatório de Custos', 'Processando dados financeiros e calculando custos operacionais detalhados por período.');
     
     // Spinner de carregamento
     const resultadosElement = document.getElementById('relatorioResultados');

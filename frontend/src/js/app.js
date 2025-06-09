@@ -200,27 +200,28 @@ async function loadDataFromLocalStorage() {
     try {
         console.log('[LOAD] Iniciando carregamento de dados...');
         
+        // Mostrar alerta de carregamento do sistema mais proeminente e persistente
+        loadingAlert = AlertInfo.loadingSystem(
+            'Carregando Sistema de Gestão Logística',
+            'Sincronizando dados de caminhões, abastecimentos e relatórios. Este processo garante que você tenha as informações mais atualizadas disponíveis.'
+        );
+        
+        // Aguardar um momento para o alerta aparecer antes de iniciar o carregamento
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Verificar se window.dbApi está disponível
         if (window.dbApi && typeof window.dbApi.buscarCaminhoes === 'function') {
             console.log('[LOAD] Usando window.dbApi para buscar dados...');
             
-            // Mostrar alerta profissional de carregamento do sistema
-            loadingAlert = AlertInfo.loadingSystem(
-                'Carregando Sistema de Gestão Logística',
-                'Sincronizando dados de caminhões, abastecimentos e relatórios do banco de dados. Aguarde alguns instantes.'
-            );
-            
-            // Usar dbApi para buscar dados do backend
+            // Usar dbApi para buscar dados do backend com aguardo entre operações
+            console.log('[LOAD] 🚛 Carregando caminhões...');
             caminhoes = await window.dbApi.buscarCaminhoes();
+            
+            // Pequena pausa para dar tempo de visualizar o progresso
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            console.log('[LOAD] ⛽ Carregando abastecimentos...');
             abastecimentos = await window.dbApi.buscarAbastecimentos();
-            
-            // Fechar alerta de carregamento
-            if (AlertUtils.isOpen()) {
-                AlertUtils.close();
-            }
-            
-            // Mostrar toast de sucesso discreto
-            AlertToast.success(`✅ Sistema carregado: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
             
             console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
@@ -231,14 +232,12 @@ async function loadDataFromLocalStorage() {
             console.warn('[LOAD] window.dbApi não disponível, usando localStorage como fallback');
             
             // Fallback para localStorage
+            console.log('[LOAD] 📦 Acessando dados locais...');
             const caminhoesJSON = localStorage.getItem('caminhoes');
             const abastecimentosJSON = localStorage.getItem('abastecimentos');
             
             caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
             abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
-            
-            // Mostrar toast informativo para fallback
-            AlertToast.info('Usando dados locais (modo offline)');
             
             console.log('[LOAD] Dados carregados via localStorage:', {
                 caminhoes: caminhoes.length,
@@ -246,10 +245,29 @@ async function loadDataFromLocalStorage() {
             });
         }
         
+        // Aguardar um momento para processar os dados
+        console.log('[LOAD] 📊 Processando e organizando dados...');
+        await new Promise(resolve => setTimeout(resolve, 400));
+        
         // Atualizar referências globais para os relatórios
         updateGlobalReferences();
         
         console.log(`✅ Carregamento concluído: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos`);
+        
+        // Aguardar um pouco mais para garantir que todo o processo foi visualizado
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Fechar alerta de carregamento
+        if (AlertUtils.isOpen()) {
+            AlertUtils.close();
+        }
+        
+        // Mostrar toast de sucesso discreto após um momento
+        setTimeout(() => {
+            const fonte = window.dbApi ? 'banco de dados' : 'dados locais';
+            AlertToast.success(`✅ Sistema carregado: ${caminhoes.length} caminhões e ${abastecimentos.length} abastecimentos (${fonte})`);
+        }, 200);
+        
     } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
         
@@ -513,8 +531,8 @@ function aplicarFiltroData() {
         return;
     }
 
-    // Mostrar loading para operação de filtro
-    AlertInfo.loadingData('Aplicando Filtro', 'Filtrando registros por período, aguarde...');
+    // Mostrar loading mais proeminente para operação de filtro
+    AlertInfo.loadingSystem('🔍 Aplicando Filtro', 'Analisando registros por período selecionado...');
 
     // Usar setTimeout para permitir que o loading apareça antes do processamento
     setTimeout(() => {
@@ -545,22 +563,25 @@ function aplicarFiltroData() {
             // Renderizar abastecimentos filtrados
             renderAbastecimentosFiltrados();
 
-            // Fechar loading
-            AlertUtils.close();
+            // Adicionar delay para garantir visibilidade do carregamento
+            setTimeout(() => {
+                // Fechar loading
+                AlertUtils.close();
 
-            // Toast de sucesso apenas se houver dados
-            if (abastecimentosFiltrados.length > 0) {
-                AlertToast.success(`Filtro aplicado! ${abastecimentosFiltrados.length} registro(s) encontrado(s).`);
-            } else {
-                AlertWarning.noData('Nenhum registro encontrado para o período selecionado.');
-            }
+                // Toast de sucesso apenas se houver dados
+                if (abastecimentosFiltrados.length > 0) {
+                    AlertToast.success(`✅ Filtro aplicado! ${abastecimentosFiltrados.length} registro(s) encontrado(s).`);
+                } else {
+                    AlertWarning.noData('🔍 Nenhum registro encontrado para o período selecionado.');
+                }
+            }, 300);
 
         } catch (error) {
             console.error('[FILTRO] Erro ao aplicar filtro:', error);
             AlertUtils.close();
             AlertError.show('Erro no Filtro', 'Ocorreu um erro ao aplicar o filtro. Tente novamente.');
         }
-    }, 100);
+    }, 400);
 }
 
 // Atualizar indicador visual do filtro ativo
@@ -1075,7 +1096,7 @@ async function confirmDelete(id, type) {
                 }
                 
                 // Mostrar loading novamente após confirmação
-                AlertInfo.loadingData();
+                AlertInfo.loadingSystem('🗑️ Excluindo Caminhão', 'Removendo caminhão e abastecimentos associados...');
                 
                 // Remover abastecimentos associados
                 abastecimentos.filter(a => a.caminhaoId === id).forEach(async (a) => {
@@ -1508,8 +1529,11 @@ async function updateDashboard() {
     try {
         console.log('[DASHBOARD] Atualizando dashboard...');
         
-        // Mostrar loading para atualização do dashboard
-        AlertInfo.loadingData('Atualizando Dashboard', 'Processando dados e gerando gráficos, aguarde...');
+        // Mostrar loading mais proeminente para atualização do dashboard
+        AlertInfo.loadingSystem(
+            'Atualizando Dashboard',
+            'Processando dados de caminhões e abastecimentos para gerar estatísticas e gráficos atualizados.'
+        );
 
         // Obter datas dos filtros do dashboard
         const dataInicio = document.getElementById('dashboardDataInicio').value;
@@ -1532,9 +1556,12 @@ async function updateDashboard() {
             return updateDashboard(); // Reexecutar com as datas definidas
         }
         
-        // Usar setTimeout para permitir que o loading apareça
+        // Usar setTimeout para permitir que o loading apareça e seja visível
         setTimeout(async () => {
             try {
+                // Pequena pausa para mostrar o processamento
+                await new Promise(resolve => setTimeout(resolve, 600));
+                
                 // Filtrar abastecimentos pelo período
                 const inicio = new Date(dataInicio);
                 const fim = new Date(dataFim + 'T23:59:59');
@@ -1567,11 +1594,16 @@ async function updateDashboard() {
                 
                 console.log('[DASHBOARD] Dashboard atualizado com sucesso');
                 
+                // Pequena pausa adicional para garantir que toda a atualização seja processada
+                await new Promise(resolve => setTimeout(resolve, 400));
+                
                 // Fechar loading
                 AlertUtils.close();
                 
-                // Toast de sucesso discreto
-                AlertToast.success(`Dashboard atualizado! ${abastecimentosFiltrados.length} registro(s) processado(s).`);
+                // Toast de sucesso discreto após um momento
+                setTimeout(() => {
+                    AlertToast.success(`Dashboard atualizado! ${abastecimentosFiltrados.length} registro(s) processado(s).`);
+                }, 200);
                 
             } catch (error) {
                 console.error('[DASHBOARD] Erro ao processar dados:', error);
