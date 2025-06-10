@@ -24,11 +24,10 @@ const API_CONFIG = {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             console.log('[API CONFIG] Ambiente local detectado, usando /api');
             return '/api';
-        }
-        // 4. Se estiver em domínio Netlify, usar backend direto
+        }        // 4. Se estiver em domínio Netlify, usar proxy do Netlify
         if (window.location.hostname.includes('netlify.app')) {
-            console.log('[API CONFIG] Netlify detectado, usando backend direto');
-            return 'https://controle-combustivel.onrender.com/api';
+            console.log('[API CONFIG] Netlify detectado, usando proxy /api');
+            return '/api';
         }
         // 5. Em produção, usar redirecionamento do Netlify
         console.log('[API CONFIG] Fallback para redirecionamento /api');
