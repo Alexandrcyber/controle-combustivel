@@ -307,12 +307,12 @@ async function loadDataFromLocalStorage() {
                 console.error('[LOAD] ❌ Erro ao carregar despesas:', error);
                 despesas = [];
             }
-            
-            console.log('[LOAD] Dados carregados via API:', {
+              console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
                 abastecimentos: abastecimentos.length,
                 despesas: despesas.length
-            });} else {
+            });
+        } else {
             console.warn('[LOAD] window.dbApi não disponível, usando localStorage');
             
             const caminhoesJSON = localStorage.getItem('caminhoes');
@@ -339,14 +339,15 @@ async function loadDataFromLocalStorage() {
         
     } catch (error) {
         console.error('❌ [LOAD] Erro ao carregar dados:', error);
-        
-        // Fallback para localStorage em caso de erro
+          // Fallback para localStorage em caso de erro
         try {
             const caminhoesJSON = localStorage.getItem('caminhoes');
             const abastecimentosJSON = localStorage.getItem('abastecimentos');
+            const despesasJSON = localStorage.getItem('despesas');
             
             caminhoes = caminhoesJSON ? JSON.parse(caminhoesJSON) : [];
             abastecimentos = abastecimentosJSON ? JSON.parse(abastecimentosJSON) : [];
+            despesas = despesasJSON ? JSON.parse(despesasJSON) : [];
             
             updateGlobalReferences();
             console.log('✅ [LOAD] Dados carregados via fallback');
@@ -354,6 +355,7 @@ async function loadDataFromLocalStorage() {
             console.error('❌ [LOAD] Erro no fallback:', fallbackError);
             caminhoes = [];
             abastecimentos = [];
+            despesas = [];
             updateGlobalReferences();
         }
     }
