@@ -24,7 +24,7 @@ if (isLocalhost) {
     console.log('🌐 Netlify detectado');
     config = {
         BACKEND_URL: 'https://controle-combustivel.onrender.com',
-        API_BASE_URL: 'https://controle-combustivel.onrender.com/api',
+        API_BASE_URL: '/api', // Usar proxy do Netlify
         NODE_ENV: 'production',
         IS_NETLIFY: true,
         IS_LOCAL: false
