@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Despesas - Gestão Logística</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-title {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1 class="debug-title">🔍 Debug Sistema de Despesas - Produção</h1>
+        <p>Esta página irá diagnosticar por que as despesas não estão carregando em produção.</p>
+        
+        <div class="grid">
+            <div>
+                <button onclick="testarConectividade()">🌐 Testar Conectividade API</button>
+                <button onclick="testarConfiguracaoAPI()">⚙️ Verificar Configuração API</button>
+                <button onclick="testarCarregamentoDespesas()">💰 Testar Carregamento Despesas</button>
+            </div>
+            <div>
+                <button onclick="verificarConsole()">🐛 Verificar Console</button>
+                <button onclick="testarLocalStorage()">💾 Verificar LocalStorage</button>
+                <button onclick="limparLogs()">🧹 Limpar Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="debug-container">
+        <h2 class="debug-title">📊 Resultados dos Testes</h2>
+        <div id="resultados"></div>
+    </div>
+
+    <div class="debug-container">
+        <h2 class="debug-title">🔧 Configurações do Sistema</h2>
+        <div id="configuracoes"></div>
+    </div>
+
+    <div class="debug-container">
+        <h2 class="debug-title">📝 Logs do Console</h2>
+        <div class="code-block" id="logs"></div>
+    </div>
+
+    <script>
+        let logs = [];
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+
+        // Interceptar logs do console
+        function interceptConsole() {
+            ['log', 'error', 'warn', 'info'].forEach(level => {
+                console[level] = function(...args) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    const message = args.map(arg => 
+                        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                    ).join(' ');
+                    
+                    logs.push(`[${timestamp}] ${level.toUpperCase()}: ${message}`);
+                    originalConsole[level].apply(console, args);
+                    atualizarLogs();
+                };
+            });
+        }
+
+        function atualizarLogs() {
+            document.getElementById('logs').textContent = logs.slice(-50).join('\n');
+        }
+
+        function limparLogs() {
+            logs = [];
+            atualizarLogs();
+        }
+
+        function adicionarResultado(titulo, status, detalhes) {
+            const resultados = document.getElementById('resultados');
+            const statusClass = status === 'success' ? 'success' : 
+                               status === 'error' ? 'error' : 
+                               status === 'warning' ? 'warning' : 'info';
+            
+            const html = `
+                <div class="test-result ${statusClass}">
+                    <strong>${titulo}</strong><br>
+                    ${detalhes}
+                </div>
+            `;
+            resultados.innerHTML += html;
+        }
+
+        async function testarConectividade() {
+            try {
+                adicionarResultado('🌐 Teste de Conectividade', 'info', 'Iniciando testes...');
+
+                // Teste 1: API direta
+                const respostaDireta = await fetch('https://controle-combustivel.onrender.com/api/despesas');
+                const dadosDiretos = await respostaDireta.json();
+                
+                adicionarResultado(
+                    'API Direta (Render)', 
+                    'success', 
+                    `✅ Conectividade OK - ${dadosDiretos.length} despesas encontradas`
+                );
+
+                // Teste 2: Proxy Netlify
+                const respostaProxy = await fetch('/api/despesas');
+                const dadosProxy = await respostaProxy.json();
+                
+                adicionarResultado(
+                    'Proxy Netlify', 
+                    'success', 
+                    `✅ Proxy OK - ${dadosProxy.length} despesas via proxy`
+                );
+
+                // Teste 3: Health check
+                const healthResponse = await fetch('/api/health');
+                const healthData = await healthResponse.json();
+                
+                adicionarResultado(
+                    'Health Check', 
+                    'success', 
+                    `✅ Servidor saudável - ${JSON.stringify(healthData)}`
+                );
+
+            } catch (error) {
+                adicionarResultado('🌐 Erro de Conectividade', 'error', `❌ ${error.message}`);
+            }
+        }
+
+        function testarConfiguracaoAPI() {
+            try {
+                adicionarResultado('⚙️ Configuração API', 'info', 'Verificando configurações...');
+
+                // Verificar variáveis de ambiente
+                const config = {
+                    hostname: window.location.hostname,
+                    protocol: window.location.protocol,
+                    ENV_CONFIG: window.ENV_CONFIG,
+                    ENV_API_BASE_URL: window.ENV_API_BASE_URL,
+                    API_BASE_URL: window.API_BASE_URL
+                };
+
+                adicionarResultado(
+                    'Configurações de Ambiente', 
+                    'info', 
+                    `<div class="code-block">${JSON.stringify(config, null, 2)}</div>`
+                );
+
+                // Verificar se APIs estão carregadas
+                const apisDisponiveis = {
+                    'window.apiClient': !!window.apiClient,
+                    'window.dbApi': !!window.dbApi,
+                    'window.localStorageApi': !!window.localStorageApi
+                };
+
+                adicionarResultado(
+                    'APIs Disponíveis', 
+                    Object.values(apisDisponiveis).every(v => v) ? 'success' : 'warning', 
+                    `<div class="code-block">${JSON.stringify(apisDisponiveis, null, 2)}</div>`
+                );
+
+            } catch (error) {
+                adicionarResultado('⚙️ Erro na Configuração', 'error', `❌ ${error.message}`);
+            }
+        }
+
+        async function testarCarregamentoDespesas() {
+            try {
+                adicionarResultado('💰 Carregamento Despesas', 'info', 'Testando carregamento...');
+
+                // Teste direto do endpoint
+                const response = await fetch('/api/despesas');
+                const despesas = await response.json();
+                
+                adicionarResultado(
+                    'Dados Brutos da API', 
+                    'success', 
+                    `✅ ${despesas.length} despesas retornadas pela API`
+                );
+
+                // Teste usando dbApi se disponível
+                if (window.dbApi && window.dbApi.buscarDespesas) {
+                    const despesasViaDbApi = await window.dbApi.buscarDespesas();
+                    adicionarResultado(
+                        'Carregamento via dbApi', 
+                        'success', 
+                        `✅ ${despesasViaDbApi.length} despesas via dbApi`
+                    );
+                } else {
+                    adicionarResultado(
+                        'dbApi não disponível', 
+                        'warning', 
+                        '⚠️ window.dbApi não está carregado'
+                    );
+                }
+
+                // Verificar dados globais
+                const despesasGlobais = window.despesas || [];
+                adicionarResultado(
+                    'Dados Globais', 
+                    despesasGlobais.length > 0 ? 'success' : 'warning', 
+                    `${despesasGlobais.length} despesas em window.despesas`
+                );
+
+                // Mostrar amostra dos dados
+                if (despesas.length > 0) {
+                    adicionarResultado(
+                        'Amostra de Dados', 
+                        'info', 
+                        `<div class="code-block">${JSON.stringify(despesas[0], null, 2)}</div>`
+                    );
+                }
+
+            } catch (error) {
+                adicionarResultado('💰 Erro no Carregamento', 'error', `❌ ${error.message}`);
+            }
+        }
+
+        function verificarConsole() {
+            adicionarResultado('🐛 Console', 'info', `${logs.length} mensagens capturadas no console`);
+            
+            const erros = logs.filter(log => log.includes('ERROR'));
+            if (erros.length > 0) {
+                adicionarResultado(
+                    'Erros Encontrados', 
+                    'error', 
+                    `❌ ${erros.length} erros no console:<br><div class="code-block">${erros.join('\n')}</div>`
+                );
+            } else {
+                adicionarResultado('Nenhum Erro', 'success', '✅ Nenhum erro crítico encontrado no console');
+            }
+        }
+
+        function testarLocalStorage() {
+            try {
+                const despesasLocal = localStorage.getItem('despesas');
+                const caminhoesLocal = localStorage.getItem('caminhoes');
+                const abastecimentosLocal = localStorage.getItem('abastecimentos');
+
+                const dados = {
+                    despesas: despesasLocal ? JSON.parse(despesasLocal).length : 0,
+                    caminhoes: caminhoesLocal ? JSON.parse(caminhoesLocal).length : 0,
+                    abastecimentos: abastecimentosLocal ? JSON.parse(abastecimentosLocal).length : 0
+                };
+
+                adicionarResultado(
+                    'LocalStorage', 
+                    'info', 
+                    `<div class="code-block">${JSON.stringify(dados, null, 2)}</div>`
+                );
+
+                if (despesasLocal) {
+                    adicionarResultado(
+                        'Despesas no LocalStorage', 
+                        'warning', 
+                        '⚠️ Há dados de despesas no localStorage que podem estar causando conflito'
+                    );
+                }
+
+            } catch (error) {
+                adicionarResultado('💾 Erro LocalStorage', 'error', `❌ ${error.message}`);
+            }
+        }
+
+        // Carregar configurações ao inicializar
+        window.addEventListener('load', () => {
+            interceptConsole();
+            
+            const configDiv = document.getElementById('configuracoes');
+            configDiv.innerHTML = `
+                <div class="code-block">${JSON.stringify({
+                    URL: window.location.href,
+                    Hostname: window.location.hostname,
+                    Protocol: window.location.protocol,
+                    UserAgent: navigator.userAgent.substring(0, 100) + '...'
+                }, null, 2)}</div>
+            `;
+
+            console.log('🔍 Debug Despesas iniciado');
+            console.log('Hostname:', window.location.hostname);
+            console.log('URL completa:', window.location.href);
+        });
+
+        // Carregar scripts necessários
+        function carregarScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Tentar carregar os scripts da aplicação principal
+        window.addEventListener('load', async () => {
+            try {
+                console.log('Carregando scripts da aplicação...');
+                
+                await carregarScript('/src/js/config.js');
+                await carregarScript('/src/js/api.js');
+                await carregarScript('/src/js/data.js');
+                
+                console.log('Scripts carregados com sucesso');
+                
+                // Executar teste automático após 2 segundos
+                setTimeout(() => {
+                    console.log('Executando testes automáticos...');
+                    testarConfiguracaoAPI();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Erro ao carregar scripts:', error);
+                adicionarResultado('Carregamento Scripts', 'error', `❌ Erro ao carregar scripts: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>
