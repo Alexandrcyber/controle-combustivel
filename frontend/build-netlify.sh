@@ -19,7 +19,14 @@ fi
 # Verificar se as variáveis de ambiente estão definidas
 if [ -z "$API_BASE_URL" ]; then
     echo "⚠️ Variável API_BASE_URL não definida, usando valor padrão"
-    API_BASE_URL="https://controle-combustivel.onrender.com/api"
+    # No Netlify, usar o proxy /api em vez da URL direta
+    if [ -n "$DEPLOY_URL" ] && [ -n "$SITE_ID" ]; then
+        API_BASE_URL="/api"
+        echo "🌐 Netlify detectado, usando proxy: /api"
+    else
+        API_BASE_URL="https://controle-combustivel.onrender.com/api"
+        echo "🌐 Ambiente externo, usando URL direta"
+    fi
 fi
 
 if [ -z "$BACKEND_URL" ]; then

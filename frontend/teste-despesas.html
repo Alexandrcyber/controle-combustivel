@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Rápido - Despesas</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Teste Rápido - Carregamento de Despesas</h1>
+    <div id="resultado"></div>
+    
+    <script>
+        async function testarDespesas() {
+            const resultado = document.getElementById('resultado');
+            
+            try {
+                // Teste 1: Verificar configuração
+                resultado.innerHTML += '<p>🔧 Verificando configuração...</p>';
+                resultado.innerHTML += `<p>Hostname: ${window.location.hostname}</p>`;
+                resultado.innerHTML += `<p>É Netlify: ${window.location.hostname.includes('netlify.app')}</p>`;
+                
+                // Teste 2: Carregar configuração
+                resultado.innerHTML += '<p>📦 Carregando configuração...</p>';
+                
+                // Simular o que o env-config.js faz
+                const isNetlify = window.location.hostname.includes('netlify.app');
+                const API_BASE_URL = isNetlify ? '/api' : 'https://controle-combustivel.onrender.com/api';
+                
+                resultado.innerHTML += `<p>API Base URL: ${API_BASE_URL}</p>`;
+                
+                // Teste 3: Testar conexão
+                resultado.innerHTML += '<p>🌐 Testando conexão com API...</p>';
+                
+                const response = await fetch(`${API_BASE_URL}/despesas`);
+                const despesas = await response.json();
+                
+                resultado.innerHTML += `<p>✅ Sucesso! ${despesas.length} despesas encontradas</p>`;
+                resultado.innerHTML += `<pre>${JSON.stringify(despesas[0], null, 2)}</pre>`;
+                
+            } catch (error) {
+                resultado.innerHTML += `<p>❌ Erro: ${error.message}</p>`;
+                console.error('Erro:', error);
+            }
+        }
+        
+        // Executar teste quando a página carregar
+        window.addEventListener('load', testarDespesas);
+    </script>
+</body>
+</html>
