@@ -447,14 +447,13 @@ function setupEventHandlers() {
     document.getElementById('valorLitro').addEventListener('input', calcularValorTotal);
     
     // Manipulador para confirmação de exclusão
-    document.getElementById('confirmDelete').addEventListener('click', confirmDelete);
-
-    // Event listeners para limpeza de backdrop dos modais
+    document.getElementById('confirmDelete').addEventListener('click', confirmDelete);    // Event listeners para limpeza de backdrop dos modais
     setupModalCleanupListeners();
 
     // Manipuladores para exportação
     document.getElementById('exportarPdfCompleto').addEventListener('click', exportarPdfCompleto);
     document.getElementById('exportarPdf').addEventListener('click', exportarPdfCustos);
+    document.getElementById('exportarPdfDespesas').addEventListener('click', exportarPdfDespesas);
     
     // Manipuladores para formulários de relatórios
     document.getElementById('relatorioConsumoForm').addEventListener('submit', (e) => {
@@ -464,6 +463,11 @@ function setupEventHandlers() {
       document.getElementById('relatorioCustosForm').addEventListener('submit', (e) => {
         e.preventDefault();
         gerarRelatorioCustos();
+    });
+    // Listener para relatório de despesas
+    document.getElementById('relatorioDespesasForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        gerarRelatorioDespesas();
     });
 }
 
@@ -823,25 +827,72 @@ function aplicarFiltroDespesaData() {
                     return;
                 }
 
-                console.log('[FILTRO DESPESAS] Aplicando filtro:', { dataInicio, dataFim, totalDespesas: despesas.length });
-
-                // Filtrar despesas por data
+                console.log('[FILTRO DESPESAS] Aplicando filtro:', { dataInicio, dataFim, totalDespesas: despesas.length });                // Filtrar despesas por data
                 despesasFiltradas = despesas.filter(despesa => {
-                    const dataDespesa = new Date(despesa.data);
-                    let incluir = true;
+                    try {
+                        // Converter a data da despesa de forma mais robusta
+                        let dataDespesa;
+                        
+                        if (typeof despesa.data === 'string') {
+                            // Verificar se a data já tem 'T' (formato ISO)
+                            if (despesa.data.includes('T')) {
+                                dataDespesa = new Date(despesa.data);
+                            } else {
+                                // Adicionar T00:00:00 para evitar problemas de fuso horário
+                                dataDespesa = new Date(despesa.data + 'T00:00:00');
+                            }
+                            
+                            // Se ainda for inválida, tentar outros formatos
+                            if (isNaN(dataDespesa.getTime())) {
+                                // Formato DD/MM/YYYY
+                                if (despesa.data.includes('/')) {
+                                    const parts = despesa.data.split('/');
+                                    if (parts.length === 3) {
+                                        const dia = parseInt(parts[0], 10);
+                                        const mes = parseInt(parts[1], 10) - 1;
+                                        const ano = parseInt(parts[2], 10);
+                                        dataDespesa = new Date(ano, mes, dia);
+                                    }
+                                }
+                                // Formato YYYY-MM-DD
+                                else if (despesa.data.includes('-')) {
+                                    const parts = despesa.data.split('-');
+                                    if (parts.length === 3) {
+                                        const ano = parseInt(parts[0], 10);
+                                        const mes = parseInt(parts[1], 10) - 1;
+                                        const dia = parseInt(parts[2], 10);
+                                        dataDespesa = new Date(ano, mes, dia);
+                                    }
+                                }
+                            }
+                        } else {
+                            dataDespesa = new Date(despesa.data);
+                        }
+                        
+                        // Se a data continuar inválida após todas as tentativas, pular este registro
+                        if (isNaN(dataDespesa.getTime())) {
+                            console.warn('Data inválida ao filtrar:', despesa.data);
+                            return false;
+                        }
+                        
+                        let incluir = true;
 
-                    if (dataInicio) {
-                        const dataInicioFiltro = new Date(dataInicio);
-                        incluir = incluir && dataDespesa >= dataInicioFiltro;
+                        if (dataInicio) {
+                            const dataInicioFiltro = new Date(dataInicio);
+                            incluir = incluir && dataDespesa >= dataInicioFiltro;
+                        }
+
+                        if (dataFim) {
+                            const dataFimFiltro = new Date(dataFim);
+                            dataFimFiltro.setHours(23, 59, 59, 999); // Incluir o dia inteiro
+                            incluir = incluir && dataDespesa <= dataFimFiltro;
+                        }
+
+                        return incluir;
+                    } catch (error) {
+                        console.error('Erro ao processar data para filtro:', despesa.data, error);
+                        return false;
                     }
-
-                    if (dataFim) {
-                        const dataFimFiltro = new Date(dataFim);
-                        dataFimFiltro.setHours(23, 59, 59, 999); // Incluir o dia inteiro
-                        incluir = incluir && dataDespesa <= dataFimFiltro;
-                    }
-
-                    return incluir;
                 });
 
                 filtrosDespesasAtivos = true;
@@ -1946,13 +1997,54 @@ function renderDespesas() {
         `;
         tableBody.appendChild(row);
         return;
-    }
-
-    despesasParaExibir.forEach(despesa => {
+    }    despesasParaExibir.forEach(despesa => {
         const row = document.createElement('tr');
         
-        // Formatar data
-        const dataFormatada = new Date(despesa.data).toLocaleDateString('pt-BR');
+        // Formatar data com mais robustez
+        let dataFormatada = '';
+        try {
+            // Verificar se a data já tem 'T' (formato ISO)
+            const formattedDate = despesa.data.includes('T') 
+                ? new Date(despesa.data) 
+                : new Date(despesa.data + 'T00:00:00');
+            
+            if (!isNaN(formattedDate.getTime())) {
+                dataFormatada = formattedDate.toLocaleDateString('pt-BR');
+            } else {
+                // Tentar outros formatos de data se falhar
+                if (despesa.data.includes('/')) {
+                    const parts = despesa.data.split('/');
+                    if (parts.length === 3) {
+                        const dia = parseInt(parts[0], 10);
+                        const mes = parseInt(parts[1], 10) - 1;
+                        const ano = parseInt(parts[2], 10);
+                        const dateObj = new Date(ano, mes, dia);
+                        if (!isNaN(dateObj.getTime())) {
+                            dataFormatada = dateObj.toLocaleDateString('pt-BR');
+                        }
+                    }
+                } else if (despesa.data.includes('-')) {
+                    const parts = despesa.data.split('-');
+                    if (parts.length === 3) {
+                        const ano = parseInt(parts[0], 10);
+                        const mes = parseInt(parts[1], 10) - 1;
+                        const dia = parseInt(parts[2], 10);
+                        const dateObj = new Date(ano, mes, dia);
+                        if (!isNaN(dateObj.getTime())) {
+                            dataFormatada = dateObj.toLocaleDateString('pt-BR');
+                        }
+                    }
+                }
+                
+                if (!dataFormatada) {
+                    console.warn('Data inválida ao renderizar tabela:', despesa.data);
+                    dataFormatada = 'Data inválida';
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao formatar data na tabela:', despesa.data, error);
+            dataFormatada = 'Data inválida';
+        }
         
         // Formatar valor
         const valorFormatado = new Intl.NumberFormat('pt-BR', {
@@ -2159,8 +2251,7 @@ async function updateDashboard() {
                 
                 // Atualizar cards do dashboard
                 atualizarCards(stats);
-                
-                // Atualizar gráficos
+                  // Atualizar gráficos
                 if (typeof updateCharts === 'function') {
                     updateCharts();
                 } else {

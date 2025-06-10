@@ -13,8 +13,8 @@ body {
 
 /* Container principal que empurra o rodapé para baixo */
 .main-content {
-    flex: 1;
-    padding-bottom: 1rem; /* Espaço reduzido antes do footer */
+    flex: 1 0 auto; /* Flex grow, flex shrink, flex basis */
+    padding-bottom: 2rem; /* Espaço antes do footer */
 }
 
 /* Estilos do Navbar melhorados */
@@ -224,9 +224,9 @@ canvas {
     border-top: 3px solid #007bff !important;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     background: linear-gradient(135deg, #212529 0%, #495057 100%) !important;
-    margin-top: auto;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Impede que o rodapé encolha */
     padding: 1rem 0; /* Reduzindo o padding para diminuir a altura */
+    margin-top: auto; /* Empurra o rodapé para o final do container flex */
 }
 
 .footer h6 {

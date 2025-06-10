@@ -5,9 +5,9 @@
     <title>Gestão Logística Unidade SC</title>
     <link rel="icon" href="src/img/icon_combustivel.png" type="image/png">
     <link rel="apple-touch-icon" href="src/img/icon_combustivel.png">
-    <meta name="theme-color" content="#0d6efd">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <meta name="theme-color" content="#0d6efd">    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/footer-fix.css">
       <!-- Sistema de configuração centralizada -->
     <script>
         // Configurar variável global para API
@@ -97,7 +97,7 @@
                     <div class="col-12">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">Dashboard</h5>
+                                <h5 class="mb-0">Dashboard de Gastos com Combustível</h5>
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -153,6 +153,76 @@
                                             </div>
                                             <div class="card-body">
                                                 <canvas id="gastosMensais"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dashboard de Despesas -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Dashboard de Despesas Gerais</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-success text-white">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Total Despesas</h5>
+                                                <h2 id="totalDespesas">0</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-info text-white">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Despesas/Mês</h5>
+                                                <h2 id="despesasPorMes">0</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-warning text-dark">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Média por Despesa</h5>
+                                                <h2 id="mediaDespesa">R$ 0,00</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card bg-danger text-white">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Gasto Total/Mês</h5>
+                                                <h2 id="gastoTotalDespesas">R$ 0,00</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Despesas por Categoria</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="despesasPorCategoria"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="mb-0">Evolução de Despesas Mensais</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <canvas id="evolucaoDespesasMensais"></canvas>
                                             </div>
                                         </div>
                                     </div>
@@ -350,7 +420,7 @@
                             <div class="col-md-6">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h5 class="mb-0">Relatório de Consumo</h5>
+                                        <h5 class="mb-0">Relatório de Consumo de Combustível</h5>
                                     </div>
                                     <div class="card-body">
                                         <form id="relatorioConsumoForm">
@@ -381,7 +451,7 @@
                             <div class="col-md-6">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h5 class="mb-0">Relatório de Custos</h5>
+                                        <h5 class="mb-0">Relatório de Custos com Combustível</h5>
                                     </div>
                                     <div class="card-body">
                                         <form id="relatorioCustosForm">
@@ -411,6 +481,35 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row mb-4">
+                            <!-- Início da coluna de Relatório de Despesas -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Relatório de Despesas Gerais</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="relatorioDespesasForm">
+                                            <div class="row mb-3">
+                                                <div class="col-md-6">
+                                                    <label for="despesasDataInicio" class="form-label">Data Início</label>
+                                                    <input type="date" class="form-control" id="despesasDataInicio">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="despesasDataFim" class="form-label">Data Fim</label>
+                                                    <input type="date" class="form-control" id="despesasDataFim">
+                                                </div>                                            </div>
+                                            <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+                                            <button type="button" class="btn btn-success ms-2" id="exportarPdfDespesas">
+                                                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Fim da coluna de Relatório de Despesas -->
+                        </div> <!-- Fim da row mb-4 -->
 
                         <div class="card">
                             <div class="card-header">
@@ -605,9 +704,8 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-danger" id="confirmDelete">Excluir</button>
                 </div>
-            </div>
-        </div>
-    </div>    <footer class="footer fixed-bottom bg-dark text-white py-3 border-top">
+            </div>        </div>
+    </div>    <footer class="footer bg-dark text-white py-3 border-top">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start">
@@ -700,11 +798,10 @@
                         Acesso restrito a administradores
                     </small>
                 </div>
-            </div>
-        </div>
+            </div>        </div>
     </div>
 
-    <footer class="text-center text-muted py-3 mt-5 border-top"><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>

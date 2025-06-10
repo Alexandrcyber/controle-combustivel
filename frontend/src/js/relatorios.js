@@ -444,6 +444,82 @@ async function gerarRelatorioCustos() {
     }
 }
 
+// Gerar relatório de despesas
+async function gerarRelatorioDespesas() {
+    console.log('📝 Iniciando geração de relatório de despesas...');
+    // Mostrar loading
+    AlertInfo.loadingSystem('Gerando Relatório de Despesas', 'Processando dados de despesas para gerar análises detalhadas de despesas.');
+    const resultadosElement = document.getElementById('relatorioResultados');
+    if (!resultadosElement) {
+        console.error('❌ Elemento relatorioResultados não encontrado!');
+        AlertUtils.close();
+        AlertError.show('Erro do Sistema', 'Elemento de exibição do relatório não encontrado.');
+        return;
+    }
+    resultadosElement.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Gerando relatório de despesas...</p></div>';
+    // Capturar período
+    const dataInicio = document.getElementById('despesasDataInicio').value;
+    const dataFim = document.getElementById('despesasDataFim').value;
+    if (!dataInicio || !dataFim) {
+        AlertUtils.close();
+        AlertError.validation('Por favor, selecione o período para o relatório.');
+        return;
+    }
+    // Acessar dados
+    const despesasDados = window.despesas || [];
+    // Filtrar por período
+    const despesasFiltradas = despesasDados.filter(d => {
+        const dData = d.data.split('T')[0];
+        return dData >= dataInicio && dData <= dataFim;
+    }).sort((a, b) => new Date(a.data) - new Date(b.data));
+    // Montar HTML
+    let html = `
+        <h4 class="mb-3">Relatório de Despesas - ${formatDate(dataInicio)} a ${formatDate(dataFim)}</h4>
+        <div class="table-responsive mb-4">
+            <table class="table table-striped table-bordered">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Data</th>
+                        <th>Fornecedor</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Valor (R$)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+    let totalValor = 0;
+    despesasFiltradas.forEach(d => {
+        const valor = garantirNumero(d.valor, 0);
+        totalValor += valor;
+        html += `
+                    <tr>
+                        <td>${formatDate(d.data)}</td>
+                        <td>${d.fornecedor}</td>
+                        <td>${d.descricao}</td>
+                        <td><span class="badge bg-secondary">${d.categoria}</span></td>
+                        <td class="fw-bold text-primary">R$ ${formatarMoeda(valor)}</td>
+                    </tr>`;
+    });
+    html += `
+                    <tr class="table-success fw-bold">
+                        <td colspan="4">TOTAL GERAL</td>
+                        <td>R$ ${formatarMoeda(totalValor)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>`;
+    resultadosElement.innerHTML = html;
+    // Fechar loading
+    AlertUtils.close();
+    // Toast de resultado
+    const totalRegistros = despesasFiltradas.length;
+    if (totalRegistros > 0) {
+        AlertToast.success(`Relatório de despesas gerado com sucesso! (${totalRegistros} ${totalRegistros === 1 ? 'despesa' : 'despesas'})`);
+    } else {
+        AlertWarning.noData('Nenhuma despesa encontrada para o período selecionado.');
+    }
+}
+
 // Exportar relatório para Excel com Dashboard Profissional
 function exportarRelatorioExcel() {
     // Mostrar loading para exportação
@@ -1402,7 +1478,7 @@ function criarAnaliseCustosPdf(doc, dados, cores) {
         doc.rect(15, yPos, 180, 8, 'F');
     }
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
+       doc.setFontSize(12);
     adicionarTextoPDF(doc, 'RANKING DE EFICIENCIA DOS VEICULOS', 105, yPos + 6, { align: 'center' });
     
     yPos += 20;
@@ -2072,10 +2148,51 @@ function obterDadosDoRelatorio() {
 function formatDate(dateString) {
     if (!dateString) return '';
     try {
-        const date = new Date(dateString + 'T00:00:00');
-        return date.toLocaleDateString('pt-BR');
+        // Verificar se a data já tem 'T' (formato ISO)
+        const formattedDate = dateString.includes('T') 
+            ? new Date(dateString) 
+            : new Date(dateString + 'T00:00:00');
+        
+        // Verificar se a data é válida
+        if (isNaN(formattedDate.getTime())) {
+            // Tentar interpretar string de data no formato brasileiro (DD/MM/YYYY)
+            if (dateString.includes('/')) {
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    const dia = parseInt(parts[0], 10);
+                    const mes = parseInt(parts[1], 10) - 1; // Mês em JS é 0-11
+                    const ano = parseInt(parts[2], 10);
+                    
+                    const dateObj = new Date(ano, mes, dia);
+                    if (!isNaN(dateObj.getTime())) {
+                        return dateObj.toLocaleDateString('pt-BR');
+                    }
+                }
+            }
+            
+            // Tentar interpretar formatos comuns de data em SQL (YYYY-MM-DD)
+            if (dateString.includes('-')) {
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const ano = parseInt(parts[0], 10);
+                    const mes = parseInt(parts[1], 10) - 1; // Mês em JS é 0-11
+                    const dia = parseInt(parts[2], 10);
+                    
+                    const dateObj = new Date(ano, mes, dia);
+                    if (!isNaN(dateObj.getTime())) {
+                        return dateObj.toLocaleDateString('pt-BR');
+                    }
+                }
+            }
+            
+            console.warn('Data inválida após tentativas de conversão:', dateString);
+            return 'Data inválida';
+        }
+        
+        return formattedDate.toLocaleDateString('pt-BR');
     } catch (error) {
-        return dateString;
+        console.error('Erro ao formatar data:', dateString, error);
+        return 'Data inválida';
     }
 }
 
@@ -2289,4 +2406,331 @@ function normalizarTextoPDF(texto) {
 function adicionarTextoPDF(doc, texto, x, y, opcoes = {}) {
     const textoNormalizado = normalizarTextoPDF(texto);
     doc.text(textoNormalizado, x, y, opcoes);
+}
+
+// Exportar relatório de despesas para PDF
+async function exportarPdfDespesas() {
+    console.log('🚀 Iniciando geração de PDF de despesas...');
+    
+    try {
+        // Capturar dados do formulário
+        const dataInicio = document.getElementById('despesasDataInicio')?.value;
+        const dataFim = document.getElementById('despesasDataFim')?.value;
+
+        // Validar se as datas estão preenchidas
+        if (!dataInicio || !dataFim) {
+            AlertError.validation('Por favor, selecione o período para gerar o relatório de despesas.');
+            return;
+        }
+
+        // Acessar dados
+        const despesasDados = window.despesas || [];
+        
+        console.log('📊 Dados disponíveis para PDF:', {
+            despesas: despesasDados.length,
+            periodo: { inicio: dataInicio, fim: dataFim }
+        });
+        
+        // Verificar se há dados
+        if (despesasDados.length === 0) {
+            console.error('❌ Não há despesas cadastradas');
+            AlertError.show(
+                'Dados Insuficientes',
+                'Não há despesas cadastradas. Por favor, cadastre pelo menos uma despesa.'
+            );
+            return;
+        }
+          // Filtrar por período com tratamento robusto de datas
+        let despesasFiltradas = despesasDados.filter(d => {
+            try {
+                if (!d.data) return false;
+                
+                // Converter a string de data para objeto Date de forma mais robusta
+                let dataDespesa;
+                
+                if (typeof d.data === 'string') {
+                    // Verificar se a data já tem 'T' (formato ISO)
+                    if (d.data.includes('T')) {
+                        dataDespesa = new Date(d.data);
+                    } else {
+                        // Adicionar T00:00:00 para evitar problemas de fuso horário
+                        dataDespesa = new Date(d.data + 'T00:00:00');
+                    }
+                    
+                    // Se ainda for inválida, tentar outros formatos
+                    if (isNaN(dataDespesa.getTime())) {
+                        // Formato DD/MM/YYYY
+                        if (d.data.includes('/')) {
+                            const parts = d.data.split('/');
+                            if (parts.length === 3) {
+                                const dia = parseInt(parts[0], 10);
+                                const mes = parseInt(parts[1], 10) - 1;
+                                const ano = parseInt(parts[2], 10);
+                                dataDespesa = new Date(ano, mes, dia);
+                            }
+                        }
+                        // Formato YYYY-MM-DD
+                        else if (d.data.includes('-')) {
+                            const parts = d.data.split('-');
+                            if (parts.length === 3) {
+                                const ano = parseInt(parts[0], 10);
+                                const mes = parseInt(parts[1], 10) - 1;
+                                const dia = parseInt(parts[2], 10);
+                                dataDespesa = new Date(ano, mes, dia);
+                            }
+                        }
+                    }
+                } else {
+                    dataDespesa = new Date(d.data);
+                }
+                
+                // Se a data continuar inválida após todas as tentativas, pular este registro
+                if (isNaN(dataDespesa.getTime())) {
+                    console.warn('Data inválida ao filtrar para PDF:', d.data);
+                    return false;
+                }
+                
+                const dataInicioObj = new Date(dataInicio);
+                const dataFimObj = new Date(dataFim);
+                dataFimObj.setHours(23, 59, 59, 999); // Incluir o dia inteiro
+                
+                return dataDespesa >= dataInicioObj && dataDespesa <= dataFimObj;
+            } catch (error) {
+                console.error('Erro ao processar data para PDF:', d.data, error);
+                return false;
+            }
+        }).sort((a, b) => {
+            try {
+                return new Date(a.data) - new Date(b.data);
+            } catch (error) {
+                return 0;
+            }
+        });
+        
+        if (despesasFiltradas.length === 0) {
+            console.warn('⚠️ Nenhuma despesa encontrada no período');
+            AlertWarning.noData('Nenhuma despesa foi encontrada no período selecionado.');
+            return;
+        }
+
+        // Calcular valor total
+        let totalValor = 0;
+        despesasFiltradas.forEach(d => {
+            const valor = garantirNumero(d.valor, 0);
+            totalValor += valor;
+        });
+
+        // Criar PDF profissional
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Configurar esquema de cores profissional (Excel-like)
+        const cores = {
+            azulEscuro: [23, 55, 94],       // Cabeçalho principal
+            azulMedio: [54, 96, 146],       // Seções secundárias
+            azulClaro: [79, 129, 189],      // Destaque
+            cinzaEscuro: [68, 68, 68],      // Texto principal
+            cinzaMedio: [128, 128, 128],    // Texto secundário
+            cinzaClaro: [217, 217, 217],    // Bordas
+            brancoGelo: [248, 248, 248],    // Fundo alternado
+            verde: [70, 136, 71],           // Valores positivos
+            laranja: [237, 125, 49],        // Alertas
+            vermelho: [192, 80, 77],        // Valores críticos
+            branco: [255, 255, 255]
+        };
+
+        let yPos = 15;
+
+        // === CABEÇALHO PRINCIPAL ESTILO EXCEL ===
+        // Fundo gradiente principal
+        doc.setFillColor(...cores.azulEscuro);
+        doc.rect(10, 10, 190, 25, 'F');
+        
+        // Borda superior elegante
+        doc.setDrawColor(...cores.azulClaro);
+        doc.setLineWidth(0.8);
+        doc.line(10, 10, 200, 10);
+        
+        // Título principal
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        adicionarTextoPDF(doc, 'RELATÓRIO DE DESPESAS GERAIS', 105, 20, { align: 'center' });
+        
+        // Subtítulo
+        doc.setFontSize(11);
+        adicionarTextoPDF(doc, 'Sistema de Controle de Despesas', 105, 28, { align: 'center' });
+        
+        yPos = 45;
+
+        // === INFORMAÇÕES DO PERÍODO (STYLE EXCEL HEADER) ===
+        doc.setFillColor(...cores.azulMedio);
+        doc.rect(15, yPos, 180, 12, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.setLineWidth(0.3);
+        doc.rect(15, yPos, 180, 12, 'S');
+        
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        
+        adicionarTextoPDF(doc, `Período: ${formatDate(dataInicio)} até ${formatDate(dataFim)}`, 20, yPos + 7);
+        
+        const dataGeracao = new Date().toLocaleString('pt-BR');
+        adicionarTextoPDF(doc, `Relatório gerado em: ${dataGeracao}`, 120, yPos + 7, { align: 'left' });
+        
+        yPos += 20;        // === DASHBOARD DE MÉTRICAS PRINCIPAIS ===
+        // Container do dashboard com altura dinâmica
+        // Calculamos a altura necessária com base no número de categorias (cada categoria ocupa 7 pontos)
+        const categoriasPorTotal = {};
+        despesasFiltradas.forEach(d => {
+            if (!categoriasPorTotal[d.categoria]) {
+                categoriasPorTotal[d.categoria] = 0;
+            }
+            categoriasPorTotal[d.categoria] += garantirNumero(d.valor, 0);
+        });
+        
+        const categoriasOrdenadas = Object.entries(categoriasPorTotal)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+            
+        // Altura base (título + informações básicas) + altura por categoria
+        const alturaResumo = 40 + (categoriasOrdenadas.length * 7);
+        
+        doc.setFillColor(...cores.brancoGelo);
+        doc.rect(15, yPos, 180, alturaResumo, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.setLineWidth(0.5);
+        doc.rect(15, yPos, 180, alturaResumo, 'S');
+        
+        // Título da seção
+        doc.setFillColor(...cores.verde);
+        doc.rect(15, yPos, 180, 8, 'F');
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        adicionarTextoPDF(doc, 'RESUMO FINANCEIRO', 105, yPos + 5, { align: 'center' });
+        
+        yPos += 12;
+        
+        // Informações resumidas
+        doc.setTextColor(...cores.cinzaEscuro);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        
+        adicionarTextoPDF(doc, `Total de Despesas: R$ ${formatarMoeda(totalValor)}`, 20, yPos + 6);
+        adicionarTextoPDF(doc, `Quantidade de Registros: ${despesasFiltradas.length}`, 20, yPos + 14);
+        
+        if (categoriasOrdenadas.length > 0) {
+            adicionarTextoPDF(doc, `Categorias Principais:`, 120, yPos + 6, { align: 'left' });
+            
+            categoriasOrdenadas.forEach((cat, idx) => {
+                const porcentagem = Math.round((cat[1] / totalValor) * 100);
+                adicionarTextoPDF(doc, `${cat[0]}: R$ ${formatarMoeda(cat[1])} (${porcentagem}%)`, 120, yPos + 14 + (idx * 7), { align: 'left' });
+            });        }
+        
+        // Ajustar a posição vertical com base na altura real utilizada
+        // A posição atual mais a altura base mais um espaço para cada categoria
+        yPos += alturaResumo + 5; // 5 pontos adicionais de espaçamento
+
+        // === TABELA PRINCIPAL ESTILO EXCEL AVANÇADO ===
+        // Cabeçalho da tabela com estilo Excel
+        doc.setFillColor(...cores.azulEscuro);
+        doc.rect(15, yPos, 180, 10, 'F');
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        adicionarTextoPDF(doc, 'DETALHAMENTO DAS DESPESAS', 105, yPos + 6, { align: 'center' });
+        
+        yPos += 12;
+        
+        // Tabela de despesas
+        const cabecalho = [
+            { header: 'Data', dataKey: 'data' },
+            { header: 'Fornecedor', dataKey: 'fornecedor' },
+            { header: 'Descrição', dataKey: 'descricao' },
+            { header: 'Categoria', dataKey: 'categoria' },
+            { header: 'Valor (R$)', dataKey: 'valor' }
+        ];
+          const dados = despesasFiltradas.map(d => ({
+            data: formatDate(d.data),
+            fornecedor: d.fornecedor || '',
+            descricao: d.descricao || '',
+            categoria: d.categoria || 'Geral',
+            valor: `R$ ${formatarMoeda(garantirNumero(d.valor, 0))}`
+        }));
+        
+        // Configuração da tabela
+        doc.autoTable({
+            startY: yPos,
+            head: [cabecalho.map(c => c.header)],
+            body: dados.map(d => cabecalho.map(c => d[c.dataKey])),
+            theme: 'grid',
+            headStyles: {
+                fillColor: cores.azulMedio,
+                textColor: cores.branco,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 25 },
+                1: { cellWidth: 35 },
+                2: { cellWidth: 50 },
+                3: { halign: 'center', cellWidth: 30 },
+                4: { halign: 'right', cellWidth: 30 }
+            },
+            alternateRowStyles: { fillColor: [248, 249, 250] },
+            margin: { left: 15, right: 15 }
+        });
+        
+        // Adicionar linha de total
+        const finalY = doc.lastAutoTable.finalY;
+        doc.setFillColor(...cores.verde);
+        doc.rect(15, finalY + 2, 180, 8, 'F');
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        adicionarTextoPDF(doc, 'TOTAL GERAL', 105, finalY + 7, { align: 'left' });
+        adicionarTextoPDF(doc, `R$ ${formatarMoeda(totalValor)}`, 165, finalY + 7, { align: 'right' });
+        
+        // === RODAPÉ PROFISSIONAL ===
+        yPos = 280;
+        
+        // Linha de separação
+        doc.setDrawColor(...cores.azulMedio);
+        doc.setLineWidth(0.8);
+        doc.line(15, yPos, 195, yPos);
+        
+        yPos += 5;
+        
+        // Rodapé com informações
+        doc.setTextColor(...cores.cinzaMedio);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        adicionarTextoPDF(doc, `Relatório gerado automaticamente pelo Sistema de Controle de Despesas`, 20, yPos);
+        adicionarTextoPDF(doc, `${dataGeracao}`, 180, yPos, { align: 'right' });
+        
+        yPos += 3;
+        adicionarTextoPDF(doc, `Total de ${despesasFiltradas.length} despesas analisadas no período`, 20, yPos);
+        adicionarTextoPDF(doc, `Página 1 de 1`, 180, yPos, { align: 'right' });
+
+        // Salvar PDF
+        const nomeArquivo = `relatorio_despesas_${dataInicio}_${dataFim}.pdf`;
+        doc.save(nomeArquivo);
+
+        console.log('✅ PDF de despesas gerado com sucesso!', {
+            arquivo: nomeArquivo,
+            registros: despesasFiltradas.length,
+            periodo: { inicio: dataInicio, fim: dataFim }
+        });
+        
+        AlertToast.success(`PDF de despesas gerado com sucesso! Arquivo: ${nomeArquivo}`);
+
+    } catch (error) {
+        console.error('❌ Erro ao gerar PDF de despesas:', error);
+        AlertError.show(
+            'Erro ao Gerar PDF',
+            `Erro ao gerar PDF de despesas: ${error.message}. Verifique o console para mais detalhes.`
+        );
+    }
 }

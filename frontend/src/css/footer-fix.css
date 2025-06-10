@@ -1,0 +1,38 @@
+/* Ajuste para que o rodapé fique no final da página, não fixo na tela */
+/* Aplicação de estilos flex para empurrar o rodapé para o final da página */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+#mainApp {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1 0 auto; /* flex-grow: 1, flex-shrink: 0, flex-basis: auto */
+    padding-bottom: 2rem; /* Espaço antes do rodapé */
+}
+
+.footer {
+    flex-shrink: 0; /* Impede que o rodapé encolha */
+    margin-top: auto; /* Empurra o rodapé para o final do container flex */
+    position: relative; /* Remove o posicionamento fixo */
+    bottom: auto; /* Remove o posicionamento fixo */
+}
+
+/* Responsividade para telas pequenas */
+@media (max-width: 768px) {
+    .footer {
+        text-align: center;
+        padding: 1rem 0;
+    }
+}
