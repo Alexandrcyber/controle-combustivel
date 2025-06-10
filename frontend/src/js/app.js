@@ -297,17 +297,22 @@ async function loadDataFromLocalStorage() {
             await new Promise(resolve => setTimeout(resolve, 300));
               console.log('[LOAD] ⛽ Carregando abastecimentos...');
             abastecimentos = await window.dbApi.buscarAbastecimentos();
-            
-            await new Promise(resolve => setTimeout(resolve, 300));
+              await new Promise(resolve => setTimeout(resolve, 300));
             
             console.log('[LOAD] 💰 Carregando despesas...');
-            despesas = await window.dbApi.buscarDespesas();
+            try {
+                despesas = await window.dbApi.buscarDespesas();
+                console.log('[LOAD] ✅ Despesas carregadas:', despesas.length);
+            } catch (error) {
+                console.error('[LOAD] ❌ Erro ao carregar despesas:', error);
+                despesas = [];
+            }
             
             console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
                 abastecimentos: abastecimentos.length,
                 despesas: despesas.length
-            });        } else {
+            });} else {
             console.warn('[LOAD] window.dbApi não disponível, usando localStorage');
             
             const caminhoesJSON = localStorage.getItem('caminhoes');

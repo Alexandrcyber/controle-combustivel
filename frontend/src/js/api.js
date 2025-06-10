@@ -434,14 +434,15 @@ window.dbApi = {
             console.error('Erro ao excluir abastecimento:', error);
             throw error;
         }
-    },
-
-    // Despesas
+    },    // Despesas
     async buscarDespesas() {
         try {
-            return await window.apiClient.despesas.buscarTodos();
+            console.log('[dbApi] Buscando despesas...');
+            const result = await window.apiClient.despesas.buscarTodos();
+            console.log('[dbApi] Despesas encontradas:', result.length);
+            return result;
         } catch (error) {
-            console.error('Erro ao buscar despesas:', error);
+            console.error('[dbApi] Erro ao buscar despesas:', error);
             return [];
         }
     },
