@@ -139,7 +139,7 @@ window.apiClient = {
         },
 
         async buscarPorId(id) {
-            const result = await apiClient.request(`/caminhoes/${id}`);
+            const result = await this.request(`/caminhoes/${id}`);
             
             // Mapear campos do backend (snake_case) para frontend (camelCase)
             const { 
@@ -170,7 +170,7 @@ window.apiClient = {
             if (caminhao.id && caminhao.id !== 'novo') {
                 // Atualizar existente
                 console.log(`[apiClient.caminhoes] Atualizando caminhão existente ID=${caminhao.id}`);
-                return await apiClient.request(`/caminhoes/${caminhao.id}`, {
+                return await this.request(`/caminhoes/${caminhao.id}`, {
                     method: 'PUT',
                     body: JSON.stringify(caminhao)
                 });
@@ -179,7 +179,7 @@ window.apiClient = {
                 console.log('[apiClient.caminhoes] Criando novo caminhão');
                 const { id, ...caminhaoSemId } = caminhao;
                 console.log('[apiClient.caminhoes] Dados enviados:', caminhaoSemId);
-                return await apiClient.request('/caminhoes', {
+                return await this.request('/caminhoes', {
                     method: 'POST',
                     body: JSON.stringify(caminhaoSemId)
                 });
@@ -187,7 +187,7 @@ window.apiClient = {
         },
 
         async excluir(id) {
-            return await apiClient.request(`/caminhoes/${id}`, {
+            return await this.request(`/caminhoes/${id}`, {
                 method: 'DELETE'
             });
         }
@@ -196,7 +196,7 @@ window.apiClient = {
     // CRUD para Abastecimentos
     abastecimentos: {        async buscarTodos() {
             console.log('[apiClient.abastecimentos] Buscando todos os abastecimentos');
-            const result = await apiClient.request('/abastecimentos');
+            const result = await this.request('/abastecimentos');
             
             // Mapear campos do backend (snake_case) para frontend (camelCase)
             const mapearCamposParaFrontend = (abastecimentos) => {
@@ -219,7 +219,7 @@ window.apiClient = {
             return mapearCamposParaFrontend(result);
         },        async buscarPorId(id) {
             console.log('[apiClient.abastecimentos] Buscando abastecimento por ID:', id);
-            const result = await apiClient.request(`/abastecimentos/${id}`);
+            const result = await this.request(`/abastecimentos/${id}`);
             
             // Mapear campos do backend (snake_case) para frontend (camelCase)
             const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = result;
@@ -237,7 +237,7 @@ window.apiClient = {
         },
 
         async buscarPorCaminhao(caminhaoId) {
-            return await apiClient.request(`/abastecimentos?caminhao_id=${caminhaoId}`);
+            return await this.request(`/abastecimentos?caminhao_id=${caminhaoId}`);
         },        async salvar(abastecimento) {
             console.log('[apiClient.abastecimentos] Salvando abastecimento:', abastecimento);
             
@@ -278,7 +278,7 @@ window.apiClient = {
                 console.log(`[apiClient.abastecimentos] Atualizando abastecimento existente ID=${abastecimento.id}`);
                 const dadosMapeados = mapearCampos(abastecimento);
                 console.log('[apiClient.abastecimentos] Dados mapeados para backend:', dadosMapeados);
-                result = await apiClient.request(`/abastecimentos/${abastecimento.id}`, {
+                result = await this.request(`/abastecimentos/${abastecimento.id}`, {
                     method: 'PUT',
                     body: JSON.stringify(dadosMapeados)
                 });
@@ -288,7 +288,7 @@ window.apiClient = {
                 const { id, ...abastecimentoSemId } = abastecimento;
                 const dadosMapeados = mapearCampos(abastecimentoSemId);
                 console.log('[apiClient.abastecimentos] Dados mapeados para backend:', dadosMapeados);
-                result = await apiClient.request('/abastecimentos', {
+                result = await this.request('/abastecimentos', {
                     method: 'POST',
                     body: JSON.stringify(dadosMapeados)
                 });
@@ -299,7 +299,7 @@ window.apiClient = {
         },
 
         async excluir(id) {
-            return await apiClient.request(`/abastecimentos/${id}`, {
+            return await this.request(`/abastecimentos/${id}`, {
                 method: 'DELETE'
             });
         }
@@ -365,7 +365,7 @@ window.apiClient = {
     // Funções de utilidade
     async health() {
         console.log('[apiClient] Verificando health da API...');
-        const resultado = await apiClient.request('/health');
+        const resultado = await this.request('/health');
         console.log('[apiClient] Resultado do health check:', resultado);
         return resultado;
     },
