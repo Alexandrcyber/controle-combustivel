@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API Debug</title>
+</head>
+<body>
+    <h1>Teste API Debug</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Configurar ambiente de teste
+        window.ENV_CONFIG = {
+            API_BASE_URL: 'https://controle-combustivel.onrender.com/api'
+        };
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Testar health endpoint
+                const healthResponse = await fetch('https://controle-combustivel.onrender.com/api/health');
+                const healthData = await healthResponse.json();
+                resultDiv.innerHTML += `<p><strong>Health Check:</strong> ${JSON.stringify(healthData)}</p>`;
+                
+                // Testar endpoint de caminhões
+                const caminhoesResponse = await fetch('https://controle-combustivel.onrender.com/api/caminhoes');
+                const caminhoesData = await caminhoesResponse.json();
+                resultDiv.innerHTML += `<p><strong>Caminhões:</strong> ${caminhoesData.length} encontrados</p>`;
+                
+                // Testar endpoint de abastecimentos
+                const abastecimentosResponse = await fetch('https://controle-combustivel.onrender.com/api/abastecimentos');
+                const abastecimentosData = await abastecimentosResponse.json();
+                resultDiv.innerHTML += `<p><strong>Abastecimentos:</strong> ${abastecimentosData.length} encontrados</p>`;
+                resultDiv.innerHTML += `<pre>${JSON.stringify(abastecimentosData, null, 2)}</pre>`;
+                
+                // Testar endpoint de despesas
+                const despesasResponse = await fetch('https://controle-combustivel.onrender.com/api/despesas');
+                const despesasData = await despesasResponse.json();
+                resultDiv.innerHTML += `<p><strong>Despesas:</strong> ${despesasData.length} encontradas</p>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p><strong>Erro:</strong> ${error.message}</p>`;
+            }
+        }
+        
+        // Executar teste ao carregar
+        testAPI();
+    </script>
+</body>
+</html>

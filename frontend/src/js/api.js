@@ -374,9 +374,9 @@ window.apiClient = {
 };
 
 // Configurar binds após a criação do objeto apiClient
-apiClient.caminhoes.request = apiClient.request.bind(apiClient);
-apiClient.abastecimentos.request = apiClient.request.bind(apiClient);
-apiClient.despesas.request = apiClient.request.bind(apiClient);
+window.apiClient.caminhoes.request = window.apiClient.request.bind(window.apiClient);
+window.apiClient.abastecimentos.request = window.apiClient.request.bind(window.apiClient);
+window.apiClient.despesas.request = window.apiClient.request.bind(window.apiClient);
 
 // Função para gerar ID único (mantida para compatibilidade, mas o backend gerará os IDs)
 function generateId() {

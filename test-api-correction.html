@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API - Correção</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Teste da API - Verificação da Correção</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Configurar ambiente de teste
+        window.ENV_CONFIG = {
+            API_BASE_URL: 'https://controle-combustivel.onrender.com/api'
+        };
+        
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testAPIWithClientCode() {
+            addResult('🔄 Iniciando teste com código do cliente...', 'info');
+            
+            try {
+                // Simular o código do frontend
+                const API_CONFIG = {
+                    baseURL: 'https://controle-combustivel.onrender.com/api',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                // Criar apiClient como no código real
+                const apiClient = {
+                    async request(endpoint, options = {}) {
+                        const url = `${API_CONFIG.baseURL}${endpoint}`;
+                        const config = {
+                            ...options,
+                            headers: {
+                                ...API_CONFIG.headers,
+                                ...options.headers
+                            }
+                        };
+                        
+                        const response = await fetch(url, config);
+                        
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            const errorMessage = errorData.error || `Erro HTTP: ${response.status}`;
+                            throw new Error(errorMessage);
+                        }
+                        
+                        return await response.json();
+                    },
+                    
+                    abastecimentos: {
+                        request: null, // Será configurado
+                        
+                        async buscarTodos() {
+                            console.log('[apiClient.abastecimentos] Buscando todos os abastecimentos');
+                            const result = await this.request('/abastecimentos');
+                            
+                            // Mapear campos do backend (snake_case) para frontend (camelCase)
+                            const mapearCamposParaFrontend = (abastecimentos) => {
+                                return abastecimentos.map(abastecimento => {
+                                    const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = abastecimento;
+                                    return {
+                                        ...resto,
+                                        caminhaoId: caminhao_id,
+                                        periodoInicio: periodo_inicio,
+                                        periodoFim: periodo_fim,
+                                        kmInicial: parseFloat(km_inicial) || 0,
+                                        kmFinal: parseFloat(km_final) || 0,
+                                        valorLitro: parseFloat(valor_litro) || 0,
+                                        valorTotal: parseFloat(valor_total) || 0,
+                                        litros: parseFloat(abastecimento.litros) || 0
+                                    };
+                                });
+                            };
+                            
+                            return mapearCamposParaFrontend(result);
+                        }
+                    }
+                };
+                
+                // Configurar bind (CORREÇÃO APLICADA)
+                apiClient.abastecimentos.request = apiClient.request.bind(apiClient);
+                
+                // Testar buscarTodos
+                addResult('🔍 Testando buscarTodos...', 'info');
+                const abastecimentos = await apiClient.abastecimentos.buscarTodos();
+                
+                addResult(`✅ Sucesso! Encontrados ${abastecimentos.length} abastecimentos`, 'success');
+                
+                // Mostrar estrutura dos dados
+                if (abastecimentos.length > 0) {
+                    addResult(`📋 Estrutura do primeiro abastecimento (após mapeamento):`, 'info');
+                    const pre = document.createElement('pre');
+                    pre.textContent = JSON.stringify(abastecimentos[0], null, 2);
+                    document.getElementById('results').appendChild(pre);
+                    
+                    // Verificar se os campos estão corretos
+                    const primeiro = abastecimentos[0];
+                    if (primeiro.caminhaoId && primeiro.kmInicial !== undefined && primeiro.kmFinal !== undefined) {
+                        addResult('✅ Mapeamento de campos funcionando corretamente!', 'success');
+                    } else {
+                        addResult('❌ Problema no mapeamento de campos', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                addResult(`❌ Erro: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+            }
+        }
+        
+        // Executar teste ao carregar
+        testAPIWithClientCode();
+    </script>
+</body>
+</html>

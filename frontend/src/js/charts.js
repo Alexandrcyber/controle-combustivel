@@ -197,35 +197,61 @@ function updateConsumoPorCaminhaoChart() {
     const dataInicio = document.getElementById('dashboardDataInicio').value;
     const dataFim = document.getElementById('dashboardDataFim').value;
     const inicio = new Date(dataInicio);
-    const fim = new Date(dataFim + 'T23:59:59');
-
-    // Filtrar abastecimentos pelo período
-    const abastecimentosFiltrados = abastecimentos.filter(a => {
-        const dt = new Date(a.data);
-        return dt >= inicio && dt <= fim;
+    const fim = new Date(dataFim + 'T23:59:59');    // Filtrar abastecimentos pelo período
+    const abastecimentosFiltrados = (window.abastecimentos || []).filter(a => {
+        try {
+            // Tratamento mais robusto de datas
+            let dataAbastecimento;
+            if (typeof a.data === 'string') {
+                // Se a data vem como string ISO (do backend)
+                dataAbastecimento = new Date(a.data);
+            } else if (a.data instanceof Date) {
+                dataAbastecimento = a.data;
+            } else {
+                console.warn('[CHARTS] Data inválida encontrada:', a.data);
+                return false;
+            }
+            
+            // Verificar se a data é válida
+            if (isNaN(dataAbastecimento.getTime())) {
+                console.warn('[CHARTS] Data inválida após parsing:', a.data);
+                return false;
+            }
+            
+            return dataAbastecimento >= inicio && dataAbastecimento <= fim;
+        } catch (error) {
+            console.error('[CHARTS] Erro ao processar data do abastecimento:', a.data, error);
+            return false;
+        }
     });
 
     // Definir caminhões a exibir: todos ou específico
     const selecionado = document.getElementById('dashboardCaminhaoSelect').value;
     const listaCaminhoes = selecionado === 'todos'
-        ? caminhoes
-        : caminhoes.filter(c => c.id === selecionado);
+        ? (window.caminhoes || [])
+        : (window.caminhoes || []).filter(c => c.id === selecionado);
 
     const labels = [];
-    const consumoData = [];
-
-    // Calcular consumo médio para cada caminhão da lista
+    const consumoData = [];    // Calcular consumo médio para cada caminhão da lista
     listaCaminhoes.forEach(caminhao => {
         const abastecCaminhao = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhao.id);
         let totalKm = 0;
         let totalLitros = 0;
+        
         abastecCaminhao.forEach(a => {
-            totalKm += (a.kmFinal - a.kmInicial);
-            totalLitros += parseFloat(a.litros);
+            const kmInicial = parseFloat(a.kmInicial) || 0;
+            const kmFinal = parseFloat(a.kmFinal) || 0;
+            const litros = parseFloat(a.litros) || 0;
+            
+            if (kmFinal > kmInicial && litros > 0) {
+                totalKm += (kmFinal - kmInicial);
+                totalLitros += litros;
+            }
         });
-        if (totalLitros > 0) {
+        
+        if (totalLitros > 0 && totalKm > 0) {
             labels.push(`${caminhao.placa}`);
-            consumoData.push((totalKm / totalLitros).toFixed(2));
+            consumoData.push(parseFloat((totalKm / totalLitros).toFixed(2)));
         }
     });
 
@@ -252,11 +278,28 @@ function updateGastosMensaisChart() {
         meses.push(mesAnoLabel);
         // calcular gasto no mês
         const primeiroDiaMes = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-        const ultimoDiaMes = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59);
-        const gastoMes = abastecimentos
+        const ultimoDiaMes = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59);        const gastoMes = (window.abastecimentos || [])
             .filter(a => {
-                const dt = new Date(a.data);
-                return dt >= primeiroDiaMes && dt <= ultimoDiaMes;
+                try {
+                    // Tratamento robusto de datas
+                    let dataAbastecimento;
+                    if (typeof a.data === 'string') {
+                        dataAbastecimento = new Date(a.data);
+                    } else if (a.data instanceof Date) {
+                        dataAbastecimento = a.data;
+                    } else {
+                        return false;
+                    }
+                    
+                    if (isNaN(dataAbastecimento.getTime())) {
+                        return false;
+                    }
+                    
+                    return dataAbastecimento >= primeiroDiaMes && dataAbastecimento <= ultimoDiaMes;
+                } catch (error) {
+                    console.error('[CHARTS] Erro ao processar data para gastos mensais:', a.data, error);
+                    return false;
+                }
             })
             .reduce((sum, a) => sum + parseFloat(a.valorTotal), 0);
         gastosData.push(gastoMes);

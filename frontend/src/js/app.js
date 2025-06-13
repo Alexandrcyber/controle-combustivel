@@ -957,19 +957,24 @@ function renderCaminhoes() {
     const tableBody = document.getElementById('caminhaoTableBody');
     tableBody.innerHTML = '';
     
-    caminhoes.forEach(caminhao => {
-        const row = document.createElement('tr');
-        
-        // Calcular média de consumo do caminhão
-        const abastecimentosCaminhao = abastecimentos.filter(a => a.caminhaoId === caminhao.id);
+    (window.caminhoes || []).forEach(caminhao => {
+        const row = document.createElement('tr');        // Calcular média de consumo do caminhão
+        const abastecimentosCaminhao = (window.abastecimentos || []).filter(a => a.caminhaoId === caminhao.id);
         let totalKm = 0;
         let totalLitros = 0;
         
         abastecimentosCaminhao.forEach(a => {
-            totalKm += (a.kmFinal - a.kmInicial);
-            totalLitros += parseFloat(a.litros);
+            const kmInicial = parseFloat(a.kmInicial) || 0;
+            const kmFinal = parseFloat(a.kmFinal) || 0;
+            const litros = parseFloat(a.litros) || 0;
+            
+            if (kmFinal > kmInicial && litros > 0) {
+                totalKm += (kmFinal - kmInicial);
+                totalLitros += litros;
+            }
         });
-        const mediaConsumo = totalLitros > 0 ? (totalKm / totalLitros).toFixed(2) : 'N/A';
+        
+        const mediaConsumo = (totalLitros > 0 && totalKm > 0) ? (totalKm / totalLitros).toFixed(2) : 'N/A';
         
         row.innerHTML = `
             <td>${caminhao.placa}</td>
@@ -1014,17 +1019,22 @@ function renderCaminhoes() {
 // Renderizar tabela de abastecimentos
 function renderAbastecimentos() {
     const tableBody = document.getElementById('abastecimentoTableBody');
-    tableBody.innerHTML = '';
-    
-    // Ordenar abastecimentos por data (mais recentes primeiro)
-    const sortedAbastecimentos = [...abastecimentos].sort((a, b) => {
-        return new Date(b.data) - new Date(a.data);
+    tableBody.innerHTML = '';    // Ordenar abastecimentos por data (mais recentes primeiro)
+    const sortedAbastecimentos = [...(window.abastecimentos || [])].sort((a, b) => {
+        try {
+            const dateA = new Date(a.data);
+            const dateB = new Date(b.data);
+            return dateB.getTime() - dateA.getTime();
+        } catch (error) {
+            console.error('[RENDER] Erro ao ordenar por data:', error);
+            return 0;
+        }
     });
     
     sortedAbastecimentos.forEach(abastecimento => {
         const row = document.createElement('tr');
         // Encontrar o caminhão correspondente
-        const caminhao = caminhoes.find(c => c.id === abastecimento.caminhaoId);
+        const caminhao = (window.caminhoes || []).find(c => c.id === abastecimento.caminhaoId);
         const placaCaminhao = caminhao ? caminhao.placa : 'Desconhecido';
         const modeloCaminhao = caminhao ? caminhao.modelo : 'Desconhecido';
         
@@ -1393,11 +1403,10 @@ function populateCaminhaoSelects() {
     // Select para relatórios de custos
     const caminhaoCustosSelect = document.getElementById('caminhaoCustosSelect');
     caminhaoCustosSelect.innerHTML = '<option value="todos">Todos os caminhões</option>';
-    
-    // Select para dashboard
+      // Select para dashboard
     const dashboardCaminhaoSelect = document.getElementById('dashboardCaminhaoSelect');
     dashboardCaminhaoSelect.innerHTML = '<option value="todos">Todos os caminhões</option>';
-    caminhoes.forEach(caminhao => {
+    (window.caminhoes || []).forEach(caminhao => {
         const opt = document.createElement('option');
         opt.value = caminhao.id;
         opt.textContent = `${caminhao.placa} - ${caminhao.modelo}`;
@@ -1405,7 +1414,7 @@ function populateCaminhaoSelects() {
     });
     
     // Adicionar opções para cada caminhão
-    caminhoes.forEach(caminhao => {
+    (window.caminhoes || []).forEach(caminhao => {
         const option1 = document.createElement('option');
         option1.value = caminhao.id;
         option1.textContent = `${caminhao.placa} - ${caminhao.modelo}`;
@@ -2239,10 +2248,30 @@ async function updateDashboard() {
                 // Filtrar abastecimentos pelo período
                 const inicio = new Date(dataInicio);
                 const fim = new Date(dataFim + 'T23:59:59');
-                
-                let abastecimentosFiltrados = abastecimentos.filter(a => {
-                    const dataAbast = new Date(a.data);
-                    return dataAbast >= inicio && dataAbast <= fim;
+                  let abastecimentosFiltrados = (window.abastecimentos || []).filter(a => {
+                    try {
+                        // Tratamento robusto de datas
+                        let dataAbastecimento;
+                        if (typeof a.data === 'string') {
+                            dataAbastecimento = new Date(a.data);
+                        } else if (a.data instanceof Date) {
+                            dataAbastecimento = a.data;
+                        } else {
+                            console.warn('[DASHBOARD] Data inválida encontrada:', a.data);
+                            return false;
+                        }
+                        
+                        // Verificar se a data é válida
+                        if (isNaN(dataAbastecimento.getTime())) {
+                            console.warn('[DASHBOARD] Data inválida após parsing:', a.data);
+                            return false;
+                        }
+                        
+                        return dataAbastecimento >= inicio && dataAbastecimento <= fim;
+                    } catch (error) {
+                        console.error('[DASHBOARD] Erro ao processar data do abastecimento:', a.data, error);
+                        return false;
+                    }
                 });
                 
                 // Filtrar por caminhão específico se selecionado
@@ -2293,9 +2322,8 @@ async function updateDashboard() {
 }
 
 // Calcular estatísticas para o dashboard
-function calcularEstatisticas(abastecimentosFiltrados) {
-    // Estatísticas básicas
-    const totalCaminhoesAtivos = caminhoes.filter(c => c.status === 'ativo' || !c.status).length;
+function calcularEstatisticas(abastecimentosFiltrados) {    // Estatísticas básicas
+    const totalCaminhoesAtivos = (window.caminhoes || []).filter(c => c.status === 'ativo' || !c.status).length;
     const totalAbastecimentos = abastecimentosFiltrados.length;
     
     // Calcular totais
