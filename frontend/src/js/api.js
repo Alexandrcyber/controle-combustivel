@@ -41,6 +41,15 @@ const API_CONFIG = {
 // Imprimir a URL da API para depuração
 console.log('[API] URL base da API configurada para:', API_CONFIG.baseURL);
 
+// Função helper para garantir que request esteja sempre disponível
+function ensureRequest(context, methodName) {
+    if (typeof context.request !== 'function') {
+        console.warn(`[API] ${methodName}: this.request não disponível, configurando...`);
+        context.request = window.apiClient.request.bind(window.apiClient);
+    }
+    return context.request;
+}
+
 // Função auxiliar para fazer requisições com autenticação
 async function authenticatedRequest(url, options = {}) {
     // Verificar se o sistema de autenticação está disponível
@@ -196,10 +205,18 @@ window.apiClient = {
     abastecimentos: {
         // Adicionar método request com bind correto
         request: null, // Será definido após a criação do apiClient
-        
-        async buscarTodos() {
+          async buscarTodos() {
             console.log('[apiClient.abastecimentos] Buscando todos os abastecimentos');
-            const result = await this.request('/abastecimentos');
+            
+            // Fallback robusto para garantir que request funcione
+            let request = this.request;
+            if (typeof request !== 'function') {
+                console.warn('[apiClient.abastecimentos] this.request não disponível, usando fallback');
+                request = window.apiClient.request.bind(window.apiClient);
+                this.request = request; // Salvar para próximas chamadas
+            }
+            
+            const result = await request('/abastecimentos');
             
             // Mapear campos do backend (snake_case) para frontend (camelCase)
             const mapearCamposParaFrontend = (abastecimentos) => {
@@ -222,7 +239,15 @@ window.apiClient = {
             return mapearCamposParaFrontend(result);
         },        async buscarPorId(id) {
             console.log('[apiClient.abastecimentos] Buscando abastecimento por ID:', id);
-            const result = await this.request(`/abastecimentos/${id}`);
+            
+            // Fallback robusto para garantir que request funcione
+            let request = this.request;
+            if (typeof request !== 'function') {
+                request = window.apiClient.request.bind(window.apiClient);
+                this.request = request;
+            }
+            
+            const result = await request(`/abastecimentos/${id}`);
             
             // Mapear campos do backend (snake_case) para frontend (camelCase)
             const { caminhao_id, periodo_inicio, periodo_fim, km_inicial, km_final, valor_litro, valor_total, ...resto } = result;
@@ -373,10 +398,38 @@ window.apiClient = {
     }
 };
 
-// Configurar binds após a criação do objeto apiClient
-window.apiClient.caminhoes.request = window.apiClient.request.bind(window.apiClient);
-window.apiClient.abastecimentos.request = window.apiClient.request.bind(window.apiClient);
-window.apiClient.despesas.request = window.apiClient.request.bind(window.apiClient);
+// Configurar binds após a criação do objeto apiClient de forma mais robusta
+(function setupApiBindings() {
+    // Aguardar um pouco para garantir que o objeto está totalmente criado
+    setTimeout(() => {
+        try {
+            if (window.apiClient) {
+                console.log('[API] Configurando binds...');
+                
+                // Bind para caminhões
+                if (window.apiClient.caminhoes) {
+                    window.apiClient.caminhoes.request = window.apiClient.request.bind(window.apiClient);
+                }
+                
+                // Bind para abastecimentos
+                if (window.apiClient.abastecimentos) {
+                    window.apiClient.abastecimentos.request = window.apiClient.request.bind(window.apiClient);
+                }
+                
+                // Bind para despesas
+                if (window.apiClient.despesas) {
+                    window.apiClient.despesas.request = window.apiClient.request.bind(window.apiClient);
+                }
+                
+                console.log('[API] Binds configurados com sucesso!');
+            } else {
+                console.error('[API] window.apiClient não encontrado');
+            }
+        } catch (error) {
+            console.error('[API] Erro ao configurar binds:', error);
+        }
+    }, 100);
+})();
 
 // Função para gerar ID único (mantida para compatibilidade, mas o backend gerará os IDs)
 function generateId() {
