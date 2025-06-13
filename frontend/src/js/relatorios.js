@@ -2555,7 +2555,7 @@ async function exportarPdfDespesas() {
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(18);
-        adicionarTextoPDF(doc, 'RELATÓRIO DE DESPESAS GERAIS', 105, 20, { align: 'center' });
+        adicionarTextoPDF(doc, 'RELATORIO DE DESPESAS GERAIS', 105, 20, { align: 'center' });
         
         // Subtítulo
         doc.setFontSize(11);
