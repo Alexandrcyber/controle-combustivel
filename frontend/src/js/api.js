@@ -104,12 +104,13 @@ window.apiClient = {
             console.error('Erro na requisição:', error.message);
             throw error;
         }
-    },
-
-    // CRUD para Caminhões
+    },    // CRUD para Caminhões
     caminhoes: {
+        // Adicionar método request com bind correto
+        request: null, // Será definido após a criação do apiClient
+        
         async buscarTodos() {
-            const result = await apiClient.request('/caminhoes');
+            const result = await this.request('/caminhoes');
             
             // Mapear campos do backend (snake_case) para frontend (camelCase)
             return result.map(caminhao => {
@@ -191,10 +192,12 @@ window.apiClient = {
                 method: 'DELETE'
             });
         }
-    },
-
-    // CRUD para Abastecimentos
-    abastecimentos: {        async buscarTodos() {
+    },    // CRUD para Abastecimentos
+    abastecimentos: {
+        // Adicionar método request com bind correto
+        request: null, // Será definido após a criação do apiClient
+        
+        async buscarTodos() {
             console.log('[apiClient.abastecimentos] Buscando todos os abastecimentos');
             const result = await this.request('/abastecimentos');
             
@@ -303,24 +306,23 @@ window.apiClient = {
                 method: 'DELETE'
             });
         }
-    },
-
-    // CRUD para Despesas
+    },    // CRUD para Despesas
     despesas: {
+        // Adicionar método request com bind correto
+        request: null, // Será definido após a criação do apiClient
+        
         async buscarTodos() {
             console.log('[apiClient.despesas] Buscando todas as despesas');
-            const result = await apiClient.request('/despesas');
+            const result = await this.request('/despesas');
             
             // Mapear campos do backend (snake_case) para frontend (camelCase) se necessário
             return result.map(despesa => ({
                 ...despesa,
                 valor: parseFloat(despesa.valor) || 0
             }));
-        },
-
-        async buscarPorId(id) {
+        },        async buscarPorId(id) {
             console.log('[apiClient.despesas] Buscando despesa por ID:', id);
-            const result = await apiClient.request(`/despesas/${id}`);
+            const result = await this.request(`/despesas/${id}`);
             
             return {
                 ...result,
@@ -335,7 +337,7 @@ window.apiClient = {
             if (despesa.id && despesa.id !== 'novo') {
                 // Atualizar existente
                 console.log(`[apiClient.despesas] Atualizando despesa existente ID=${despesa.id}`);
-                result = await apiClient.request(`/despesas/${despesa.id}`, {
+                result = await this.request(`/despesas/${despesa.id}`, {
                     method: 'PUT',
                     body: JSON.stringify(despesa)
                 });
@@ -343,7 +345,7 @@ window.apiClient = {
                 // Criar nova
                 console.log('[apiClient.despesas] Criando nova despesa');
                 const { id, ...despesaSemId } = despesa;
-                result = await apiClient.request('/despesas', {
+                result = await this.request('/despesas', {
                     method: 'POST',
                     body: JSON.stringify(despesaSemId)
                 });
@@ -353,10 +355,8 @@ window.apiClient = {
                 ...result,
                 valor: parseFloat(result.valor) || 0
             };
-        },
-
-        async excluir(id) {
-            return await apiClient.request(`/despesas/${id}`, {
+        },        async excluir(id) {
+            return await this.request(`/despesas/${id}`, {
                 method: 'DELETE'
             });
         }
@@ -368,12 +368,15 @@ window.apiClient = {
         const resultado = await this.request('/health');
         console.log('[apiClient] Resultado do health check:', resultado);
         return resultado;
-    },
-
-    async info() {
-        return await apiClient.request('/info');
+    },    async info() {
+        return await this.request('/info');
     }
 };
+
+// Configurar binds após a criação do objeto apiClient
+apiClient.caminhoes.request = apiClient.request.bind(apiClient);
+apiClient.abastecimentos.request = apiClient.request.bind(apiClient);
+apiClient.despesas.request = apiClient.request.bind(apiClient);
 
 // Função para gerar ID único (mantida para compatibilidade, mas o backend gerará os IDs)
 function generateId() {
