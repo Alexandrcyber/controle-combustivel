@@ -962,7 +962,7 @@ function criarPlanilhaIndicadores(wb, dados) {
 
 // Nova funcao para exportar PDF completo com todos os dados e analises
 async function exportarPdfCompleto() {
-    console.log('🚀 Iniciando geração de PDF de consumo...');
+    console.log('🚀 Iniciando geração de PDF de consumo simplificado...');
     
     try {
         // Capturar dados do formulário
@@ -1031,9 +1031,7 @@ async function exportarPdfCompleto() {
             console.warn('⚠️ Nenhum abastecimento encontrado no período');
             AlertWarning.noData('Nenhum abastecimento foi encontrado no período selecionado.');
             return;
-        }
-
-        // Agrupar dados por caminhão com foco no consumo
+        }        // Agrupar dados por caminhão
         const dadosPorCaminhao = {};
         filtrados.forEach(a => {
             if (!dadosPorCaminhao[a.caminhaoId]) {
@@ -1043,8 +1041,7 @@ async function exportarPdfCompleto() {
                     modelo: c.modelo || 'Desconhecido',
                     totalLitros: 0,
                     totalGasto: 0,
-                    totalKm: 0,
-                    abastecimentos: 0
+                    totalKm: 0
                 };
             }
             const entry = dadosPorCaminhao[a.caminhaoId];
@@ -1052,15 +1049,10 @@ async function exportarPdfCompleto() {
             entry.totalLitros += a.litros;
             entry.totalGasto += a.valorTotal;
             entry.totalKm += dist;
-            entry.abastecimentos += 1;
-        });
-
-        // Calcular métricas de consumo
+        });// Calcular totais gerais e métricas de consumo
         let totalLitrosGeral = 0, totalGastoGeral = 0, totalKmGeral = 0;
         Object.values(dadosPorCaminhao).forEach(d => {
             d.mediaConsumo = d.totalLitros > 0 ? (d.totalKm / d.totalLitros) : 0;
-            d.consumoPor100Km = d.totalKm > 0 ? (d.totalLitros / d.totalKm * 100) : 0;
-            d.eficienciaMedia = d.mediaConsumo;
             d.custoMedio = d.totalKm > 0 ? (d.totalGasto / d.totalKm) : 0;
             d.valorMedioLitro = d.totalLitros > 0 ? (d.totalGasto / d.totalLitros) : 0;
             totalLitrosGeral += d.totalLitros;
@@ -1068,7 +1060,7 @@ async function exportarPdfCompleto() {
             totalKmGeral += d.totalKm;
         });
         const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
-        const consumoPor100KmGeral = totalKmGeral > 0 ? formatarNumero(totalLitrosGeral / totalKmGeral * 100, 2) : 'N/A';
+        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';
 
         // Criar PDF profissional usando o mesmo estilo de custos
         const { jsPDF } = window.jspdf;
@@ -1141,22 +1133,20 @@ async function exportarPdfCompleto() {
         doc.setDrawColor(...cores.cinzaClaro);
         doc.setLineWidth(0.5);
         doc.rect(15, yPos, 180, 35, 'S');
-        
-        // Título da seção
+          // Título da seção - FOCO EM CONSUMO
         doc.setFillColor(...cores.verde);
         doc.rect(15, yPos, 180, 8, 'F');
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        adicionarTextoPDF(doc, 'ANALISE DE CONSUMO', 105, yPos + 5, { align: 'center' });
+        adicionarTextoPDF(doc, 'RESUMO DE CONSUMO OPERACIONAL', 105, yPos + 5, { align: 'center' });
         
         yPos += 12;
-        
-        // Cards de métricas (3 colunas)
+          // Cards de métricas (3 colunas) - DADOS PRINCIPAIS DE CONSUMO
         const larguraCard = 55;
         const espacoCard = 60;
         
-        // Card 1: Frota e Eficiência
+        // Card 1: Frota e Consumo Total
         doc.setFillColor(...cores.branco);
         doc.rect(20, yPos, larguraCard, 18, 'F');
         doc.setDrawColor(...cores.cinzaClaro);
@@ -1165,7 +1155,7 @@ async function exportarPdfCompleto() {
         doc.setTextColor(...cores.azulEscuro);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        adicionarTextoPDF(doc, 'FROTA E EFICIENCIA', 47.5, yPos + 4, { align: 'center' });
+        adicionarTextoPDF(doc, 'FROTA E COMBUSTIVEL', 47.5, yPos + 4, { align: 'center' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(...cores.cinzaEscuro);
@@ -1173,7 +1163,7 @@ async function exportarPdfCompleto() {
         adicionarTextoPDF(doc, `Combustivel: ${formatarLitros(totalLitrosGeral)} L`, 22, yPos + 12);
         adicionarTextoPDF(doc, `Eficiencia: ${consumoMedioGeral} km/L`, 22, yPos + 16);
         
-        // Card 2: Consumo Operacional
+        // Card 2: Operacional
         doc.setFillColor(...cores.branco);
         doc.rect(20 + espacoCard, yPos, larguraCard, 18, 'F');
         doc.setDrawColor(...cores.cinzaClaro);
@@ -1182,16 +1172,17 @@ async function exportarPdfCompleto() {
         doc.setTextColor(...cores.verde);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        adicionarTextoPDF(doc, 'CONSUMO OPERACIONAL', 47.5 + espacoCard, yPos + 4, { align: 'center' });
+        adicionarTextoPDF(doc, 'DESEMPENHO OPERACIONAL', 47.5 + espacoCard, yPos + 4, { align: 'center' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(...cores.cinzaEscuro);
-        adicionarTextoPDF(doc, `Consumo/100km: ${consumoPor100KmGeral} L`, 22 + espacoCard, yPos + 8);
-        adicionarTextoPDF(doc, `Distancia Total: ${formatarQuilometragem(totalKmGeral)} km`, 22 + espacoCard, yPos + 12);
+        adicionarTextoPDF(doc, `Quilometragem: ${formatarQuilometragem(totalKmGeral)} km`, 22 + espacoCard, yPos + 8);
+        const mediaKmPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? Math.round(totalKmGeral / Object.keys(dadosPorCaminhao).length) : 0;
+        adicionarTextoPDF(doc, `Media por veículo: ${formatarQuilometragem(mediaKmPorVeiculo)} km`, 22 + espacoCard, yPos + 12);
         const abastecimentosPeriodo = filtrados.length;
         adicionarTextoPDF(doc, `Abastecimentos: ${abastecimentosPeriodo}`, 22 + espacoCard, yPos + 16);
         
-        // Card 3: Performance
+        // Card 3: Performance e Custo
         doc.setFillColor(...cores.branco);
         doc.rect(20 + (espacoCard * 2), yPos, larguraCard, 18, 'F');
         doc.setDrawColor(...cores.cinzaClaro);
@@ -1200,16 +1191,14 @@ async function exportarPdfCompleto() {
         doc.setTextColor(...cores.laranja);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        adicionarTextoPDF(doc, 'PERFORMANCE GERAL', 47.5 + (espacoCard * 2), yPos + 4, { align: 'center' });
+        adicionarTextoPDF(doc, 'CUSTOS E PRECOS', 47.5 + (espacoCard * 2), yPos + 4, { align: 'center' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(...cores.cinzaEscuro);
-        const mediaKmPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? Math.round(totalKmGeral / Object.keys(dadosPorCaminhao).length) : 0;
-        adicionarTextoPDF(doc, `Km medio/veiculo: ${formatarQuilometragem(mediaKmPorVeiculo)} km`, 22 + (espacoCard * 2), yPos + 8);
-        const mediaLitrosPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? totalLitrosGeral / Object.keys(dadosPorCaminhao).length : 0;
-        adicionarTextoPDF(doc, `L medio/veiculo: ${formatarLitros(mediaLitrosPorVeiculo)} L`, 22 + (espacoCard * 2), yPos + 12);
+        adicionarTextoPDF(doc, `Total Gasto: R$ ${formatarMoeda(totalGastoGeral)}`, 22 + (espacoCard * 2), yPos + 8);
+        adicionarTextoPDF(doc, `Custo por km: R$ ${custoPorKmGeral}`, 22 + (espacoCard * 2), yPos + 12);
         const valorMedioLitro = totalLitrosGeral > 0 ? formatarMoeda(totalGastoGeral / totalLitrosGeral) : 'N/A';
-        adicionarTextoPDF(doc, `Preco medio: R$ ${valorMedioLitro}`, 22 + (espacoCard * 2), yPos + 16);
+        adicionarTextoPDF(doc, `Preço por litro: R$ ${valorMedioLitro}`, 22 + (espacoCard * 2), yPos + 16);
         
         yPos += 28;
 
@@ -1221,20 +1210,19 @@ async function exportarPdfCompleto() {
         doc.rect(15, yPos, 180, 10, 'F');
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        adicionarTextoPDF(doc, 'DETALHAMENTO DE CONSUMO POR VEÍCULO', 105, yPos + 6, { align: 'center' });
+        doc.setFontSize(11);        adicionarTextoPDF(doc, 'DETALHAMENTO POR VEÍCULO', 105, yPos + 6, { align: 'center' });
         
         yPos += 12;
         
-        // Headers da tabela com cores alternadas - ajustando para dados de consumo
+        // Headers da tabela com cores alternadas - MESMAS COLUNAS DO RELATÓRIO DE CUSTOS
         const colunas = [
             { titulo: 'PLACA', x: 20, largura: 25 },
             { titulo: 'MODELO', x: 47, largura: 27 },
-            { titulo: 'DISTANCIA', x: 75, largura: 25 },
-            { titulo: 'COMBUSTIVEL', x: 98, largura: 25 },
-            { titulo: 'EFICIENCIA', x: 123, largura: 25 },
-            { titulo: 'L/100KM', x: 146, largura: 25 },
-            { titulo: 'ABASTEC.', x: 169, largura: 27 }
+            { titulo: 'COMBUSTIVEL', x: 75, largura: 25 },
+            { titulo: 'GASTO TOTAL', x: 98, largura: 25 },
+            { titulo: 'DISTANCIA', x: 123, largura: 25 },
+            { titulo: 'CONSUMO', x: 146, largura: 25 },
+            { titulo: 'CUSTO/KM', x: 169, largura: 27 }
         ];
         
         // Cabeçalho das colunas
@@ -1253,18 +1241,16 @@ async function exportarPdfCompleto() {
         yPos += 8;
         doc.setFillColor(...cores.azulClaro);
         doc.rect(15, yPos, 180, 6, 'F');
-        doc.setFontSize(7);
-        adicionarTextoPDF(doc, 'Identificaçao', 20, yPos + 4);
+        doc.setFontSize(7);        adicionarTextoPDF(doc, 'Identificaçao', 20, yPos + 4);
         adicionarTextoPDF(doc, 'Tipo do Veiculo', 47, yPos + 4);
-        adicionarTextoPDF(doc, 'Quilometros', 75, yPos + 4);
-        adicionarTextoPDF(doc, 'Litros', 98, yPos + 4);
-        adicionarTextoPDF(doc, 'km por Litro', 123, yPos + 4);
-        adicionarTextoPDF(doc, 'Litros/100km', 146, yPos + 4);
-        adicionarTextoPDF(doc, 'Quantidade', 169, yPos + 4);
+        adicionarTextoPDF(doc, 'Litros', 75, yPos + 4);
+        adicionarTextoPDF(doc, 'Reais', 98, yPos + 4);
+        adicionarTextoPDF(doc, 'Quilometros', 123, yPos + 4);
+        adicionarTextoPDF(doc, 'km por Litro', 146, yPos + 4);
+        adicionarTextoPDF(doc, 'Reais por km', 169, yPos + 4);
         
         yPos += 8;
-        
-        // Dados dos veículos com linhas alternadas - ordenados por eficiência (melhor consumo primeiro)
+          // Dados dos veículos com linhas alternadas - ORDENADOS POR EFICIÊNCIA (MELHOR CONSUMO PRIMEIRO)
         let linhaPar = true;
         const dadosOrdenados = Object.values(dadosPorCaminhao).sort((a, b) => b.mediaConsumo - a.mediaConsumo);
         
@@ -1279,7 +1265,7 @@ async function exportarPdfCompleto() {
                 doc.setTextColor(...cores.branco);
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
-                adicionarTextoPDF(doc, 'DETALHAMENTO DE CONSUMO - Continuaçao', 105, yPos + 5, { align: 'center' });
+                adicionarTextoPDF(doc, 'DETALHAMENTO POR VEICULO - Continuaçao', 105, yPos + 5, { align: 'center' });
                 yPos += 10;
                 linhaPar = true;
             }
@@ -1310,15 +1296,27 @@ async function exportarPdfCompleto() {
             // Modelo (coluna separada)
             doc.setFontSize(7);
             adicionarTextoPDF(doc, d.modelo, 47, yPos + 4.5);
-            
-            // Valores com formatação condicional
+              // Valores com formatação condicional
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.setTextColor(...cores.cinzaEscuro);
-            adicionarTextoPDF(doc, formatarQuilometragem(d.totalKm), 75, yPos + 4.5);
-            adicionarTextoPDF(doc, formatarLitros(d.totalLitros), 98, yPos + 4.5);
+            adicionarTextoPDF(doc, formatarLitros(d.totalLitros), 75, yPos + 4.5);
             
-            // Eficiência com código de cores (verde para melhor, vermelho para pior)
+            // Gasto com código de cores
+            const maiorGasto = Math.max(...dadosOrdenados.map(v => v.totalGasto));
+            const menorGasto = Math.min(...dadosOrdenados.map(v => v.totalGasto));
+            if (d.totalGasto >= maiorGasto * 0.8) {
+                doc.setTextColor(...cores.vermelho);
+            } else if (d.totalGasto <= menorGasto * 1.2) {
+                doc.setTextColor(...cores.verde);
+            } else {
+                doc.setTextColor(...cores.cinzaEscuro);
+            }
+            adicionarTextoPDF(doc, formatarMoeda(d.totalGasto), 98, yPos + 4.5);
+            
+            doc.setTextColor(...cores.cinzaEscuro);
+            adicionarTextoPDF(doc, formatarQuilometragem(d.totalKm), 123, yPos + 4.5);
+            
+            // Consumo com código de cores - DESTAQUE PRINCIPAL
             if (d.mediaConsumo >= 8) {
                 doc.setTextColor(...cores.verde);
             } else if (d.mediaConsumo <= 5) {
@@ -1326,11 +1324,10 @@ async function exportarPdfCompleto() {
             } else {
                 doc.setTextColor(...cores.laranja);
             }
-            adicionarTextoPDF(doc, formatarNumero(d.mediaConsumo, 2), 123, yPos + 4.5);
+            adicionarTextoPDF(doc, formatarNumero(d.mediaConsumo, 2), 146, yPos + 4.5);
             
             doc.setTextColor(...cores.cinzaEscuro);
-            adicionarTextoPDF(doc, formatarNumero(d.consumoPor100Km, 2), 146, yPos + 4.5);
-            adicionarTextoPDF(doc, d.abastecimentos.toString(), 169, yPos + 4.5);
+            adicionarTextoPDF(doc, formatarMoeda(d.custoMedio), 169, yPos + 4.5);
             
             yPos += 7;
             linhaPar = !linhaPar;
@@ -1359,9 +1356,7 @@ async function exportarPdfCompleto() {
 
         // Salvar PDF
         const nomeArquivo = `relatorio_consumo_${dataInicio}_${dataFim}.pdf`;
-        doc.save(nomeArquivo);
-
-        console.log('✅ PDF de consumo gerado com sucesso!', {
+        doc.save(nomeArquivo);        console.log('✅ PDF de consumo simplificado gerado com sucesso!', {
             arquivo: nomeArquivo,
             veiculos: Object.keys(dadosPorCaminhao).length,
             periodo: { inicio: dataInicio, fim: dataFim }
