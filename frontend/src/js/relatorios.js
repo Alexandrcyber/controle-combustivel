@@ -1100,12 +1100,11 @@ async function exportarPdfCompleto() {
         doc.setDrawColor(...cores.azulClaro);
         doc.setLineWidth(0.8);
         doc.line(10, 10, 200, 10);
-        
-        // Título principal
+          // Título principal
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(18);
-        adicionarTextoPDF(doc, 'RELATÓRIO DE CUSTOS OPERACIONAIS', 105, 20, { align: 'center' });
+        adicionarTextoPDF(doc, 'RELATORIO DE CONSUMO DE COMBUSTIVEL', 105, 20, { align: 'center' });
         
         // Subtítulo
         doc.setFontSize(11);
@@ -1124,34 +1123,24 @@ async function exportarPdfCompleto() {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         
-        adicionarTextoPDF(doc, `Período: ${formatDate(dataInicio)} até ${formatDate(dataFim)}`, 20, yPos + 7);
+        const caminhaoSelecionado = caminhaoId === 'todos' ? 'Todos os Veículos' : 
+            (dadosCaminhoes.find(c => c.id === caminhaoId)?.placa || 'Desconhecido');
+        
+        adicionarTextoPDF(doc, `Periodo: ${formatDate(dataInicio)} até ${formatDate(dataFim)}`, 20, yPos + 5);
+        adicionarTextoPDF(doc, `Veiculo: ${caminhaoSelecionado}`, 20, yPos + 9);
         
         const dataGeracao = new Date().toLocaleString('pt-BR');
-        adicionarTextoPDF(doc, `Relatório gerado em: ${dataGeracao}`, 120, yPos + 7, { align: 'left' });
+        adicionarTextoPDF(doc, `Relatorio gerado em: ${dataGeracao}`, 120, yPos + 7, { align: 'left' });
         
-        yPos += 20;        // === DASHBOARD DE MÉTRICAS PRINCIPAIS ===
-        // Container do dashboard com altura dinâmica
-        // Calculamos a altura necessária com base no número de categorias (cada categoria ocupa 7 pontos)
-        const categoriasPorTotal = {};
-        despesasFiltradas.forEach(d => {
-            if (!categoriasPorTotal[d.categoria]) {
-                categoriasPorTotal[d.categoria] = 0;
-            }
-            categoriasPorTotal[d.categoria] += garantirNumero(d.valor, 0);
-        });
-        
-        const categoriasOrdenadas = Object.entries(categoriasPorTotal)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3);
-            
-        // Altura base (título + informações básicas) + altura por categoria
-        const alturaResumo = 40 + (categoriasOrdenadas.length * 7);
-        
+        yPos += 20;
+
+        // === DASHBOARD DE MÉTRICAS PRINCIPAIS ===
+        // Container do dashboard
         doc.setFillColor(...cores.brancoGelo);
-        doc.rect(15, yPos, 180, alturaResumo, 'F');
+        doc.rect(15, yPos, 180, 35, 'F');
         doc.setDrawColor(...cores.cinzaClaro);
         doc.setLineWidth(0.5);
-        doc.rect(15, yPos, 180, alturaResumo, 'S');
+        doc.rect(15, yPos, 180, 35, 'S');
         
         // Título da seção
         doc.setFillColor(...cores.verde);
@@ -1159,89 +1148,193 @@ async function exportarPdfCompleto() {
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        adicionarTextoPDF(doc, 'RESUMO EXECUTIVO', 105, yPos + 5, { align: 'center' });
+        adicionarTextoPDF(doc, 'ANALISE DE CONSUMO', 105, yPos + 5, { align: 'center' });
         
         yPos += 12;
         
-        // Informações resumidas
-        doc.setTextColor(...cores.cinzaEscuro);
+        // Cards de métricas (3 colunas)
+        const larguraCard = 55;
+        const espacoCard = 60;
+        
+        // Card 1: Frota e Eficiência
+        doc.setFillColor(...cores.branco);
+        doc.rect(20, yPos, larguraCard, 18, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.rect(20, yPos, larguraCard, 18, 'S');
+        
+        doc.setTextColor(...cores.azulEscuro);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
+        doc.setFontSize(9);
+        adicionarTextoPDF(doc, 'FROTA E EFICIENCIA', 47.5, yPos + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...cores.cinzaEscuro);
+        adicionarTextoPDF(doc, `Veiculos: ${Object.keys(dadosPorCaminhao).length}`, 22, yPos + 8);
+        adicionarTextoPDF(doc, `Combustivel: ${formatarLitros(totalLitrosGeral)} L`, 22, yPos + 12);
+        adicionarTextoPDF(doc, `Eficiencia: ${consumoMedioGeral} km/L`, 22, yPos + 16);
         
-        adicionarTextoPDF(doc, `Total de Despesas: R$ ${formatarMoeda(totalValor)}`, 20, yPos + 6);
-        adicionarTextoPDF(doc, `Quantidade de Registros: ${despesasFiltradas.length}`, 20, yPos + 14);
+        // Card 2: Consumo Operacional
+        doc.setFillColor(...cores.branco);
+        doc.rect(20 + espacoCard, yPos, larguraCard, 18, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.rect(20 + espacoCard, yPos, larguraCard, 18, 'S');
         
-        if (categoriasOrdenadas.length > 0) {
-            adicionarTextoPDF(doc, `Categorias Principais:`, 120, yPos + 6, { align: 'left' });
-            
-            categoriasOrdenadas.forEach((cat, idx) => {
-                const porcentagem = Math.round((cat[1] / totalValor) * 100);
-                adicionarTextoPDF(doc, `${cat[0]}: R$ ${formatarMoeda(cat[1])} (${porcentagem}%)`, 120, yPos + 14 + (idx * 7), { align: 'left' });
-            });        }
+        doc.setTextColor(...cores.verde);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        adicionarTextoPDF(doc, 'CONSUMO OPERACIONAL', 47.5 + espacoCard, yPos + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...cores.cinzaEscuro);
+        adicionarTextoPDF(doc, `Consumo/100km: ${consumoPor100KmGeral} L`, 22 + espacoCard, yPos + 8);
+        adicionarTextoPDF(doc, `Distancia Total: ${formatarQuilometragem(totalKmGeral)} km`, 22 + espacoCard, yPos + 12);
+        const abastecimentosPeriodo = filtrados.length;
+        adicionarTextoPDF(doc, `Abastecimentos: ${abastecimentosPeriodo}`, 22 + espacoCard, yPos + 16);
         
-        // Ajustar a posição vertical com base na altura real utilizada
-        // A posição atual mais a altura base mais um espaço para cada categoria
-        yPos += alturaResumo + 5; // 5 pontos adicionais de espaçamento
+        // Card 3: Performance
+        doc.setFillColor(...cores.branco);
+        doc.rect(20 + (espacoCard * 2), yPos, larguraCard, 18, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.rect(20 + (espacoCard * 2), yPos, larguraCard, 18, 'S');
+        
+        doc.setTextColor(...cores.laranja);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        adicionarTextoPDF(doc, 'PERFORMANCE GERAL', 47.5 + (espacoCard * 2), yPos + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...cores.cinzaEscuro);
+        const mediaKmPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? Math.round(totalKmGeral / Object.keys(dadosPorCaminhao).length) : 0;
+        adicionarTextoPDF(doc, `Km medio/veiculo: ${formatarQuilometragem(mediaKmPorVeiculo)} km`, 22 + (espacoCard * 2), yPos + 8);
+        const mediaLitrosPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? totalLitrosGeral / Object.keys(dadosPorCaminhao).length : 0;
+        adicionarTextoPDF(doc, `L medio/veiculo: ${formatarLitros(mediaLitrosPorVeiculo)} L`, 22 + (espacoCard * 2), yPos + 12);
+        const valorMedioLitro = totalLitrosGeral > 0 ? formatarMoeda(totalGastoGeral / totalLitrosGeral) : 'N/A';
+        adicionarTextoPDF(doc, `Preco medio: R$ ${valorMedioLitro}`, 22 + (espacoCard * 2), yPos + 16);
+        
+        yPos += 28;
 
         // === TABELA PRINCIPAL ESTILO EXCEL AVANÇADO ===
+        yPos += 10;
+        
         // Cabeçalho da tabela com estilo Excel
         doc.setFillColor(...cores.azulEscuro);
         doc.rect(15, yPos, 180, 10, 'F');
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        adicionarTextoPDF(doc, 'DETALHAMENTO DAS DESPESAS', 105, yPos + 6, { align: 'center' });
+        adicionarTextoPDF(doc, 'DETALHAMENTO DE CONSUMO POR VEÍCULO', 105, yPos + 6, { align: 'center' });
         
         yPos += 12;
         
-        // Tabela de despesas
-        const cabecalho = [
-            { header: 'Data', dataKey: 'data' },
-            { header: 'Fornecedor', dataKey: 'fornecedor' },
-            { header: 'Descrição', dataKey: 'descricao' },
-            { header: 'Categoria', dataKey: 'categoria' },
-            { header: 'Valor (R$)', dataKey: 'valor' }
+        // Headers da tabela com cores alternadas - ajustando para dados de consumo
+        const colunas = [
+            { titulo: 'PLACA', x: 20, largura: 25 },
+            { titulo: 'MODELO', x: 47, largura: 27 },
+            { titulo: 'DISTANCIA', x: 75, largura: 25 },
+            { titulo: 'COMBUSTIVEL', x: 98, largura: 25 },
+            { titulo: 'EFICIENCIA', x: 123, largura: 25 },
+            { titulo: 'L/100KM', x: 146, largura: 25 },
+            { titulo: 'ABASTEC.', x: 169, largura: 27 }
         ];
-          const dados = despesasFiltradas.map(d => ({
-            data: formatDate(d.data),
-            fornecedor: d.fornecedor || '',
-            descricao: d.descricao || '',
-            categoria: d.categoria || 'Geral',
-            valor: `R$ ${formatarMoeda(garantirNumero(d.valor, 0))}`
-        }));
         
-        // Configuração da tabela
-        doc.autoTable({
-            startY: yPos,
-            head: [cabecalho.map(c => c.header)],
-            body: dados.map(d => cabecalho.map(c => d[c.dataKey])),
-            theme: 'grid',
-            headStyles: {
-                fillColor: cores.azulMedio,
-                textColor: cores.branco,
-                fontStyle: 'bold',
-                halign: 'center'
-            },
-            columnStyles: {
-                0: { halign: 'center', cellWidth: 25 },
-                1: { cellWidth: 35 },
-                2: { cellWidth: 50 },
-                3: { halign: 'center', cellWidth: 30 },
-                4: { halign: 'right', cellWidth: 30 }
-            },
-            alternateRowStyles: { fillColor: [248, 249, 250] },
-            margin: { left: 15, right: 15 }
-        });
+        // Cabeçalho das colunas
+        doc.setFillColor(...cores.azulMedio);
+        doc.rect(15, yPos, 180, 8, 'F');
         
-        // Adicionar linha de total
-        const finalY = doc.lastAutoTable.finalY;
-        doc.setFillColor(...cores.verde);
-        doc.rect(15, finalY + 2, 180, 8, 'F');
         doc.setTextColor(...cores.branco);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        adicionarTextoPDF(doc, 'TOTAL GERAL', 105, finalY + 7, { align: 'left' });
-        adicionarTextoPDF(doc, `R$ ${formatarMoeda(totalValor)}`, 165, finalY + 7, { align: 'right' });
+        doc.setFontSize(8);
+        
+        colunas.forEach(col => {
+            adicionarTextoPDF(doc, col.titulo, col.x, yPos + 5);
+        });
+        
+        // Subheaders - português brasileiro correto
+        yPos += 8;
+        doc.setFillColor(...cores.azulClaro);
+        doc.rect(15, yPos, 180, 6, 'F');
+        doc.setFontSize(7);
+        adicionarTextoPDF(doc, 'Identificaçao', 20, yPos + 4);
+        adicionarTextoPDF(doc, 'Tipo do Veiculo', 47, yPos + 4);
+        adicionarTextoPDF(doc, 'Quilometros', 75, yPos + 4);
+        adicionarTextoPDF(doc, 'Litros', 98, yPos + 4);
+        adicionarTextoPDF(doc, 'km por Litro', 123, yPos + 4);
+        adicionarTextoPDF(doc, 'Litros/100km', 146, yPos + 4);
+        adicionarTextoPDF(doc, 'Quantidade', 169, yPos + 4);
+        
+        yPos += 8;
+        
+        // Dados dos veículos com linhas alternadas - ordenados por eficiência (melhor consumo primeiro)
+        let linhaPar = true;
+        const dadosOrdenados = Object.values(dadosPorCaminhao).sort((a, b) => b.mediaConsumo - a.mediaConsumo);
+        
+        dadosOrdenados.forEach((d, index) => {
+            if (yPos > 265) { // Nova página se necessário
+                doc.addPage();
+                yPos = 20;
+                
+                // Repetir cabeçalho na nova página
+                doc.setFillColor(...cores.azulEscuro);
+                doc.rect(15, yPos, 180, 8, 'F');
+                doc.setTextColor(...cores.branco);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                adicionarTextoPDF(doc, 'DETALHAMENTO DE CONSUMO - Continuaçao', 105, yPos + 5, { align: 'center' });
+                yPos += 10;
+                linhaPar = true;
+            }
+            
+            // Fundo alternado
+            if (linhaPar) {
+                doc.setFillColor(...cores.brancoGelo);
+                doc.rect(15, yPos, 180, 7, 'F');
+            }
+            
+            // Bordas das células
+            doc.setDrawColor(...cores.cinzaClaro);
+            doc.setLineWidth(0.2);
+            let xPos = 15;
+            colunas.forEach(col => {
+                doc.rect(xPos, yPos, col.largura, 7, 'S');
+                xPos += col.largura;
+            });
+            
+            // Texto das células
+            doc.setTextColor(...cores.cinzaEscuro);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            
+            // Placa
+            adicionarTextoPDF(doc, d.placa, 21, yPos + 4.5);
+            
+            // Modelo (coluna separada)
+            doc.setFontSize(7);
+            adicionarTextoPDF(doc, d.modelo, 47, yPos + 4.5);
+            
+            // Valores com formatação condicional
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(...cores.cinzaEscuro);
+            adicionarTextoPDF(doc, formatarQuilometragem(d.totalKm), 75, yPos + 4.5);
+            adicionarTextoPDF(doc, formatarLitros(d.totalLitros), 98, yPos + 4.5);
+            
+            // Eficiência com código de cores (verde para melhor, vermelho para pior)
+            if (d.mediaConsumo >= 8) {
+                doc.setTextColor(...cores.verde);
+            } else if (d.mediaConsumo <= 5) {
+                doc.setTextColor(...cores.vermelho);
+            } else {
+                doc.setTextColor(...cores.laranja);
+            }
+            adicionarTextoPDF(doc, formatarNumero(d.mediaConsumo, 2), 123, yPos + 4.5);
+            
+            doc.setTextColor(...cores.cinzaEscuro);
+            adicionarTextoPDF(doc, formatarNumero(d.consumoPor100Km, 2), 146, yPos + 4.5);
+            adicionarTextoPDF(doc, d.abastecimentos.toString(), 169, yPos + 4.5);
+            
+            yPos += 7;
+            linhaPar = !linhaPar;
+        });
         
         // === RODAPÉ PROFISSIONAL ===
         yPos = 280;
@@ -1257,33 +1350,453 @@ async function exportarPdfCompleto() {
         doc.setTextColor(...cores.cinzaMedio);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        adicionarTextoPDF(doc, `Relatório gerado automaticamente pelo Sistema de Controle de Despesas`, 20, yPos);
+        adicionarTextoPDF(doc, `Relatório gerado automaticamente pelo Sistema de Controle de Combustível`, 20, yPos);
         adicionarTextoPDF(doc, `${dataGeracao}`, 180, yPos, { align: 'right' });
         
         yPos += 3;
-        adicionarTextoPDF(doc, `Total de ${despesasFiltradas.length} despesas analisadas no período`, 20, yPos);
+        adicionarTextoPDF(doc, `Total de ${filtrados.length} abastecimentos analisados no período`, 20, yPos);
         adicionarTextoPDF(doc, `Página 1 de 1`, 180, yPos, { align: 'right' });
 
         // Salvar PDF
-        const nomeArquivo = `relatorio_despesas_${dataInicio}_${dataFim}.pdf`;
+        const nomeArquivo = `relatorio_consumo_${dataInicio}_${dataFim}.pdf`;
         doc.save(nomeArquivo);
 
-        console.log('✅ PDF de despesas gerado com sucesso!', {
+        console.log('✅ PDF de consumo gerado com sucesso!', {
             arquivo: nomeArquivo,
-            registros: despesasFiltradas.length,
+            veiculos: Object.keys(dadosPorCaminhao).length,
             periodo: { inicio: dataInicio, fim: dataFim }
         });
         
-        AlertToast.success(`PDF de despesas gerado com sucesso! Arquivo: ${nomeArquivo}`);
+        AlertToast.success(`PDF de consumo gerado com sucesso! Arquivo: ${nomeArquivo} | Veículos: ${Object.keys(dadosPorCaminhao).length}`);
 
     } catch (error) {
-        console.error('❌ Erro ao gerar PDF de despesas:', error);
+        console.error('❌ Erro ao gerar PDF de consumo:', error);
         AlertError.show(
             'Erro ao Gerar PDF',
-            `Erro ao gerar PDF de despesas: ${error.message}. Verifique o console para mais detalhes.`
+            `Erro ao gerar PDF de consumo: ${error.message}. Verifique o console para mais detalhes.`
         );
     }
 }
+
+// Função exportarPdfCustos (que estava faltando)
+async function exportarPdfCustos() {
+    console.log('🚀 Iniciando geração de PDF de custos...');
+    
+    try {
+        // Capturar dados do formulário
+        const dataInicio = document.getElementById('custosDataInicio')?.value;
+        const dataFim = document.getElementById('custosDataFim')?.value;
+        const caminhaoId = document.getElementById('caminhaoCustosSelect')?.value || 'todos';
+
+        // Validar se as datas estão preenchidas
+        if (!dataInicio || !dataFim) {
+            AlertError.validation('Por favor, selecione o período para gerar o relatório de custos.');
+            return;
+        }
+
+        // Processar dados igual à função gerarRelatorioCustos
+        const dadosCaminhoes = window.caminhoes || [];
+        let dadosAbastecimentos = window.abastecimentos || [];
+        
+        console.log('📊 Dados disponíveis para PDF de custos:', {
+            caminhoes: dadosCaminhoes.length,
+            abastecimentos: dadosAbastecimentos.length,
+            periodo: { inicio: dataInicio, fim: dataFim },
+            caminhaoSelecionado: caminhaoId
+        });
+        
+        // Verificar se há dados básicos
+        if (dadosCaminhoes.length === 0) {
+            console.error('❌ Não há caminhões cadastrados');
+            AlertError.show(
+                'Dados Insuficientes',
+                'Não há caminhões cadastrados. Por favor, cadastre pelo menos um caminhão.'
+            );
+            return;
+        }
+        
+        if (dadosAbastecimentos.length === 0) {
+            console.error('❌ Não há abastecimentos cadastrados');
+            AlertError.show(
+                'Dados Insuficientes', 
+                'Não há abastecimentos cadastrados. Por favor, registre pelo menos um abastecimento.'
+            );
+            return;
+        }
+        
+        // Normalizar campos
+        dadosAbastecimentos = dadosAbastecimentos.map(a => ({
+            ...a,
+            caminhaoId: getField(a, 'caminhao_id', 'caminhaoId'),
+            kmInicial: getNumField(a, 'km_inicial', 'kmInicial'),
+            kmFinal: getNumField(a, 'km_final', 'kmFinal'),
+            litros: getNumField(a, 'litros', 'litros'),
+            valorTotal: getNumField(a, 'valor_total', 'valorTotal')
+        }));
+
+        // Filtrar por data
+        let filtrados = dadosAbastecimentos.filter(a => {
+            const dia = a.data.split('T')[0];
+            return dia >= dataInicio && dia <= dataFim;
+        });
+        
+        // Filtrar por caminhão
+        if (caminhaoId !== 'todos') {
+            filtrados = filtrados.filter(a => a.caminhaoId === caminhaoId);
+        }
+        
+        if (filtrados.length === 0) {
+            console.warn('⚠️ Nenhum abastecimento encontrado no período');
+            AlertWarning.noData('Nenhum abastecimento foi encontrado no período selecionado.');
+            return;
+        }
+
+        // Agrupar dados por caminhão
+        const dadosPorCaminhao = {};
+        filtrados.forEach(a => {
+            if (!dadosPorCaminhao[a.caminhaoId]) {
+                const c = dadosCaminhoes.find(c => c.id === a.caminhaoId) || {};
+                dadosPorCaminhao[a.caminhaoId] = {
+                    placa: c.placa || 'Desconhecido',
+                    modelo: c.modelo || 'Desconhecido',
+                    totalLitros: 0,
+                    totalGasto: 0,
+                    totalKm: 0
+                };
+            }
+            const entry = dadosPorCaminhao[a.caminhaoId];
+            const dist = a.kmFinal - a.kmInicial;
+            entry.totalLitros += a.litros;
+            entry.totalGasto += a.valorTotal;
+            entry.totalKm += dist;
+        });
+
+        // Calcular totais gerais
+        let totalLitrosGeral = 0, totalGastoGeral = 0, totalKmGeral = 0;
+        Object.values(dadosPorCaminhao).forEach(d => {
+            d.mediaConsumo = d.totalLitros > 0 ? (d.totalKm / d.totalLitros) : 0;
+            d.custoMedio = d.totalKm > 0 ? (d.totalGasto / d.totalKm) : 0;
+            d.valorMedioLitro = d.totalLitros > 0 ? (d.totalGasto / d.totalLitros) : 0;
+            totalLitrosGeral += d.totalLitros;
+            totalGastoGeral += d.totalGasto;
+            totalKmGeral += d.totalKm;
+        });
+        const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
+        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';
+
+        // Criar PDF profissional
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Configurar esquema de cores profissional (Excel-like)
+        const cores = {
+            azulEscuro: [23, 55, 94],       // Cabeçalho principal
+            azulMedio: [54, 96, 146],       // Seções secundárias
+            azulClaro: [79, 129, 189],      // Destaque
+            cinzaEscuro: [68, 68, 68],      // Texto principal
+            cinzaMedio: [128, 128, 128],    // Texto secundário
+            cinzaClaro: [217, 217, 217],    // Bordas
+            brancoGelo: [248, 248, 248],    // Fundo alternado
+            verde: [70, 136, 71],           // Valores positivos
+            laranja: [237, 125, 49],        // Alertas
+            vermelho: [192, 80, 77],        // Valores críticos
+            branco: [255, 255, 255]
+        };
+
+        let yPos = 15;
+
+        // === CABEÇALHO PRINCIPAL ESTILO EXCEL ===
+        // Fundo gradiente principal
+        doc.setFillColor(...cores.azulEscuro);
+        doc.rect(10, 10, 190, 25, 'F');
+        
+        // Borda superior elegante
+        doc.setDrawColor(...cores.azulClaro);
+        doc.setLineWidth(0.8);
+        doc.line(10, 10, 200, 10);
+        
+        // Título principal
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        adicionarTextoPDF(doc, 'RELATORIO DE CUSTOS OPERACIONAIS', 105, 20, { align: 'center' });
+        
+        // Subtítulo
+        doc.setFontSize(11);
+        adicionarTextoPDF(doc, 'Sistema de Controle de Combustível', 105, 28, { align: 'center' });
+        
+        yPos = 45;
+
+        // === INFORMAÇÕES DO PERÍODO (STYLE EXCEL HEADER) ===
+        doc.setFillColor(...cores.azulMedio);
+        doc.rect(15, yPos, 180, 12, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.setLineWidth(0.3);
+        doc.rect(15, yPos, 180, 12, 'S');
+        
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        
+        const caminhaoSelecionado = caminhaoId === 'todos' ? 'Todos os Veículos' : 
+            (dadosCaminhoes.find(c => c.id === caminhaoId)?.placa || 'Desconhecido');
+              adicionarTextoPDF(doc, `Periodo: ${formatDate(dataInicio)} até ${formatDate(dataFim)}`, 20, yPos + 5);
+        adicionarTextoPDF(doc, `Veiculo: ${caminhaoSelecionado}`, 20, yPos + 9);
+        
+        const dataGeracao = new Date().toLocaleString('pt-BR');
+        adicionarTextoPDF(doc, `Relatorio gerado em: ${dataGeracao}`, 120, yPos + 7, { align: 'left' });
+        
+        yPos += 20;
+
+        // === DASHBOARD DE MÉTRICAS PRINCIPAIS ===
+        // Container do dashboard
+        doc.setFillColor(...cores.brancoGelo);
+        doc.rect(15, yPos, 180, 35, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.setLineWidth(0.5);
+        doc.rect(15, yPos, 180, 35, 'S');
+        
+        // Título da seção
+        doc.setFillColor(...cores.verde);
+        doc.rect(15, yPos, 180, 8, 'F');
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        adicionarTextoPDF(doc, 'RESUMO EXECUTIVO', 105, yPos + 5, { align: 'center' });
+        
+        yPos += 12;
+        
+        // Cards de métricas (3 colunas)
+        const larguraCard = 55;
+        const espacoCard = 60;
+        
+        // Card 1: Veículos e Combustível
+        doc.setFillColor(...cores.branco);
+        doc.rect(20, yPos, larguraCard, 18, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.rect(20, yPos, larguraCard, 18, 'S');
+          doc.setTextColor(...cores.azulEscuro);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        adicionarTextoPDF(doc, 'FROTA E COMBUSTIVEL', 47.5, yPos + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...cores.cinzaEscuro);
+        adicionarTextoPDF(doc, `Veiculos: ${Object.keys(dadosPorCaminhao).length}`, 22, yPos + 8);
+        adicionarTextoPDF(doc, `Combustivel: ${formatarLitros(totalLitrosGeral)} L`, 22, yPos + 12);
+        adicionarTextoPDF(doc, `Consumo Medio: ${consumoMedioGeral} km/L`, 22, yPos + 16);
+        
+        // Card 2: Financeiro
+        doc.setFillColor(...cores.branco);
+        doc.rect(20 + espacoCard, yPos, larguraCard, 18, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.rect(20 + espacoCard, yPos, larguraCard, 18, 'S');
+        
+        doc.setTextColor(...cores.verde);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        adicionarTextoPDF(doc, 'CUSTOS OPERACIONAIS', 47.5 + espacoCard, yPos + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...cores.cinzaEscuro);        adicionarTextoPDF(doc, `Total Gasto: R$ ${formatarMoeda(totalGastoGeral)}`, 22 + espacoCard, yPos + 8);
+        adicionarTextoPDF(doc, `Custo por km: R$ ${custoPorKmGeral}`, 22 + espacoCard, yPos + 12);
+        const valorMedioLitro = totalLitrosGeral > 0 ? formatarMoeda(totalGastoGeral / totalLitrosGeral) : 'N/A';
+        adicionarTextoPDF(doc, `Preço por litro: R$ ${valorMedioLitro}`, 22 + espacoCard, yPos + 16);
+        
+        // Card 3: Operacional
+        doc.setFillColor(...cores.branco);
+        doc.rect(20 + (espacoCard * 2), yPos, larguraCard, 18, 'F');
+        doc.setDrawColor(...cores.cinzaClaro);
+        doc.rect(20 + (espacoCard * 2), yPos, larguraCard, 18, 'S');
+        
+        doc.setTextColor(...cores.laranja);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        adicionarTextoPDF(doc, 'DESEMPENHO OPERACIONAL', 47.5 + (espacoCard * 2), yPos + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...cores.cinzaEscuro);        adicionarTextoPDF(doc, `Quilometragem total: ${formatarQuilometragem(totalKmGeral)} km`, 22 + (espacoCard * 2), yPos + 8);
+        const mediaKmPorVeiculo = Object.keys(dadosPorCaminhao).length > 0 ? Math.round(totalKmGeral / Object.keys(dadosPorCaminhao).length) : 0;
+        adicionarTextoPDF(doc, `Media por veículo: ${formatarQuilometragem(mediaKmPorVeiculo)} km`, 22 + (espacoCard * 2), yPos + 12);
+        const abastecimentosPeriodo = filtrados.length;
+        adicionarTextoPDF(doc, `Abastecimentos: ${abastecimentosPeriodo}`, 22 + (espacoCard * 2), yPos + 16);
+        
+        yPos += 28;
+
+        // === TABELA PRINCIPAL ESTILO EXCEL AVANÇADO ===
+        yPos += 10;
+        
+        // Cabeçalho da tabela com estilo Excel
+        doc.setFillColor(...cores.azulEscuro);
+        doc.rect(15, yPos, 180, 10, 'F');
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        adicionarTextoPDF(doc, 'DETALHAMENTO POR VEÍCULO', 105, yPos + 6, { align: 'center' });
+        
+        yPos += 12;
+          // Headers da tabela com cores alternadas - ajustando larguras para separar placa e modelo
+        const colunas = [
+            { titulo: 'PLACA', x: 20, largura: 25 },
+            { titulo: 'MODELO', x: 47, largura: 27 },
+            { titulo: 'COMBUSTIVEL', x: 75, largura: 25 },
+            { titulo: 'GASTO TOTAL', x: 98, largura: 25 },
+            { titulo: 'DISTANCIA', x: 123, largura: 25 },
+            { titulo: 'CONSUMO', x: 146, largura: 25 },
+            { titulo: 'CUSTO/KM', x: 169, largura: 27 }
+        ];
+        
+        // Cabeçalho das colunas
+        doc.setFillColor(...cores.azulMedio);
+        doc.rect(15, yPos, 180, 8, 'F');
+        
+        doc.setTextColor(...cores.branco);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        
+        colunas.forEach(col => {
+            adicionarTextoPDF(doc, col.titulo, col.x, yPos + 5);
+        });
+        
+        // Subheaders - português brasileiro correto
+        yPos += 8;
+        doc.setFillColor(...cores.azulClaro);
+        doc.rect(15, yPos, 180, 6, 'F');
+        doc.setFontSize(7);
+        adicionarTextoPDF(doc, 'Identificaçao', 20, yPos + 4);
+        adicionarTextoPDF(doc, 'Tipo do Veiculo', 47, yPos + 4);
+        adicionarTextoPDF(doc, 'Litros', 75, yPos + 4);
+        adicionarTextoPDF(doc, 'Reais', 98, yPos + 4);
+        adicionarTextoPDF(doc, 'Quilometros', 123, yPos + 4);
+        adicionarTextoPDF(doc, 'km por Litro', 146, yPos + 4);
+        adicionarTextoPDF(doc, 'Reais por km', 169, yPos + 4);
+        
+        yPos += 8;
+        
+        // Dados dos veículos com linhas alternadas
+        let linhaPar = true;
+        const dadosOrdenados = Object.values(dadosPorCaminhao).sort((a, b) => b.totalGasto - a.totalGasto);
+        
+        dadosOrdenados.forEach((d, index) => {
+            if (yPos > 265) { // Nova página se necessário
+                doc.addPage();
+                yPos = 20;
+                  // Repetir cabeçalho na nova página
+                doc.setFillColor(...cores.azulEscuro);
+                doc.rect(15, yPos, 180, 8, 'F');
+                doc.setTextColor(...cores.branco);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                adicionarTextoPDF(doc, 'DETALHAMENTO POR VEICULO - Continuaçao', 105, yPos + 5, { align: 'center' });
+                yPos += 10;
+                linhaPar = true;
+            }
+              // Fundo alternado
+            if (linhaPar) {
+                doc.setFillColor(...cores.brancoGelo);
+                doc.rect(15, yPos, 180, 7, 'F');
+            }
+            
+            // Bordas das células
+            doc.setDrawColor(...cores.cinzaClaro);
+            doc.setLineWidth(0.2);
+            let xPos = 15;
+            colunas.forEach(col => {
+                doc.rect(xPos, yPos, col.largura, 7, 'S');
+                xPos += col.largura;
+            });
+            
+            // Texto das células
+            doc.setTextColor(...cores.cinzaEscuro);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            
+            // Placa sem ranking (apenas a placa)
+            adicionarTextoPDF(doc, d.placa, 21, yPos + 4.5);
+            
+            // Modelo (coluna separada)
+            doc.setFontSize(7);
+            adicionarTextoPDF(doc, d.modelo, 47, yPos + 4.5);
+            
+            // Valores com formatação condicional
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            adicionarTextoPDF(doc, formatarLitros(d.totalLitros), 75, yPos + 4.5);
+            
+            // Cor baseada no gasto (verde para menor, vermelho para maior)
+            const maiorGasto = Math.max(...dadosOrdenados.map(v => v.totalGasto));
+            const menorGasto = Math.min(...dadosOrdenados.map(v => v.totalGasto));
+            if (d.totalGasto >= maiorGasto * 0.8) {
+                doc.setTextColor(...cores.vermelho);
+            } else if (d.totalGasto <= menorGasto * 1.2) {
+                doc.setTextColor(...cores.verde);
+            } else {
+                doc.setTextColor(...cores.cinzaEscuro);
+            }
+            adicionarTextoPDF(doc, formatarMoeda(d.totalGasto), 98, yPos + 4.5);
+            
+            doc.setTextColor(...cores.cinzaEscuro);
+            adicionarTextoPDF(doc, formatarQuilometragem(d.totalKm), 123, yPos + 4.5);
+            
+            // Consumo com código de cores
+            if (d.mediaConsumo >= 8) {
+                doc.setTextColor(...cores.verde);
+            } else if (d.mediaConsumo <= 5) {
+                doc.setTextColor(...cores.vermelho);
+            } else {
+                doc.setTextColor(...cores.laranja);
+            }
+            adicionarTextoPDF(doc, formatarNumero(d.mediaConsumo, 2), 146, yPos + 4.5);
+            
+            doc.setTextColor(...cores.cinzaEscuro);
+            adicionarTextoPDF(doc, formatarMoeda(d.custoMedio), 169, yPos + 4.5);
+            
+            yPos += 7;
+            linhaPar = !linhaPar;
+        });
+        
+        // === RODAPÉ PROFISSIONAL ===
+        yPos = 280;
+        
+        // Linha de separação
+        doc.setDrawColor(...cores.azulMedio);
+        doc.setLineWidth(0.8);
+        doc.line(15, yPos, 195, yPos);
+        
+        yPos += 5;
+          // Rodapé com informações
+        doc.setTextColor(...cores.cinzaMedio);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        adicionarTextoPDF(doc, `Relatório gerado automaticamente pelo Sistema de Controle de Combustível`, 20, yPos);
+        adicionarTextoPDF(doc, `${dataGeracao}`, 180, yPos, { align: 'right' });
+        
+        yPos += 3;
+        adicionarTextoPDF(doc, `Total de ${filtrados.length} abastecimentos analisados no período`, 20, yPos);
+        adicionarTextoPDF(doc, `Página 1 de 1`, 180, yPos, { align: 'right' });
+
+        // Salvar PDF
+        const nomeArquivo = `relatorio_custos_${dataInicio}_${dataFim}.pdf`;
+        doc.save(nomeArquivo);
+
+        console.log('✅ PDF de custos gerado com sucesso!', {
+            arquivo: nomeArquivo,
+            veiculos: Object.keys(dadosPorCaminhao).length,
+            periodo: { inicio: dataInicio, fim: dataFim }
+        });
+        
+        AlertToast.success(`PDF de custos gerado com sucesso! Arquivo: ${nomeArquivo} | Veículos: ${Object.keys(dadosPorCaminhao).length}`);
+
+    } catch (error) {
+        console.error('❌ Erro ao gerar PDF de custos:', error);
+        AlertError.show(
+            'Erro ao Gerar PDF',
+            `Erro ao gerar PDF de custos: ${error.message}. Verifique o console para mais detalhes.`
+        );
+    }
+}
+
+// Função exportarPdfDespesas (mantendo a estrutura original)
 
 // Exportar funções para o escopo global
 if (typeof window !== 'undefined') {
