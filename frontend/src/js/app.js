@@ -1133,15 +1133,15 @@ async function saveCaminhao() {
         console.log('[APP] Caminhão salvo com sucesso:', savedCaminhao);
         
         // Fechar loading
-        AlertUtils.close();
-          // Atualizar array local
+        AlertUtils.close();        // Atualizar array local
         if (isEdit) {
-            const index = caminhoes.findIndex(c => c.id === caminhaoIdInput.value);
+            const index = (window.caminhoes || []).findIndex(c => c.id === caminhaoIdInput.value);
             if (index !== -1) {
-                caminhoes[index] = savedCaminhao;
+                window.caminhoes[index] = savedCaminhao;
             }
         } else {
-            caminhoes.push(savedCaminhao);
+            window.caminhoes = window.caminhoes || [];
+            window.caminhoes.push(savedCaminhao);
         }
          
         updateGlobalReferences();
@@ -1184,7 +1184,7 @@ async function saveCaminhao() {
 
 // Editar caminhão existente
 function editCaminhao(id) {
-    const caminhao = caminhoes.find(c => c.id === id);
+    const caminhao = (window.caminhoes || []).find(c => c.id === id);
     if (caminhao) {
         // Preencher formulário com dados do caminhão
         document.getElementById('caminhaoId').value = caminhao.id;
@@ -1284,15 +1284,15 @@ async function saveAbastecimento() {
         console.log('[APP] Abastecimento salvo com sucesso:', savedAbastecimento);
         
         // Fechar loading
-        AlertUtils.close();
-          // Atualizar array local
+        AlertUtils.close();        // Atualizar array local
         if (isEdit) {
-            const index = abastecimentos.findIndex(a => a.id === abastecimentoIdInput.value);
+            const index = (window.abastecimentos || []).findIndex(a => a.id === abastecimentoIdInput.value);
             if (index !== -1) {
-                abastecimentos[index] = savedAbastecimento;
+                window.abastecimentos[index] = savedAbastecimento;
             }
         } else {
-            abastecimentos.push(savedAbastecimento);
+            window.abastecimentos = window.abastecimentos || [];
+            window.abastecimentos.push(savedAbastecimento);
         }
           // Atualizar referências globais para os relatórios
         updateGlobalReferences();
@@ -1330,7 +1330,7 @@ async function saveAbastecimento() {
 
 // Editar abastecimento existente
 function editAbastecimento(id) {
-    const abastecimento = abastecimentos.find(a => a.id === id);
+    const abastecimento = (window.abastecimentos || []).find(a => a.id === id);
     if (abastecimento) {
         // Preencher formulário com dados do abastecimento
         document.getElementById('abastecimentoId').value = abastecimento.id;
@@ -1449,9 +1449,8 @@ async function confirmDelete(id, type) {
         // Mostrar loading para operação de exclusão
         const loadingInstance = AlertInfo.loadingData();
         
-        if (type === 'caminhao') {
-            // Verificar se há abastecimentos associados a este caminhão
-            const abastecimentosAssociados = abastecimentos.some(a => a.caminhaoId === id);
+        if (type === 'caminhao') {            // Verificar se há abastecimentos associados a este caminhão
+            const abastecimentosAssociados = (window.abastecimentos || []).some(a => a.caminhaoId === id);
             
             if (abastecimentosAssociados) {
                 // Fechar loading temporariamente para mostrar confirmação

@@ -17,8 +17,35 @@ const chartColors = [
 
 // Inicializar gráficos
 function initCharts() {
+    // Destruir gráficos existentes se existirem
+    if (consumoPorCaminhaoChart) {
+        consumoPorCaminhaoChart.destroy();
+        consumoPorCaminhaoChart = null;
+    }
+    if (gastosMensaisChart) {
+        gastosMensaisChart.destroy();
+        gastosMensaisChart = null;
+    }
+    if (despesasPorCategoriaChart) {
+        despesasPorCategoriaChart.destroy();
+        despesasPorCategoriaChart = null;
+    }
+    if (evolucaoDespesasMensaisChart) {
+        evolucaoDespesasMensaisChart.destroy();
+        evolucaoDespesasMensaisChart = null;
+    }
+    
+    // Verificar se os elementos existem antes de criar gráficos
+    const consumoCanvas = document.getElementById('consumoPorCaminhao');
+    const gastosCanvas = document.getElementById('gastosMensais');
+    
+    if (!consumoCanvas || !gastosCanvas) {
+        console.warn('[CHARTS] Canvas elements not found, skipping chart initialization');
+        return;
+    }
+    
     // Gráfico de consumo por caminhão
-    const consumoCtx = document.getElementById('consumoPorCaminhao').getContext('2d');
+    const consumoCtx = consumoCanvas.getContext('2d');
     consumoPorCaminhaoChart = new Chart(consumoCtx, {
         type: 'bar',
         data: {
@@ -56,9 +83,8 @@ function initCharts() {
             maintainAspectRatio: false
         }
     });
-    
-    // Gráfico de gastos mensais
-    const gastosCtx = document.getElementById('gastosMensais').getContext('2d');
+      // Gráfico de gastos mensais
+    const gastosCtx = gastosCanvas.getContext('2d');
     gastosMensaisChart = new Chart(gastosCtx, {
         type: 'line',
         data: {
@@ -324,10 +350,16 @@ function updateDespesasCharts() {
             return;
         }
     }
-    
-    // Verificar se o array de despesas está disponível
+      // Verificar se o array de despesas está disponível
     if (!Array.isArray(window.despesas) || window.despesas.length === 0) {
-        console.warn('[CHARTS] Dados de despesas não disponíveis para gráficos');
+        console.warn('[CHARTS] Dados de despesas não disponíveis para gráficos, aguardando carregamento...');
+        // Reagendar para tentar novamente em 1 segundo
+        setTimeout(() => {
+            if (Array.isArray(window.despesas) && window.despesas.length > 0) {
+                console.log('[CHARTS] Despesas carregadas, atualizando gráficos...');
+                updateDespesasCharts();
+            }
+        }, 1000);
         return;
     }
     
@@ -493,6 +525,47 @@ function updateDespesasCards(despesasFiltradas) {
     } catch (error) {
         console.error('[DASHBOARD] Erro ao atualizar cards de despesas:', error);
     }
+}
+
+// Função específica para atualizar apenas os gráficos de despesas (chamada externa)
+function updateDespesasChartsOnly() {
+    console.log('[CHARTS] Atualizando apenas gráficos de despesas...');
+    
+    if (!Array.isArray(window.despesas) || window.despesas.length === 0) {
+        console.warn('[CHARTS] Dados de despesas não disponíveis');
+        return;
+    }
+    
+    // Verificar se os gráficos existem, se não, tentar inicializar
+    if (!despesasPorCategoriaChart || !evolucaoDespesasMensaisChart) {
+        console.log('[CHARTS] Gráficos de despesas não inicializados, tentando inicializar...');
+        if (document.getElementById('despesasPorCategoria') && document.getElementById('evolucaoDespesasMensais')) {
+            initCharts();
+        }
+    }
+    
+    // Ler filtros atuais
+    const dataInicio = document.getElementById('dashboardDataInicio')?.value || new Date().toISOString().split('T')[0];
+    const dataFim = document.getElementById('dashboardDataFim')?.value || new Date().toISOString().split('T')[0];
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim + 'T23:59:59');
+    
+    // Filtrar despesas
+    const despesasFiltradas = window.despesas.filter(d => {
+        try {
+            const dataDespesa = new Date(d.data);
+            return dataDespesa >= inicio && dataDespesa <= fim;
+        } catch (error) {
+            return false;
+        }
+    });
+    
+    // Atualizar gráficos
+    updateDespesasPorCategoriaChart(despesasFiltradas);
+    updateEvolucaoDespesasMensaisChart(despesasFiltradas);
+    updateDespesasCards(despesasFiltradas);
+    
+    console.log(`[CHARTS] Gráficos de despesas atualizados com ${despesasFiltradas.length} registros`);
 }
 
 // Documentar que este script foi carregado (para debugging)
