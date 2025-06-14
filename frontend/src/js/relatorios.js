@@ -993,14 +993,29 @@ function criarPlanilhaIndicadores(wb, dados) {
 
 // Função helper para adicionar texto no PDF com opções de alinhamento
 function adicionarTextoPDF(doc, texto, x, y, opcoes = {}) {
-    const align = opcoes.align || 'left';
+    const {
+        fontSize = 10,
+        textColor = [0, 0, 0],
+        align = 'left',
+        fontStyle = 'normal',
+        maxWidth = null
+    } = opcoes;
     
-    if (align === 'center') {
-        doc.text(texto, x, y, { align: 'center' });
-    } else if (align === 'right') {
-        doc.text(texto, x, y, { align: 'right' });
+    // Aplicar configurações
+    if (fontSize) doc.setFontSize(fontSize);
+    if (textColor) doc.setTextColor(...textColor);
+    if (fontStyle && fontStyle !== 'normal') {
+        doc.setFont('helvetica', fontStyle);
+    }
+    
+    // Adicionar texto com alinhamento
+    if (maxWidth && doc.getTextWidth(texto) > maxWidth) {
+        const lines = doc.splitTextToSize(texto, maxWidth);
+        doc.text(lines, x, y, { align });
+        return lines.length * (fontSize || 10) * 0.352778; // Retorna altura aproximada
     } else {
-        doc.text(texto, x, y);
+        doc.text(texto, x, y, { align });
+        return (fontSize || 10) * 0.352778; // Retorna altura aproximada
     }
 }
 
@@ -1009,6 +1024,11 @@ function adicionarTextoPDF(doc, texto, x, y, opcoes = {}) {
 // Função para exportar PDF de consumo seguindo o padrão de custos
 async function exportarPdfCompleto() {
     console.log('🚀 Iniciando geração de PDF de consumo...');
+    console.log('📊 Estado do jsPDF:', {
+        'window.jsPDF': typeof window.jsPDF,
+        'window.jspdf': typeof window.jspdf,
+        'window.jspdf?.jsPDF': window.jspdf ? typeof window.jspdf.jsPDF : 'undefined'
+    });
     
     try {
         // Capturar dados do formulário
@@ -1110,9 +1130,24 @@ async function exportarPdfCompleto() {
             totalKmGeral += d.totalKm;
         });
         const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
-        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';        // Criar PDF profissional usando o mesmo estilo de custos
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';        console.log('📅 Testando formatDate:', {
+            dataInicio: dataInicio,
+            dataFim: dataFim,
+            formatadoInicio: formatDate(dataInicio),
+            formatadoFim: formatDate(dataFim)
+        });
+        
+        // Criar PDF profissional usando o mesmo estilo de custos
+        let jsPDFLib;
+        if (window.jsPDF) {
+            jsPDFLib = window.jsPDF;
+        } else if (window.jspdf && window.jspdf.jsPDF) {
+            jsPDFLib = window.jspdf.jsPDF;
+        } else {
+            throw new Error('Biblioteca jsPDF não encontrada. Verifique se o script está carregado.');
+        }
+        
+        const doc = new jsPDFLib();
 
         // Configurar esquema de cores profissional (Excel-like) - IGUAL AO RELATÓRIO DE CUSTOS
         const cores = {
@@ -1418,11 +1453,17 @@ async function exportarPdfCustos() {
             totalKmGeral += d.totalKm;
         });
         const consumoMedioGeral = totalLitrosGeral > 0 ? formatarNumero(totalKmGeral / totalLitrosGeral, 2) : 'N/A';
-        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';
-
-        // Criar PDF profissional
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const custoPorKmGeral = totalKmGeral > 0 ? formatarMoeda(totalGastoGeral / totalKmGeral) : 'N/A';        // Criar PDF profissional
+        let jsPDFLib;
+        if (window.jsPDF) {
+            jsPDFLib = window.jsPDF;
+        } else if (window.jspdf && window.jspdf.jsPDF) {
+            jsPDFLib = window.jspdf.jsPDF;
+        } else {
+            throw new Error('Biblioteca jsPDF não encontrada. Verifique se o script está carregado.');
+        }
+        
+        const doc = new jsPDFLib();
 
         // Configurar esquema de cores profissional (Excel-like)
         const cores = {

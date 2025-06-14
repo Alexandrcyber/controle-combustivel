@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug jsPDF</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <h1>Debug jsPDF Loading</h1>
+    <button onclick="verificarJsPDF()">Verificar jsPDF</button>
+    <div id="resultado"></div>
+
+    <script>
+        function verificarJsPDF() {
+            const log = document.getElementById('resultado');
+            log.innerHTML = '';
+            
+            log.innerHTML += '<p>window.jsPDF: ' + (typeof window.jsPDF) + '</p>';
+            log.innerHTML += '<p>window.jspdf: ' + (typeof window.jspdf) + '</p>';
+            
+            if (window.jsPDF) {
+                log.innerHTML += '<p>✅ jsPDF carregado como window.jsPDF</p>';
+                try {
+                    const doc = new window.jsPDF();
+                    log.innerHTML += '<p>✅ Instância criada com sucesso</p>';
+                } catch (e) {
+                    log.innerHTML += '<p>❌ Erro ao criar instância: ' + e.message + '</p>';
+                }
+            }
+            
+            if (window.jspdf && window.jspdf.jsPDF) {
+                log.innerHTML += '<p>✅ jsPDF carregado como window.jspdf.jsPDF</p>';
+                try {
+                    const doc = new window.jspdf.jsPDF();
+                    log.innerHTML += '<p>✅ Instância criada com sucesso via jspdf.jsPDF</p>';
+                } catch (e) {
+                    log.innerHTML += '<p>❌ Erro ao criar instância via jspdf.jsPDF: ' + e.message + '</p>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

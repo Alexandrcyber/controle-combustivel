@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Função PDF Real</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <h1>Teste da Função PDF Real</h1>
+    
+    <!-- Simular formulário -->
+    <form>
+        <label>Data Início:</label>
+        <input type="date" id="dataInicio" value="2024-01-01">
+        
+        <label>Data Fim:</label>
+        <input type="date" id="dataFim" value="2024-01-31">
+        
+        <select id="caminhaoSelect">
+            <option value="todos">Todos os caminhões</option>
+        </select>
+    </form>
+    
+    <button onclick="testarFuncaoReal()">Testar Função PDF Real</button>
+    <div id="log"></div>
+
+    <script>
+        // Simular dados globais
+        window.caminhoes = [
+            { id: 1, placa: 'ABC-1234', modelo: 'Volvo FH' },
+            { id: 2, placa: 'DEF-5678', modelo: 'Scania R' }
+        ];
+        
+        window.abastecimentos = [
+            {
+                id: 1,
+                data: '2024-01-15T00:00:00',
+                caminhaoId: 1,
+                kmInicial: 100000,
+                kmFinal: 101000,
+                litros: 150,
+                valorTotal: 750
+            },
+            {
+                id: 2,
+                data: '2024-01-20T00:00:00',
+                caminhaoId: 2,
+                kmInicial: 200000,
+                kmFinal: 201200,
+                litros: 180,
+                valorTotal: 900
+            }
+        ];
+
+        // Funções auxiliares necessárias
+        function garantirNumero(valor, padrao = 0) {
+            if (valor === null || valor === undefined || valor === '' || isNaN(valor)) {
+                return padrao;
+            }
+            const numero = parseFloat(valor);
+            return isNaN(numero) ? padrao : numero;
+        }
+
+        function formatarNumero(valor, decimais = 2) {
+            const numero = garantirNumero(valor, 0);
+            return numero.toFixed(decimais);
+        }
+
+        function formatarMoeda(valor) {
+            const numero = garantirNumero(valor, 0);
+            return numero.toFixed(2);
+        }
+
+        function formatDate(data) {
+            if (!data) return '';
+            
+            let dateObj;
+            
+            if (data instanceof Date) {
+                dateObj = data;
+            } else {
+                if (typeof data === 'string') {
+                    if (data.includes('-')) {
+                        dateObj = new Date(data + 'T00:00:00');
+                    } else {
+                        dateObj = new Date(data);
+                    }
+                } else {
+                    dateObj = new Date(data);
+                }
+            }
+            
+            if (isNaN(dateObj.getTime())) {
+                return data;
+            }
+            
+            return dateObj.toLocaleDateString('pt-BR');
+        }
+
+        function formatarQuilometragem(valor) {
+            const numero = garantirNumero(valor, 0);
+            return Math.round(numero).toLocaleString('pt-BR');
+        }
+
+        function formatarLitros(valor) {
+            const numero = garantirNumero(valor, 0);
+            if (numero % 1 === 0) {
+                return Math.round(numero).toString();
+            }
+            return numero.toFixed(1);
+        }
+
+        function getField(obj, ...fields) {
+            for (let field of fields) {
+                if (obj[field] !== undefined) return obj[field];
+            }
+            return undefined;
+        }
+
+        function getNumField(obj, ...fields) {
+            const value = getField(obj, ...fields);
+            return garantirNumero(value, 0);
+        }
+
+        function adicionarTextoPDF(doc, texto, x, y, opcoes = {}) {
+            const {
+                fontSize = 10,
+                textColor = [0, 0, 0],
+                align = 'left',
+                fontStyle = 'normal',
+                maxWidth = null
+            } = opcoes;
+            
+            if (fontSize) doc.setFontSize(fontSize);
+            if (textColor) doc.setTextColor(...textColor);
+            if (fontStyle && fontStyle !== 'normal') {
+                doc.setFont('helvetica', fontStyle);
+            }
+            
+            if (maxWidth && doc.getTextWidth(texto) > maxWidth) {
+                const lines = doc.splitTextToSize(texto, maxWidth);
+                doc.text(lines, x, y, { align });
+                return lines.length * (fontSize || 10) * 0.352778;
+            } else {
+                doc.text(texto, x, y, { align });
+                return (fontSize || 10) * 0.352778;
+            }
+        }
+
+        // Funções de alerta mock
+        const AlertError = {
+            validation: (msg) => console.log('VALIDATION ERROR:', msg),
+            show: (title, msg) => console.log('ERROR:', title, msg)
+        };
+
+        const AlertWarning = {
+            noData: (msg) => console.log('WARNING:', msg)
+        };
+
+        const AlertToast = {
+            success: (msg) => console.log('SUCCESS:', msg)
+        };
+
+        function log(msg) {
+            document.getElementById('log').innerHTML += '<p>' + msg + '</p>';
+            console.log(msg);
+        }
+
+        async function testarFuncaoReal() {
+            log('🚀 Iniciando teste da função real...');
+            
+            try {
+                const dataInicio = document.getElementById('dataInicio').value;
+                const dataFim = document.getElementById('dataFim').value;
+                const caminhaoId = document.getElementById('caminhaoSelect').value || 'todos';
+
+                log('📊 Dados do formulário: ' + JSON.stringify({ dataInicio, dataFim, caminhaoId }));
+
+                if (!dataInicio || !dataFim) {
+                    log('❌ Erro: Datas não preenchidas');
+                    return;
+                }
+
+                const dadosCaminhoes = window.caminhoes || [];
+                let dadosAbastecimentos = window.abastecimentos || [];
+                
+                log('📈 Dados disponíveis: ' + dadosCaminhoes.length + ' caminhões, ' + dadosAbastecimentos.length + ' abastecimentos');
+
+                if (dadosCaminhoes.length === 0 || dadosAbastecimentos.length === 0) {
+                    log('❌ Erro: Dados insuficientes');
+                    return;
+                }
+
+                // Normalizar campos
+                dadosAbastecimentos = dadosAbastecimentos.map(a => ({
+                    ...a,
+                    caminhaoId: getField(a, 'caminhao_id', 'caminhaoId'),
+                    kmInicial: getNumField(a, 'km_inicial', 'kmInicial'),
+                    kmFinal: getNumField(a, 'km_final', 'kmFinal'),
+                    litros: getNumField(a, 'litros', 'litros'),
+                    valorTotal: getNumField(a, 'valor_total', 'valorTotal')
+                }));
+
+                log('📊 Dados normalizados');
+
+                // Filtrar por data
+                let filtrados = dadosAbastecimentos.filter(a => {
+                    const dia = a.data.split('T')[0];
+                    return dia >= dataInicio && dia <= dataFim;
+                });
+
+                log('🔍 Filtrados por data: ' + filtrados.length + ' registros');
+
+                if (filtrados.length === 0) {
+                    log('⚠️ Nenhum abastecimento no período');
+                    return;
+                }
+
+                // Verificar jsPDF
+                log('🔧 Verificando jsPDF...');
+                let jsPDFLib;
+                if (window.jsPDF) {
+                    jsPDFLib = window.jsPDF;
+                    log('✅ jsPDF encontrado como window.jsPDF');
+                } else if (window.jspdf && window.jspdf.jsPDF) {
+                    jsPDFLib = window.jspdf.jsPDF;
+                    log('✅ jsPDF encontrado como window.jspdf.jsPDF');
+                } else {
+                    log('❌ jsPDF não encontrado');
+                    return;
+                }
+
+                const doc = new jsPDFLib();
+                log('✅ Documento PDF criado');
+
+                // Teste básico de geração
+                doc.setFillColor(23, 55, 94);
+                doc.rect(10, 10, 190, 25, 'F');
+                log('✅ Retângulo de fundo adicionado');
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.text('RELATÓRIO DE ANÁLISE DE CONSUMO', 105, 22, { align: 'center' });
+                log('✅ Título adicionado');
+
+                // Teste de tabela
+                if (doc.autoTable) {
+                    doc.autoTable({
+                        startY: 50,
+                        head: [['Caminhão', 'Combustível', 'Gasto']],
+                        body: filtrados.map(a => {
+                            const caminhao = dadosCaminhoes.find(c => c.id === a.caminhaoId);
+                            return [
+                                caminhao ? `${caminhao.placa} - ${caminhao.modelo}` : 'Desconhecido',
+                                formatarLitros(a.litros) + 'L',
+                                'R$ ' + formatarMoeda(a.valorTotal)
+                            ];
+                        }),
+                        theme: 'grid'
+                    });
+                    log('✅ Tabela adicionada');
+                } else {
+                    log('⚠️ autoTable não disponível');
+                }
+
+                doc.save('teste-consumo-real.pdf');
+                log('🎉 PDF gerado com sucesso!');
+
+            } catch (error) {
+                log('❌ ERRO: ' + error.message);
+                console.error('Erro completo:', error);
+            }
+        }
+    </script>
+</body>
+</html>

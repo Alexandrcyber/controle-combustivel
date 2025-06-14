@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste PDF Debug</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <h1>Teste Debug PDF</h1>
+    <button onclick="testarPdf()">Testar PDF</button>
+    <div id="log"></div>
+
+    <script>
+        function log(msg) {
+            document.getElementById('log').innerHTML += '<p>' + msg + '</p>';
+            console.log(msg);
+        }
+
+        function testarPdf() {
+            try {
+                log('Iniciando teste...');
+                
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    log('ERRO: jsPDF não carregado');
+                    return;
+                }
+                
+                const doc = new jsPDF();
+                log('PDF criado com sucesso');
+                
+                // Teste básico
+                doc.text('Teste básico', 20, 20);
+                log('Texto básico adicionado');
+                
+                // Teste com cor
+                doc.setFillColor(23, 55, 94);
+                doc.rect(10, 30, 190, 20, 'F');
+                log('Retângulo colorido adicionado');
+                
+                // Teste com texto branco
+                doc.setTextColor(255, 255, 255);
+                doc.text('Texto branco', 105, 42, { align: 'center' });
+                log('Texto branco adicionado');
+                
+                // Teste autoTable
+                if (doc.autoTable) {
+                    doc.autoTable({
+                        startY: 60,
+                        head: [['Coluna 1', 'Coluna 2']],
+                        body: [['Valor 1', 'Valor 2']],
+                        theme: 'grid'
+                    });
+                    log('Tabela adicionada');
+                } else {
+                    log('AVISO: autoTable não disponível');
+                }
+                
+                doc.save('teste-debug.pdf');
+                log('PDF salvo com sucesso!');
+                
+            } catch (error) {
+                log('ERRO: ' + error.message);
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
