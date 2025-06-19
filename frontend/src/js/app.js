@@ -1173,6 +1173,308 @@ function atualizarIndicadorFiltroDespesas(dataInicio, dataFim) {
     indicador.style.display = 'block';
 }
 
+// ============ FUNÇÕES DE DESPESAS ============
+
+// Carregar dados de despesas
+async function loadDespesas() {
+    console.log('[DESPESAS] Carregando dados de despesas...');
+    try {
+        if (window.dbApi && window.dbApi.buscarDespesas) {
+            despesas = await window.dbApi.buscarDespesas();
+            console.log('[DESPESAS] ✅ Despesas carregadas via API:', despesas.length);
+        } else {
+            // Fallback para localStorage
+            console.warn('[DESPESAS] API não disponível, usando localStorage como fallback');
+            const savedDespesas = localStorage.getItem('despesas');
+            despesas = savedDespesas ? JSON.parse(savedDespesas) : [];
+            console.log('[DESPESAS] ✅ Despesas carregadas via localStorage:', despesas.length);
+        }
+        
+        // Atualizar referência global
+        window.despesas = despesas;
+        
+        // Renderizar a tabela
+        renderDespesas();
+        
+        // Atualizar gráficos e cards se estiverem disponíveis
+        if (typeof updateDespesasCharts === 'function') {
+            updateDespesasCharts();
+        }
+        if (typeof updateDespesasCards === 'function') {
+            updateDespesasCards(despesas);
+        }
+        
+    } catch (error) {
+        console.error('[DESPESAS] ❌ Erro ao carregar despesas:', error);
+        despesas = [];
+        window.despesas = despesas;
+        renderDespesas(); // Renderizar tabela vazia
+    }
+}
+
+// Renderizar tabela de despesas
+function renderDespesas() {
+    console.log('[DESPESAS] Renderizando tabela de despesas...');
+    
+    const tbody = document.getElementById('despesaTableBody');
+    if (!tbody) {
+        console.error('[DESPESAS] ❌ Elemento despesaTableBody não encontrado');
+        return;
+    }
+
+    // Determinar quais despesas mostrar (filtradas ou todas)
+    let despesasParaMostrar = filtrosDespesasAtivos && despesasFiltradas.length >= 0 ? despesasFiltradas : despesas;
+    
+    console.log('[DESPESAS] Renderizando:', {
+        totalDespesas: despesas.length,
+        despesasFiltradas: despesasFiltradas.length,
+        filtroAtivo: filtrosDespesasAtivos,
+        mostrarDespesas: despesasParaMostrar.length
+    });
+
+    if (!Array.isArray(despesasParaMostrar) || despesasParaMostrar.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <div class="text-muted">
+                        <i class="bi bi-receipt fs-1 d-block mb-2"></i>
+                        ${filtrosDespesasAtivos ? 'Nenhuma despesa encontrada para os filtros aplicados' : 'Nenhuma despesa cadastrada'}
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    // Ordenar despesas por data (mais recente primeiro)
+    despesasParaMostrar.sort((a, b) => {
+        try {
+            return new Date(b.data) - new Date(a.data);
+        } catch (error) {
+            return 0;
+        }
+    });
+
+    tbody.innerHTML = despesasParaMostrar.map(despesa => {
+        const valor = parseFloat(despesa.valor) || 0;
+        const dataFormatada = formatDate(despesa.data);
+        const categoria = despesa.categoria || 'Geral';
+        
+        return `
+            <tr>
+                <td>${dataFormatada}</td>
+                <td>
+                    <strong>${despesa.fornecedor}</strong>
+                </td>
+                <td>
+                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="${despesa.descricao}">
+                        ${despesa.descricao}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${categoria}</span>
+                </td>
+                <td>
+                    <span class="fw-bold text-primary">R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </td>
+                <td class="admin-only">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary btn-sm" onclick="editDespesa('${despesa.id}')" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteDespesa('${despesa.id}')" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    console.log('[DESPESAS] ✅ Tabela renderizada com', despesasParaMostrar.length, 'despesas');
+}
+
+// Salvar despesa (nova ou editada)
+async function saveDespesa() {
+    console.log('[DESPESAS] Salvando despesa...');
+    
+    // Capturar dados do formulário
+    const form = document.getElementById('despesaForm');
+    if (!form) {
+        console.error('[DESPESAS] ❌ Formulário de despesa não encontrado');
+        return;
+    }
+
+    const formData = new FormData(form);
+    const despesa = {
+        data: formData.get('data'),
+        fornecedor: formData.get('fornecedor'),
+        descricao: formData.get('descricao'),
+        valor: parseFloat(formData.get('valor')),
+        categoria: formData.get('categoria') || 'Geral',
+        observacoes: formData.get('observacoes') || ''
+    };
+
+    // Validação básica
+    if (!despesa.data || !despesa.fornecedor || !despesa.descricao || !despesa.valor) {
+        AlertError.validation('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+
+    if (despesa.valor <= 0) {
+        AlertError.validation('O valor deve ser maior que zero.');
+        return;
+    }
+
+    try {
+        // Mostrar loading
+        AlertUtils.showLoading('Salvando despesa...');
+
+        // Verificar se é edição
+        const despesaId = form.dataset.despesaId;
+        if (despesaId) {
+            despesa.id = despesaId;
+        }
+
+        // Salvar via API
+        let savedDespesa;
+        if (window.dbApi && window.dbApi.salvarDespesa) {
+            savedDespesa = await window.dbApi.salvarDespesa(despesa);
+        } else {
+            // Fallback para localStorage
+            if (!despesa.id) {
+                despesa.id = generateId();
+                despesas.push(despesa);
+            } else {
+                const index = despesas.findIndex(d => d.id === despesa.id);
+                if (index !== -1) {
+                    despesas[index] = despesa;
+                }
+            }
+            localStorage.setItem('despesas', JSON.stringify(despesas));
+            savedDespesa = despesa;
+        }
+
+        // Recarregar dados
+        await loadDespesas();
+
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addDespesaModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Limpar formulário
+        resetDespesaForm();
+
+        AlertUtils.close();
+        AlertToast.success(despesaId ? 'Despesa atualizada com sucesso!' : 'Despesa cadastrada com sucesso!');
+
+    } catch (error) {
+        console.error('[DESPESAS] ❌ Erro ao salvar despesa:', error);
+        AlertUtils.close();
+        AlertError.show('Erro ao Salvar', 'Ocorreu um erro ao salvar a despesa. Tente novamente.');
+    }
+}
+
+// Editar despesa existente
+function editDespesa(id) {
+    console.log('[DESPESAS] Editando despesa:', id);
+    
+    const despesa = despesas.find(d => d.id === id);
+    if (!despesa) {
+        AlertError.show('Erro', 'Despesa não encontrada.');
+        return;
+    }
+
+    // Preencher formulário
+    const form = document.getElementById('despesaForm');
+    if (!form) {
+        console.error('[DESPESAS] ❌ Formulário de despesa não encontrado');
+        return;
+    }
+
+    form.dataset.despesaId = id;
+    form.querySelector('[name="data"]').value = despesa.data.split('T')[0];
+    form.querySelector('[name="fornecedor"]').value = despesa.fornecedor;
+    form.querySelector('[name="descricao"]').value = despesa.descricao;
+    form.querySelector('[name="valor"]').value = despesa.valor;
+    form.querySelector('[name="categoria"]').value = despesa.categoria || '';
+    form.querySelector('[name="observacoes"]').value = despesa.observacoes || '';
+
+    // Alterar título do modal
+    const modalTitle = document.querySelector('#addDespesaModal .modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = 'Editar Despesa';
+    }
+
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('addDespesaModal'));
+    modal.show();
+}
+
+// Excluir despesa
+async function deleteDespesa(id) {
+    console.log('[DESPESAS] Excluindo despesa:', id);
+    
+    const despesa = despesas.find(d => d.id === id);
+    if (!despesa) {
+        AlertError.show('Erro', 'Despesa não encontrada.');
+        return;
+    }
+
+    const result = await AlertConfirm.delete(`Tem certeza que deseja excluir a despesa "${despesa.descricao}"?`);
+    
+    if (result.isConfirmed) {
+        try {
+            AlertUtils.showLoading('Excluindo despesa...');
+
+            // Excluir via API
+            if (window.dbApi && window.dbApi.excluirDespesa) {
+                await window.dbApi.excluirDespesa(id);
+            } else {
+                // Fallback para localStorage
+                const index = despesas.findIndex(d => d.id === id);
+                if (index !== -1) {
+                    despesas.splice(index, 1);
+                    localStorage.setItem('despesas', JSON.stringify(despesas));
+                }
+            }
+
+            // Recarregar dados
+            await loadDespesas();
+
+            AlertUtils.close();
+            AlertToast.success('Despesa excluída com sucesso!');
+
+        } catch (error) {
+            console.error('[DESPESAS] ❌ Erro ao excluir despesa:', error);
+            AlertUtils.close();
+            AlertError.show('Erro ao Excluir', 'Ocorreu um erro ao excluir a despesa. Tente novamente.');
+        }
+    }
+}
+
+// Resetar formulário de despesa
+function resetDespesaForm() {
+    const form = document.getElementById('despesaForm');
+    if (form) {
+        form.reset();
+        delete form.dataset.despesaId;
+        
+        // Restaurar título do modal
+        const modalTitle = document.querySelector('#addDespesaModal .modal-title');
+        if (modalTitle) {
+            modalTitle.textContent = 'Nova Despesa';
+        }
+    }
+}
+
+// Gerar ID único para despesas
+function generateId() {
+    return 'desp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
 // Renderizar tabela de caminhões
 function renderCaminhoes() {
     const tableBody = document.getElementById('caminhaoTableBody');
@@ -2094,336 +2396,3 @@ function renderAbastecimentosFiltrados() {
         tableBody.appendChild(row);
     });
 }
-
-// ===== FUNÇÃO DO DASHBOARD =====
-
-// Atualizar dados do dashboard
-async function updateDashboard() {
-    try {
-        console.log('[DASHBOARD] Atualizando dashboard...');
-        
-        // Mostrar loading mais proeminente para atualização do dashboard
-        AlertInfo.loadingSystem(
-            'Atualizando Dashboard',
-            'Processando dados de caminhões e abastecimentos para gerar estatísticas e gráficos atualizados.'
-        );
-
-        // Obter datas dos filtros do dashboard
-        const dataInicio = document.getElementById('dashboardDataInicio').value;
-        const dataFim = document.getElementById('dashboardDataFim').value;
-        const caminhaoId = document.getElementById('dashboardCaminhaoSelect').value;
-        
-        console.log('[DASHBOARD] Filtros aplicados:', { dataInicio, dataFim, caminhaoId });
-        
-        // Validar se as datas estão definidas
-        if (!dataInicio || !dataFim) {
-            console.warn('[DASHBOARD] Datas não definidas, usando valores padrão');
-            const hoje = new Date();
-            const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
-            const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
-            
-            document.getElementById('dashboardDataInicio').value = primeiroDia;
-            document.getElementById('dashboardDataFim').value = ultimoDia;
-            // Fechar loading antes de reexecutar
-            AlertUtils.close();
-            return updateDashboard(); // Reexecutar com as datas definidas
-        }
-        
-        // Usar setTimeout para permitir que o loading apareça e seja visível
-        setTimeout(async () => {
-            try {
-                // Pequena pausa para mostrar o processamento
-                await new Promise(resolve => setTimeout(resolve, 600));
-                
-                // Filtrar abastecimentos pelo período
-                const inicio = new Date(dataInicio);
-                const fim = new Date(dataFim + 'T23:59:59');
-                
-                let abastecimentosFiltrados = abastecimentos.filter(a => {
-                    const dataAbast = new Date(a.data);
-                    return dataAbast >= inicio && dataAbast <= fim;
-                });
-                
-                // Filtrar por caminhão específico se selecionado
-                if (caminhaoId && caminhaoId !== 'todos') {
-                    abastecimentosFiltrados = abastecimentosFiltrados.filter(a => a.caminhaoId === caminhaoId);
-                }
-                
-                console.log('[DASHBOARD] Abastecimentos filtrados:', abastecimentosFiltrados.length);
-                
-                // Calcular estatísticas
-                const stats = calcularEstatisticas(abastecimentosFiltrados);
-                console.log('[DASHBOARD] Estatísticas calculadas:', stats);
-                
-                // Atualizar cards do dashboard
-                atualizarCards(stats);
-                  // Atualizar gráficos
-                if (typeof updateCharts === 'function') {
-                    updateCharts();
-                } else {
-                    console.warn('[DASHBOARD] Função updateCharts não disponível');
-                }
-                
-                console.log('[DASHBOARD] Dashboard atualizado com sucesso');
-                
-                // Pequena pausa adicional para garantir que toda a atualização seja processada
-                await new Promise(resolve => setTimeout(resolve, 400));
-                
-                // Fechar loading
-                AlertUtils.close();
-                
-                // Toast de sucesso discreto após um momento
-                setTimeout(() => {
-                    AlertToast.success(`Dashboard atualizado! ${abastecimentosFiltrados.length} registro(s) processado(s).`);
-                }, 200);
-                
-            } catch (error) {
-                console.error('[DASHBOARD] Erro ao processar dados:', error);
-                AlertUtils.close();
-                AlertError.show('Erro no Dashboard', 'Ocorreu um erro ao atualizar o dashboard. Tente novamente.');
-            }
-        }, 100);
-        
-    } catch (error) {
-        console.error('[DASHBOARD] Erro ao atualizar dashboard:', error);
-        AlertUtils.close();
-        AlertError.show('Erro no Dashboard', 'Ocorreu um erro ao inicializar a atualização do dashboard.');
-    }
-}
-
-// Calcular estatísticas para o dashboard
-function calcularEstatisticas(abastecimentosFiltrados) {
-    // Estatísticas básicas
-    const totalCaminhoesAtivos = caminhoes.filter(c => c.status === 'ativo' || !c.status).length;
-    const totalAbastecimentos = abastecimentosFiltrados.length;
-    
-    // Calcular totais
-    let totalLitros = 0;
-    let totalGasto = 0;
-    let totalKm = 0;
-    
-    abastecimentosFiltrados.forEach(a => {
-        totalLitros += parseFloat(a.litros) || 0;
-        totalGasto += parseFloat(a.valorTotal) || 0;
-        const distancia = (parseFloat(a.kmFinal) || 0) - (parseFloat(a.kmInicial) || 0);
-        if (distancia > 0) {
-            totalKm += distancia;
-        }
-    });
-    
-    // Calcular média de consumo (km/l)
-    const mediaConsumo = totalLitros > 0 ? (totalKm / totalLitros) : 0;
-    
-    return {
-        totalCaminhoes: totalCaminhoesAtivos,
-        totalAbastecimentos,
-        totalLitros,
-        totalGasto,
-        totalKm,
-        mediaConsumo
-    };
-}
-
-// Atualizar cards do dashboard com as estatísticas
-function atualizarCards(stats) {
-    try {
-        // Card: Total Caminhões
-        const totalCaminhoesEl = document.getElementById('totalCaminhoes');
-        if (totalCaminhoesEl) {
-            totalCaminhoesEl.textContent = stats.totalCaminhoes;
-        }
-        
-        // Card: Total Abastecimentos
-        const totalAbastecimentosEl = document.getElementById('totalAbastecimentos');
-        if (totalAbastecimentosEl) {
-            totalAbastecimentosEl.textContent = stats.totalAbastecimentos;
-        }
-        
-        // Card: Média de Consumo
-        const mediaConsumoEl = document.getElementById('mediaConsumo');
-        if (mediaConsumoEl) {
-            const consumoFormatado = stats.mediaConsumo > 0 ? 
-                `${stats.mediaConsumo.toFixed(2)} km/l` : '0 km/l';
-            mediaConsumoEl.textContent = consumoFormatado;
-        }
-        
-        // Card: Gasto Total
-        const gastoTotalEl = document.getElementById('gastoTotal');
-        if (gastoTotalEl) {
-            const gastoFormatado = stats.totalGasto > 0 ? 
-                `R$ ${stats.totalGasto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 
-                'R$ 0,00';
-            gastoTotalEl.textContent = gastoFormatado;
-        }
-        
-        console.log('[DASHBOARD] Cards atualizados:', {
-            caminhoes: stats.totalCaminhoes,
-            abastecimentos: stats.totalAbastecimentos,
-            consumo: stats.mediaConsumo.toFixed(2),
-            gasto: stats.totalGasto.toFixed(2)
-        });
-        
-    } catch (error) {
-        console.error('[DASHBOARD] Erro ao atualizar cards:', error);
-    }
-}
-
-// Função para navegação via teclado e acessibilidade
-function setupKeyboardNavigation() {
-    console.log('[KEYBOARD] Configurando navegação por teclado...');
-    
-    document.addEventListener('keydown', function(e) {
-        // Verificar se Alt + número está sendo pressionado
-        if (e.altKey && !e.ctrlKey && !e.shiftKey) {
-            switch(e.key) {
-                case '1':
-                    e.preventDefault();
-                    console.log('[KEYBOARD] Alt+1 - Navegando para Dashboard');
-                    showSection('dashboardSection');
-                    break;
-                case '2':
-                    e.preventDefault();
-                    console.log('[KEYBOARD] Alt+2 - Navegando para Caminhões');
-                    showSection('caminhaoSection');
-                    break;
-                case '3':
-                    e.preventDefault();
-                    console.log('[KEYBOARD] Alt+3 - Navegando para Abastecimentos');
-                    showSection('abastecimentoSection');
-                    break;
-                case '4':
-                    e.preventDefault();
-                    console.log('[KEYBOARD] Alt+4 - Navegando para Despesas');
-                    showSection('despesasSection');
-                    break;
-                case '5':
-                    e.preventDefault();
-                    console.log('[KEYBOARD] Alt+5 - Navegando para Relatórios');
-                    showSection('relatoriosSection');
-                    break;
-            }
-        }
-    });
-    
-    console.log('[KEYBOARD] ✅ Navegação por teclado configurada (Alt+1-5)');
-}
-
-// Função para detectar e diagnosticar problemas de navegação
-function diagnosticNavigation() {
-    console.log('=== DIAGNÓSTICO DE NAVEGAÇÃO ===');
-    
-    const report = {
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href,
-        elements: {},
-        eventListeners: {},
-        errors: []
-    };
-    
-    // Verificar elementos HTML
-    const elements = [
-        'dashboardLink', 'caminhaoLink', 'abastecimentoLink', 'despesasLink', 'relatoriosLink',
-        'dashboardSection', 'caminhaoSection', 'abastecimentoSection', 'despesasSection', 'relatoriosSection'
-    ];
-    
-    elements.forEach(id => {
-        const element = document.getElementById(id);
-        report.elements[id] = {
-            exists: !!element,
-            visible: element ? element.style.display !== 'none' : false,
-            hasClass: element ? Array.from(element.classList) : [],
-            onclick: element ? !!element.onclick : false
-        };
-    });
-    
-    // Verificar se há erros JavaScript
-    if (window.navigationErrors && window.navigationErrors.length > 0) {
-        report.errors = window.navigationErrors;
-    }
-    
-    console.log('📊 Relatório de Diagnóstico:', report);
-    
-    // Mostrar resumo para o usuário
-    const missingElements = Object.keys(report.elements).filter(key => !report.elements[key].exists);
-    const inactiveLinks = Object.keys(report.elements)
-        .filter(key => key.includes('Link'))
-        .filter(key => report.elements[key].exists && !report.elements[key].onclick);
-    
-    if (missingElements.length > 0 || inactiveLinks.length > 0) {
-        console.error('❌ Problemas de navegação detectados:');
-        if (missingElements.length > 0) {
-            console.error('  - Elementos ausentes:', missingElements);
-        }
-        if (inactiveLinks.length > 0) {
-            console.error('  - Links sem evento:', inactiveLinks);
-        }
-        
-        // Mostrar alerta para o usuário
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Problema de Navegação Detectado',
-                html: `
-                    <div class="text-start">
-                        <strong>Diagnóstico:</strong><br>
-                        ${missingElements.length > 0 ? `• Elementos ausentes: ${missingElements.join(', ')}<br>` : ''}
-                        ${inactiveLinks.length > 0 ? `• Links inativos: ${inactiveLinks.join(', ')}<br>` : ''}
-                        <br>
-                        <strong>Soluções alternativas:</strong><br>
-                        • Use Alt+3 para ir aos Abastecimentos<br>
-                        • Use Alt+1 para voltar ao Dashboard<br>
-                        • Recarregue a página (F5)<br>
-                    </div>
-                `,
-                width: '500px',
-                confirmButtonText: 'Entendi'
-            });
-        }
-    } else {
-        console.log('✅ Navegação funcionando corretamente');
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: 'Navegação OK',
-                text: 'Todos os elementos de navegação estão funcionando corretamente.',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
-    }
-    
-    return report;
-}
-
-// Sistema de captura de erros de navegação
-window.navigationErrors = [];
-
-// Capturar erros JavaScript
-window.addEventListener('error', function(e) {
-    const error = {
-        timestamp: new Date().toISOString(),
-        message: e.message,
-        filename: e.filename,
-        lineno: e.lineno,
-        colno: e.colno,
-        stack: e.error ? e.error.stack : null
-    };
-    
-    console.error('[ERROR CAPTURE]', error);
-    window.navigationErrors.push(error);
-});
-
-// Capturar erros de promises rejeitadas
-window.addEventListener('unhandledrejection', function(e) {
-    const error = {
-        timestamp: new Date().toISOString(),
-        type: 'unhandledrejection',
-        reason: e.reason,
-        stack: e.reason && e.reason.stack ? e.reason.stack : null
-    };
-    
-    console.error('[PROMISE ERROR]', error);
-    window.navigationErrors.push(error);
-});
