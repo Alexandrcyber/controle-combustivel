@@ -162,6 +162,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarFiltrosAbastecimento();
     configurarFiltrosDespesas();
     
+    // Carregar despesas explicitamente para garantir que estejam disponíveis
+    console.log('[INIT] 💰 Carregando despesas explicitamente...');
+    await loadDespesas();
+    
     // Inicializar gráficos
     if (typeof initCharts === 'function') {
         initCharts();
@@ -339,15 +343,36 @@ async function loadDataFromLocalStorage() {
             console.log('[LOAD] 💰 Carregando despesas...');
             try {
                 despesas = await window.dbApi.buscarDespesas();
-                console.log('[LOAD] ✅ Despesas carregadas:', despesas.length);
+                console.log('[LOAD] ✅ Despesas carregadas via API:', despesas.length);
+                
+                // Log detalhado das despesas para diagnóstico
+                if (despesas.length > 0) {
+                    console.log('[LOAD] 📊 Amostra de despesa:', despesas[0]);
+                } else {
+                    console.warn('[LOAD] ⚠️ Nenhuma despesa encontrada na API');
+                }
             } catch (error) {
                 console.error('[LOAD] ❌ Erro ao carregar despesas:', error);
+                console.error('[LOAD] ❌ Detalhes do erro:', error.message);
                 despesas = [];
+                
+                // Tentar carregar do localStorage como fallback
+                try {
+                    const despesasJSON = localStorage.getItem('despesas');
+                    if (despesasJSON) {
+                        despesas = JSON.parse(despesasJSON);
+                        console.log('[LOAD] 🔄 Despesas carregadas do localStorage como fallback:', despesas.length);
+                    }
+                } catch (fallbackError) {
+                    console.error('[LOAD] ❌ Erro no fallback localStorage:', fallbackError);
+                }
             }
-              console.log('[LOAD] Dados carregados via API:', {
+            
+            console.log('[LOAD] Dados carregados via API:', {
                 caminhoes: caminhoes.length,
                 abastecimentos: abastecimentos.length,
-                despesas: despesas.length
+                despesas: despesas.length,
+                primeiroAbastecimento: abastecimentos.length > 0 ? abastecimentos[0] : null
             });
         } else {
             console.warn('[LOAD] window.dbApi não disponível, usando localStorage');
@@ -372,7 +397,22 @@ async function loadDataFromLocalStorage() {
         
         updateGlobalReferences();
         
+        // Verificar se as despesas foram carregadas, se não, tentar carregar novamente
+        if (despesas.length === 0) {
+            console.log('[LOAD] ⚠️ Nenhuma despesa carregada, tentando carregar novamente...');
+            try {
+                if (window.dbApi && window.dbApi.buscarDespesas) {
+                    despesas = await window.dbApi.buscarDespesas();
+                    console.log('[LOAD] 🔄 Segunda tentativa: despesas carregadas:', despesas.length);
+                    updateGlobalReferences();
+                }
+            } catch (error) {
+                console.error('[LOAD] ❌ Erro na segunda tentativa de carregar despesas:', error);
+            }
+        }
+        
         console.log('✅ [LOAD] Carregamento concluído com sucesso!');
+        console.log('✅ [LOAD] Total final:', `${caminhoes.length} caminhões, ${abastecimentos.length} abastecimentos, ${despesas.length} despesas`);
         
     } catch (error) {
         console.error('❌ [LOAD] Erro ao carregar dados:', error);
@@ -582,8 +622,16 @@ function showSection(sectionId) {
         } else if (sectionId === 'despesasSection') {
             const despesasLink = document.getElementById('despesasLink');
             if (despesasLink) despesasLink.classList.add('active');
-            loadDespesas(); // Carregar despesas quando a seção for exibida
-            console.log('[NAVIGATION] Seção de despesas ativada e dados carregados');
+            
+            // Carregar despesas SEMPRE que navegar para a seção
+            console.log('[NAVIGATION] 💰 Carregando despesas ao navegar para seção...');
+            loadDespesas().then(() => {
+                console.log('[NAVIGATION] ✅ Despesas carregadas com sucesso');
+            }).catch(error => {
+                console.error('[NAVIGATION] ❌ Erro ao carregar despesas:', error);
+            });
+            
+            console.log('[NAVIGATION] Seção de despesas ativada e dados sendo carregados');
         } else if (sectionId === 'relatoriosSection') {
             const relatoriosLink = document.getElementById('relatoriosLink');
             if (relatoriosLink) relatoriosLink.classList.add('active');
@@ -1215,6 +1263,8 @@ async function loadDespesas() {
 // Renderizar tabela de despesas
 function renderDespesas() {
     console.log('[DESPESAS] Renderizando tabela de despesas...');
+    console.log('[DESPESAS] Total de despesas disponíveis:', despesas.length);
+    console.log('[DESPESAS] Dados das despesas:', despesas);
     
     const tbody = document.getElementById('despesaTableBody');
     if (!tbody) {

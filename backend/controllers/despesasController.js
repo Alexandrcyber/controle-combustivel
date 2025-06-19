@@ -8,6 +8,7 @@ function generateId() {
 // Listar todas as despesas
 async function listarDespesas(req, res) {
     try {
+        console.log('[DESPESAS CONTROLLER] Buscando despesas...');
         const { data_inicio, data_fim, fornecedor, categoria } = req.query;
         
         let query = `
@@ -43,9 +44,24 @@ async function listarDespesas(req, res) {
         }
         
         query += ' ORDER BY data DESC, created_at DESC';
+
+        console.log('[DESPESAS CONTROLLER] Executando query:', query);
+        console.log('[DESPESAS CONTROLLER] Parâmetros:', params);
         
         const result = await pool.query(query, params);
-        res.json(result.rows);
+
+        console.log('[DESPESAS CONTROLLER] Resultado da query:', {
+            rowCount: result.rowCount,
+            despesasEncontradas: result.rows?.length || 0
+        });
+        
+        if (!result.rows || result.rows.length === 0) {
+            console.log('[DESPESAS CONTROLLER] Nenhuma despesa encontrada, retornando array vazio');
+            return res.status(200).json([]);
+        }
+
+        console.log('[DESPESAS CONTROLLER] ✅ Retornando', result.rows.length, 'despesas');
+        res.status(200).json(result.rows);
     } catch (error) {
         console.error('Erro ao listar despesas:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });

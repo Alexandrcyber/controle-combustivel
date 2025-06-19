@@ -309,13 +309,29 @@ window.apiClient = {
     despesas: {
         async buscarTodos() {
             console.log('[apiClient.despesas] Buscando todas as despesas');
-            const result = await apiClient.request('/despesas');
+            console.log('[apiClient.despesas] Fazendo requisição para /despesas');
             
-            // Mapear campos do backend (snake_case) para frontend (camelCase) se necessário
-            return result.map(despesa => ({
-                ...despesa,
-                valor: parseFloat(despesa.valor) || 0
-            }));
+            try {
+                const result = await apiClient.request('/despesas');
+                console.log('[apiClient.despesas] Resposta recebida:', {
+                    tipo: typeof result,
+                    isArray: Array.isArray(result),
+                    length: Array.isArray(result) ? result.length : 'N/A',
+                    dadosAmostra: Array.isArray(result) && result.length > 0 ? result[0] : null
+                });
+                
+                // Mapear campos do backend (snake_case) para frontend (camelCase) se necessário
+                const mapped = result.map(despesa => ({
+                    ...despesa,
+                    valor: parseFloat(despesa.valor) || 0
+                }));
+                
+                console.log('[apiClient.despesas] Dados mapeados:', mapped);
+                return mapped;
+            } catch (error) {
+                console.error('[apiClient.despesas] Erro na requisição:', error);
+                throw error;
+            }
         },
 
         async buscarPorId(id) {
@@ -490,9 +506,33 @@ window.dbApi = {
     async buscarDespesas() {
         try {
             console.log('[dbApi] Buscando despesas...');
-            return await window.apiClient.despesas.buscarTodos();
+            
+            // Verificar se window.apiClient existe
+            if (!window.apiClient) {
+                console.error('[dbApi] window.apiClient não está disponível');
+                return [];
+            }
+            
+            // Verificar se window.apiClient.despesas existe
+            if (!window.apiClient.despesas) {
+                console.error('[dbApi] window.apiClient.despesas não está disponível');
+                return [];
+            }
+            
+            // Verificar se buscarTodos existe
+            if (typeof window.apiClient.despesas.buscarTodos !== 'function') {
+                console.error('[dbApi] window.apiClient.despesas.buscarTodos não é uma função');
+                return [];
+            }
+            
+            console.log('[dbApi] Chamando window.apiClient.despesas.buscarTodos()...');
+            const result = await window.apiClient.despesas.buscarTodos();
+            console.log('[dbApi] Despesas encontradas:', result.length);
+            console.log('[dbApi] Dados das despesas:', result);
+            return result;
         } catch (error) {
-            console.error('Erro ao buscar despesas:', error);
+            console.error('[dbApi] Erro ao buscar despesas:', error);
+            console.error('[dbApi] Stack trace:', error.stack);
             return [];
         }
     },
