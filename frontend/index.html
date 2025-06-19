@@ -30,18 +30,18 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#" id="dashboardLink">Dashboard</a>
+                            <a class="nav-link active" href="javascript:void(0)" id="dashboardLink">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="caminhaoLink">Caminhões</a>
+                            <a class="nav-link" href="javascript:void(0)" id="caminhaoLink">Caminhões</a>
                         </li>                        <li class="nav-item">
-                            <a class="nav-link" href="#" id="abastecimentoLink">Abastecimentos</a>
+                            <a class="nav-link" href="javascript:void(0)" id="abastecimentoLink">Abastecimentos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="despesasLink">Despesas</a>
+                            <a class="nav-link" href="javascript:void(0)" id="despesasLink">Despesas</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="relatoriosLink">Relatórios</a>
+                            <a class="nav-link" href="javascript:void(0)" id="relatoriosLink">Relatórios</a>
                         </li>
                         <li class="nav-item" id="loginBtn">
                             <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">
@@ -80,7 +80,7 @@
                                 <label for="dashboardDataFim" class="form-label">Data Fim</label>
                                 <input type="date" id="dashboardDataFim" class="form-control">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="dashboardCaminhaoSelect" class="form-label">Caminhão</label>
                                 <select id="dashboardCaminhaoSelect" class="form-select">
                                     <option value="todos">Todos os caminhões</option>
@@ -89,6 +89,11 @@
                             </div>
                             <div class="col-md-2">
                                 <button id="atualizarDashboard" class="btn btn-primary w-100">Atualizar</button>
+                            </div>
+                            <div class="col-md-1">
+                                <button id="testNavigationBtn" class="btn btn-secondary w-100" onclick="diagnosticNavigation()" title="Diagnosticar navegação">
+                                    <i class="bi bi-bug"></i>
+                                </button>
                             </div>
                         </form>
                     </div>

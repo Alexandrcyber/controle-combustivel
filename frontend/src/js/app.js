@@ -127,7 +127,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('✅ [INIT] Carregamento de dados concluído');
     
     // Configurar navegação
+    console.log('[INIT] Configurando navegação...');
     setupNavigation();
+    
+    // Configurar fallback de navegação
+    console.log('[INIT] Configurando fallback de navegação...');
+    setupNavigationFallback();
+    
+    // Configurar navegação por teclado
+    console.log('[INIT] Configurando navegação por teclado...');
+    setupKeyboardNavigation();
+    
+    // Verificar integridade da navegação
+    console.log('[INIT] Verificando integridade da navegação...');
+    const navigationElements = [
+        'dashboardLink', 'caminhaoLink', 'abastecimentoLink', 'despesasLink', 'relatoriosLink',
+        'dashboardSection', 'caminhaoSection', 'abastecimentoSection', 'despesasSection', 'relatoriosSection'
+    ];
+    
+    const missingElements = navigationElements.filter(id => !document.getElementById(id));
+    if (missingElements.length > 0) {
+        console.error('[INIT] ❌ Elementos de navegação ausentes:', missingElements);
+    } else {
+        console.log('[INIT] ✅ Todos os elementos de navegação encontrados');
+    }
     
     // Configurar manipuladores de eventos
     setupEventHandlers();
@@ -167,6 +190,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     console.log('🎉 [INIT] === APLICAÇÃO TOTALMENTE INICIALIZADA ===');
+    
+    // Testar navegação automaticamente em desenvolvimento
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('[DEBUG] Executando teste automático de navegação em 2 segundos...');
+        setTimeout(() => {
+            console.log('[DEBUG] Testando navegação para abastecimentos...');
+            showSection('abastecimentoSection');
+            
+            setTimeout(() => {
+                console.log('[DEBUG] Retornando ao dashboard...');
+                showSection('dashboardSection');
+            }, 1000);
+        }, 2000);
+    }
     
     // Evento para atualizar dashboard
     document.getElementById('atualizarDashboard').addEventListener('click', e => {
@@ -375,46 +412,230 @@ function updateGlobalReferences() {
 
 // Configurar navegação entre seções
 function setupNavigation() {
-    document.getElementById('dashboardLink').addEventListener('click', () => showSection('dashboardSection'));
-    document.getElementById('caminhaoLink').addEventListener('click', () => showSection('caminhaoSection'));
-    document.getElementById('abastecimentoLink').addEventListener('click', () => showSection('abastecimentoSection'));
-    document.getElementById('despesasLink').addEventListener('click', () => showSection('despesasSection'));
-    document.getElementById('relatoriosLink').addEventListener('click', () => showSection('relatoriosSection'));
+    console.log('[NAVIGATION] Configurando navegação...');
+    
+    // Dashboard
+    const dashboardLink = document.getElementById('dashboardLink');
+    if (dashboardLink) {
+        dashboardLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[NAVIGATION] Clique no Dashboard detectado');
+            showSection('dashboardSection');
+        });
+        console.log('[NAVIGATION] ✅ Dashboard link configurado');
+    } else {
+        console.error('[NAVIGATION] ❌ Dashboard link não encontrado');
+    }
+    
+    // Caminhões
+    const caminhaoLink = document.getElementById('caminhaoLink');
+    if (caminhaoLink) {
+        caminhaoLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[NAVIGATION] Clique em Caminhões detectado');
+            showSection('caminhaoSection');
+        });
+        console.log('[NAVIGATION] ✅ Caminhão link configurado');
+    } else {
+        console.error('[NAVIGATION] ❌ Caminhão link não encontrado');
+    }
+    
+    // Abastecimentos
+    const abastecimentoLink = document.getElementById('abastecimentoLink');
+    if (abastecimentoLink) {
+        abastecimentoLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[NAVIGATION] Clique em Abastecimentos detectado');
+            showSection('abastecimentoSection');
+        });
+        console.log('[NAVIGATION] ✅ Abastecimento link configurado');
+    } else {
+        console.error('[NAVIGATION] ❌ Abastecimento link não encontrado');
+    }
+    
+    // Despesas
+    const despesasLink = document.getElementById('despesasLink');
+    if (despesasLink) {
+        despesasLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[NAVIGATION] Clique em Despesas detectado');
+            showSection('despesasSection');
+        });
+        console.log('[NAVIGATION] ✅ Despesas link configurado');
+    } else {
+        console.error('[NAVIGATION] ❌ Despesas link não encontrado');
+    }
+    
+    // Relatórios
+    const relatoriosLink = document.getElementById('relatoriosLink');
+    if (relatoriosLink) {
+        relatoriosLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('[NAVIGATION] Clique em Relatórios detectado');
+            showSection('relatoriosSection');
+        });
+        console.log('[NAVIGATION] ✅ Relatórios link configurado');
+    } else {
+        console.error('[NAVIGATION] ❌ Relatórios link não encontrado');
+    }
+    
+    console.log('[NAVIGATION] ✅ Configuração de navegação concluída');
 }
 
 // Mostrar seção específica e ocultar as demais
-function showSection(sectionId) {    // Ocultar todas as seções
-    document.getElementById('dashboardSection').style.display = 'none';
-    document.getElementById('caminhaoSection').style.display = 'none';
-    document.getElementById('abastecimentoSection').style.display = 'none';
-    document.getElementById('despesasSection').style.display = 'none';
-    document.getElementById('relatoriosSection').style.display = 'none';
+function showSection(sectionId) {
+    console.log(`[NAVIGATION] Mostrando seção: ${sectionId}`);
     
-    // Remover classe active de todos os links
-    document.getElementById('dashboardLink').classList.remove('active');
-    document.getElementById('caminhaoLink').classList.remove('active');
-    document.getElementById('abastecimentoLink').classList.remove('active');
-    document.getElementById('despesasLink').classList.remove('active');
-    document.getElementById('relatoriosLink').classList.remove('active');
-    
-    // Mostrar a seção selecionada
-    document.getElementById(sectionId).style.display = 'block';
-      // Adicionar classe active ao link correspondente
-    if (sectionId === 'dashboardSection') {
-        document.getElementById('dashboardLink').classList.add('active');
-        updateDashboard(); // Atualizar dashboard quando for exibido
-    } else if (sectionId === 'caminhaoSection') {
-        document.getElementById('caminhaoLink').classList.add('active');
-    } else if (sectionId === 'abastecimentoSection') {
-        document.getElementById('abastecimentoLink').classList.add('active');
-    } else if (sectionId === 'despesasSection') {
-        document.getElementById('despesasLink').classList.add('active');
-        loadDespesas(); // Carregar despesas quando a seção for exibida
-    } else if (sectionId === 'relatoriosSection') {
-        document.getElementById('relatoriosLink').classList.add('active');
+    try {
+        // Verificar se a seção existe
+        const targetSection = document.getElementById(sectionId);
+        if (!targetSection) {
+            console.error(`[NAVIGATION] ❌ Seção '${sectionId}' não encontrada no DOM`);
+            
+            // Mostrar alerta de erro para o usuário
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro de Navegação',
+                    text: `A seção '${sectionId}' não foi encontrada. Tente recarregar a página.`,
+                    confirmButtonText: 'Recarregar',
+                    showCancelButton: true,
+                    cancelButtonText: 'Continuar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.reload();
+                    }
+                });
+            }
+            return;
+        }
+        
+        // Lista de todas as seções
+        const sections = [
+            'dashboardSection',
+            'caminhaoSection', 
+            'abastecimentoSection',
+            'despesasSection',
+            'relatoriosSection'
+        ];
+        
+        // Lista de todos os links
+        const links = [
+            'dashboardLink',
+            'caminhaoLink',
+            'abastecimentoLink', 
+            'despesasLink',
+            'relatoriosLink'
+        ];
+        
+        // Ocultar todas as seções
+        sections.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = 'none';
+            } else {
+                console.warn(`[NAVIGATION] ⚠️ Seção '${id}' não encontrada`);
+            }
+        });
+        
+        // Remover classe active de todos os links
+        links.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.classList.remove('active');
+            } else {
+                console.warn(`[NAVIGATION] ⚠️ Link '${id}' não encontrado`);
+            }
+        });
+        
+        // Mostrar a seção selecionada com animação suave
+        targetSection.style.display = 'block';
+        targetSection.style.opacity = '0';
+        targetSection.style.transition = 'opacity 0.3s ease-in-out';
+        
+        // Animação fade-in
+        setTimeout(() => {
+            targetSection.style.opacity = '1';
+        }, 10);
+        
+        console.log(`[NAVIGATION] ✅ Seção '${sectionId}' exibida`);
+        
+        // Adicionar classe active ao link correspondente e executar ações específicas
+        if (sectionId === 'dashboardSection') {
+            const dashboardLink = document.getElementById('dashboardLink');
+            if (dashboardLink) dashboardLink.classList.add('active');
+            updateDashboard(); // Atualizar dashboard quando for exibido
+            console.log('[NAVIGATION] Dashboard ativado e atualizado');
+        } else if (sectionId === 'caminhaoSection') {
+            const caminhaoLink = document.getElementById('caminhaoLink');
+            if (caminhaoLink) caminhaoLink.classList.add('active');
+            console.log('[NAVIGATION] Seção de caminhões ativada');
+        } else if (sectionId === 'abastecimentoSection') {
+            const abastecimentoLink = document.getElementById('abastecimentoLink');
+            if (abastecimentoLink) abastecimentoLink.classList.add('active');
+            console.log('[NAVIGATION] ✅ Seção de abastecimentos ativada com sucesso!');
+            
+            // Mostrar toast de sucesso quando navegar para abastecimentos
+            if (typeof AlertToast !== 'undefined') {
+                AlertToast.success('Navegação para Abastecimentos realizada com sucesso!');
+            }
+        } else if (sectionId === 'despesasSection') {
+            const despesasLink = document.getElementById('despesasLink');
+            if (despesasLink) despesasLink.classList.add('active');
+            loadDespesas(); // Carregar despesas quando a seção for exibida
+            console.log('[NAVIGATION] Seção de despesas ativada e dados carregados');
+        } else if (sectionId === 'relatoriosSection') {
+            const relatoriosLink = document.getElementById('relatoriosLink');
+            if (relatoriosLink) relatoriosLink.classList.add('active');
+            console.log('[NAVIGATION] Seção de relatórios ativada');
+        }
+        
+        currentSection = sectionId;
+        console.log(`[NAVIGATION] ✅ Navegação concluída para: ${sectionId}`);
+        
+        // Scroll para o topo da página
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        
+    } catch (error) {
+        console.error(`[NAVIGATION] ❌ Erro ao mostrar seção '${sectionId}':`, error);
+        
+        // Capturar erro para diagnóstico
+        window.navigationErrors.push({
+            timestamp: new Date().toISOString(),
+            type: 'showSection_error',
+            sectionId: sectionId,
+            error: error.message,
+            stack: error.stack
+        });
+        
+        // Mostrar alerta de erro para o usuário
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro Interno de Navegação',
+                html: `
+                    <div class="text-start">
+                        <strong>Erro:</strong> ${error.message}<br><br>
+                        <strong>Soluções:</strong><br>
+                        • Pressione F5 para recarregar<br>
+                        • Use Alt+3 para Abastecimentos<br>
+                        • Limpe o cache do navegador
+                    </div>
+                `,
+                width: '450px',
+                confirmButtonText: 'Recarregar Página',
+                showCancelButton: true,
+                cancelButtonText: 'Continuar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.reload();
+                }
+            });
+        }
     }
-    
-    currentSection = sectionId;
 }
 
 // Configurar manipuladores de eventos para formulários e botões
@@ -1713,6 +1934,7 @@ async function testarMapeamentoCampos() {
         const hoje = new Date();
         const dadosAbastecimento = {
             data: hoje.toISOString().split('T')[0],
+           
             periodoInicio: hoje.toISOString().split('T')[0], // camelCase
             periodoFim: hoje.toISOString().split('T')[0], // camelCase
             caminhaoId: caminhaoTeste.id, // camelCase
@@ -1871,329 +2093,6 @@ function renderAbastecimentosFiltrados() {
         
         tableBody.appendChild(row);
     });
-}
-
-// ============ FUNÇÕES DE DESPESAS ============
-
-// Carregar despesas do backend
-async function loadDespesas() {
-    try {
-        console.log('[APP] Carregando despesas...');
-        const loadingInstance = AlertInfo.loadingData();
-        
-        despesas = await window.dbApi.buscarDespesas();
-        console.log('[APP] Despesas carregadas:', despesas);
-        
-        // Atualizar referências globais
-        window.despesas = despesas;
-        
-        // Renderizar na interface
-        renderDespesas();
-        
-        // Fechar loading
-        AlertUtils.close();
-        
-        console.log('[APP] Despesas carregadas com sucesso!');
-    } catch (error) {
-        console.error('[APP] Erro ao carregar despesas:', error);
-        AlertUtils.close();
-        AlertError.show('Erro ao Carregar', 'Não foi possível carregar as despesas. Verifique a conexão.');
-    }
-}
-
-// Salvar despesa (criar ou editar)
-async function saveDespesa() {
-    console.log('[APP] Iniciando salvamento de despesa...');
-    
-    const despesaIdInput = document.getElementById('despesaId');
-    const dataInput = document.getElementById('dataDespesa');
-    const fornecedorInput = document.getElementById('fornecedorDespesa');
-    const descricaoInput = document.getElementById('descricaoDespesa');
-    const categoriaSelect = document.getElementById('categoriaDespesa');
-    const valorInput = document.getElementById('valorDespesa');
-    const observacoesInput = document.getElementById('observacoesDespesa');
-
-    // Validar campos obrigatórios
-    if (!dataInput.value || !fornecedorInput.value || !descricaoInput.value || 
-        !categoriaSelect.value || !valorInput.value) {
-        AlertError.validation('Por favor, preencha todos os campos obrigatórios.');
-        return;
-    }
-
-    // Validar valor
-    const valor = parseFloat(valorInput.value);
-    if (valor <= 0) {
-        AlertError.validation('O valor deve ser maior que zero.');
-        return;
-    }
-
-    // Verificar se é uma edição ou um novo registro
-    const isEdit = despesaIdInput.value !== '';
-    console.log(`[APP] Tipo de operação: ${isEdit ? 'Edição' : 'Nova despesa'}`);
-
-    // Preparar objeto da despesa
-    const despesaObj = {
-        id: isEdit ? despesaIdInput.value : null,
-        data: dataInput.value,
-        fornecedor: fornecedorInput.value,
-        descricao: descricaoInput.value,
-        categoria: categoriaSelect.value,
-        valor: valor,
-        observacoes: observacoesInput.value || null
-    };
-
-    console.log('[APP] Objeto despesa preparado:', despesaObj);
-
-    try {
-        // Mostrar loading animado
-        const loadingInstance = AlertInfo.loadingData();
-
-        console.log('[APP] Enviando despesa para API...');
-        // Salvar usando dbApi para conectar ao backend
-        const savedDespesa = await window.dbApi.salvarDespesa(despesaObj);
-        console.log('[APP] Despesa salva com sucesso:', savedDespesa);
-
-        // Fechar loading
-        AlertUtils.close();
-
-        // Atualizar array local
-        if (isEdit) {
-            const index = despesas.findIndex(d => d.id === despesaIdInput.value);
-            if (index !== -1) {
-                despesas[index] = savedDespesa;
-            }
-        } else {
-            despesas.push(savedDespesa);
-        }
-
-        // Atualizar referências globais
-        window.despesas = despesas;
-
-        // Atualizar interface
-        renderDespesas();
-        updateDashboard();
-
-        // Exibir toast de sucesso
-        AlertToast.success(isEdit ? 'Despesa atualizada com sucesso!' : 'Despesa cadastrada com sucesso!');
-
-        // Fechar modal e limpar formulário
-        AuthManager.closeModalSafely('addDespesaModal', resetDespesaForm);
-
-    } catch (error) {
-        console.error('[APP] Erro ao salvar despesa:', error);
-        AlertUtils.close();
-        AlertError.show('Erro ao Salvar', 'Ocorreu um erro ao salvar a despesa. Tente novamente.');
-    }
-}
-
-// Renderizar tabela de despesas
-function renderDespesas() {
-    const tableBody = document.getElementById('despesaTableBody');
-    tableBody.innerHTML = '';
-
-    // Usar dados filtrados se houver filtros ativos, senão usar todos
-    const despesasParaExibir = filtrosDespesasAtivos ? despesasFiltradas : despesas;
-
-    if (despesasParaExibir.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td colspan="6" class="text-center text-muted py-4">
-                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                ${filtrosDespesasAtivos ? 'Nenhuma despesa encontrada para os filtros aplicados.' : 'Nenhuma despesa cadastrada.'}
-            </td>
-        `;
-        tableBody.appendChild(row);
-        return;
-    }    despesasParaExibir.forEach(despesa => {
-        const row = document.createElement('tr');
-        
-        // Formatar data com mais robustez
-        let dataFormatada = '';
-        try {
-            // Verificar se a data já tem 'T' (formato ISO)
-            const formattedDate = despesa.data.includes('T') 
-                ? new Date(despesa.data) 
-                : new Date(despesa.data + 'T00:00:00');
-            
-            if (!isNaN(formattedDate.getTime())) {
-                dataFormatada = formattedDate.toLocaleDateString('pt-BR');
-            } else {
-                // Tentar outros formatos de data se falhar
-                if (despesa.data.includes('/')) {
-                    const parts = despesa.data.split('/');
-                    if (parts.length === 3) {
-                        const dia = parseInt(parts[0], 10);
-                        const mes = parseInt(parts[1], 10) - 1;
-                        const ano = parseInt(parts[2], 10);
-                        const dateObj = new Date(ano, mes, dia);
-                        if (!isNaN(dateObj.getTime())) {
-                            dataFormatada = dateObj.toLocaleDateString('pt-BR');
-                        }
-                    }
-                } else if (despesa.data.includes('-')) {
-                    const parts = despesa.data.split('-');
-                    if (parts.length === 3) {
-                        const ano = parseInt(parts[0], 10);
-                        const mes = parseInt(parts[1], 10) - 1;
-                        const dia = parseInt(parts[2], 10);
-                        const dateObj = new Date(ano, mes, dia);
-                        if (!isNaN(dateObj.getTime())) {
-                            dataFormatada = dateObj.toLocaleDateString('pt-BR');
-                        }
-                    }
-                }
-                
-                if (!dataFormatada) {
-                    console.warn('Data inválida ao renderizar tabela:', despesa.data);
-                    dataFormatada = 'Data inválida';
-                }
-            }
-        } catch (error) {
-            console.error('Erro ao formatar data na tabela:', despesa.data, error);
-            dataFormatada = 'Data inválida';
-        }
-        
-        // Formatar valor
-        const valorFormatado = new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(despesa.valor);
-
-        row.innerHTML = `
-            <td>${dataFormatada}</td>
-            <td>${despesa.fornecedor}</td>
-            <td>${despesa.descricao}</td>            <td><span class="badge bg-secondary">${despesa.categoria}</span></td>
-            <td class="fw-bold text-primary">${valorFormatado}</td>            <td>
-                <div class="btn-group" role="group">
-                    <button class="btn btn-outline-primary btn-sm edit-despesa admin-only" data-id="${despesa.id}" title="Editar">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-outline-danger btn-sm delete-despesa admin-only" data-id="${despesa.id}" title="Excluir">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        
-        tableBody.appendChild(row);
-    });
-
-    // Adicionar event listeners para botões de ação
-    document.querySelectorAll('.edit-despesa').forEach(button => {
-        button.addEventListener('click', () => {
-            const id = button.getAttribute('data-id');
-            editDespesa(id);
-        });
-    });    document.querySelectorAll('.delete-despesa').forEach(button => {
-        button.addEventListener('click', () => {
-            const id = button.getAttribute('data-id');
-            showDeleteConfirmation(id, 'despesa');
-        });
-    });
-
-    // Aplicar visibilidade baseada no papel do usuário
-    if (window.authManager && window.authManager.getUser()) {
-        const userRole = window.authManager.getUser().role;
-        window.applyRoleVisibility(userRole);
-    } else {
-        window.applyRoleVisibility('guest');
-    }
-}
-
-// Editar despesa
-function editDespesa(id) {
-    const despesa = despesas.find(d => d.id == id);
-    if (!despesa) {
-        AlertError.show('Erro', 'Despesa não encontrada.');
-        return;
-    }
-
-    console.log('[EDIT DESPESA] Dados da despesa:', despesa);
-
-    // Preencher formulário
-    document.getElementById('despesaId').value = despesa.id;
-    
-    // Converter data para formato correto do input date (YYYY-MM-DD)
-    let dataFormatada = '';
-    if (despesa.data) {
-        const dataObj = new Date(despesa.data);
-        if (!isNaN(dataObj.getTime())) {
-            // Garantir que a data está no formato YYYY-MM-DD
-            dataFormatada = dataObj.toISOString().split('T')[0];
-        }
-    }
-    document.getElementById('dataDespesa').value = dataFormatada;
-    console.log('[EDIT DESPESA] Data original:', despesa.data, 'Data formatada:', dataFormatada);
-    
-    document.getElementById('fornecedorDespesa').value = despesa.fornecedor || '';
-    document.getElementById('descricaoDespesa').value = despesa.descricao || '';
-    document.getElementById('categoriaDespesa').value = despesa.categoria || '';
-    document.getElementById('valorDespesa').value = despesa.valor || '';
-    document.getElementById('observacoesDespesa').value = despesa.observacoes || '';
-
-    // Alterar título do modal para edição
-    const modalTitle = document.querySelector('#addDespesaModal .modal-title');
-    if (modalTitle) {
-        modalTitle.textContent = 'Atualizar Despesa';
-    }
-
-    // Abrir modal
-    const modal = new bootstrap.Modal(document.getElementById('addDespesaModal'));
-    modal.show();
-}
-
-// Excluir despesa
-async function deleteDespesa(id) {
-    try {
-        console.log(`[APP] Excluindo despesa ID: ${id}`);
-        
-        // Mostrar loading
-        const loadingInstance = AlertInfo.loadingData();
-        
-        // Excluir do backend
-        await window.dbApi.excluirDespesa(id);
-        
-        // Remover do array local
-        const index = despesas.findIndex(d => d.id == id);
-        if (index !== -1) {
-            despesas.splice(index, 1);
-        }
-
-        // Atualizar referências globais
-        window.despesas = despesas;
-
-        // Atualizar interface
-        renderDespesas();
-        updateDashboard();
-
-        // Fechar loading
-        AlertUtils.close();
-
-        // Toast de sucesso
-        AlertToast.success('Despesa excluída com sucesso!');
-        
-    } catch (error) {
-        console.error('[APP] Erro ao excluir despesa:', error);
-        AlertUtils.close();
-        AlertError.show('Erro ao Excluir', 'Não foi possível excluir a despesa. Tente novamente.');
-    }
-}
-
-// Resetar formulário de despesa
-function resetDespesaForm() {
-    document.getElementById('despesaId').value = '';
-    document.getElementById('dataDespesa').value = new Date().toISOString().split('T')[0];
-    document.getElementById('fornecedorDespesa').value = '';
-    document.getElementById('descricaoDespesa').value = '';
-    document.getElementById('categoriaDespesa').value = '';
-    document.getElementById('valorDespesa').value = '';
-    document.getElementById('observacoesDespesa').value = '';
-    
-    // Resetar título do modal para criação
-    const modalTitle = document.querySelector('#addDespesaModal .modal-title');
-    if (modalTitle) {
-        modalTitle.textContent = 'Registrar Despesa';
-    }
 }
 
 // ===== FUNÇÃO DO DASHBOARD =====
@@ -2369,55 +2268,162 @@ function atualizarCards(stats) {
     }
 }
 
-// ===== FUNÇÃO GLOBAL PARA INTEGRAÇÃO COM AUTENTICAÇÃO =====
+// Função para navegação via teclado e acessibilidade
+function setupKeyboardNavigation() {
+    console.log('[KEYBOARD] Configurando navegação por teclado...');
+    
+    document.addEventListener('keydown', function(e) {
+        // Verificar se Alt + número está sendo pressionado
+        if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+            switch(e.key) {
+                case '1':
+                    e.preventDefault();
+                    console.log('[KEYBOARD] Alt+1 - Navegando para Dashboard');
+                    showSection('dashboardSection');
+                    break;
+                case '2':
+                    e.preventDefault();
+                    console.log('[KEYBOARD] Alt+2 - Navegando para Caminhões');
+                    showSection('caminhaoSection');
+                    break;
+                case '3':
+                    e.preventDefault();
+                    console.log('[KEYBOARD] Alt+3 - Navegando para Abastecimentos');
+                    showSection('abastecimentoSection');
+                    break;
+                case '4':
+                    e.preventDefault();
+                    console.log('[KEYBOARD] Alt+4 - Navegando para Despesas');
+                    showSection('despesasSection');
+                    break;
+                case '5':
+                    e.preventDefault();
+                    console.log('[KEYBOARD] Alt+5 - Navegando para Relatórios');
+                    showSection('relatoriosSection');
+                    break;
+            }
+        }
+    });
+    
+    console.log('[KEYBOARD] ✅ Navegação por teclado configurada (Alt+1-5)');
+}
 
-// Função global para carregar o dashboard - será chamada pelo sistema de autenticação
-window.loadDashboard = async function() {
-    try {
-        console.log('[APP] Carregando dashboard...');
-        
-        // A aplicação principal já está sempre visível
-        // Garantir que esteja visível (por compatibilidade)
-        const mainApp = document.getElementById('mainApp');
-        if (mainApp) {
-            mainApp.style.display = 'block';
+// Função para detectar e diagnosticar problemas de navegação
+function diagnosticNavigation() {
+    console.log('=== DIAGNÓSTICO DE NAVEGAÇÃO ===');
+    
+    const report = {
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        elements: {},
+        eventListeners: {},
+        errors: []
+    };
+    
+    // Verificar elementos HTML
+    const elements = [
+        'dashboardLink', 'caminhaoLink', 'abastecimentoLink', 'despesasLink', 'relatoriosLink',
+        'dashboardSection', 'caminhaoSection', 'abastecimentoSection', 'despesasSection', 'relatoriosSection'
+    ];
+    
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        report.elements[id] = {
+            exists: !!element,
+            visible: element ? element.style.display !== 'none' : false,
+            hasClass: element ? Array.from(element.classList) : [],
+            onclick: element ? !!element.onclick : false
+        };
+    });
+    
+    // Verificar se há erros JavaScript
+    if (window.navigationErrors && window.navigationErrors.length > 0) {
+        report.errors = window.navigationErrors;
+    }
+    
+    console.log('📊 Relatório de Diagnóstico:', report);
+    
+    // Mostrar resumo para o usuário
+    const missingElements = Object.keys(report.elements).filter(key => !report.elements[key].exists);
+    const inactiveLinks = Object.keys(report.elements)
+        .filter(key => key.includes('Link'))
+        .filter(key => report.elements[key].exists && !report.elements[key].onclick);
+    
+    if (missingElements.length > 0 || inactiveLinks.length > 0) {
+        console.error('❌ Problemas de navegação detectados:');
+        if (missingElements.length > 0) {
+            console.error('  - Elementos ausentes:', missingElements);
+        }
+        if (inactiveLinks.length > 0) {
+            console.error('  - Links sem evento:', inactiveLinks);
         }
         
-        // Carregar todos os dados iniciais
-        await loadDataFromLocalStorage();
-        
-        // Renderizar dados na interface
-        renderCaminhoes();
-        renderAbastecimentos();
-        updateDashboard();
-        populateCaminhaoSelects();
-        
-        // Mostrar a seção dashboard por padrão
-        showSection('dashboardSection');
-        
-        console.log('[APP] Dashboard carregado com sucesso');
-    } catch (error) {
-        console.error('[APP] Erro ao carregar dashboard:', error);
-        AlertError.show('Erro', 'Erro ao carregar o sistema. Recarregue a página.');
-    }
-};
-
-// Função para aplicar visibilidade baseada em papel do usuário
-window.applyRoleVisibility = function(userRole) {
-    console.log('[APP] Aplicando visibilidade para papel:', userRole);
-    
-    // Remover classes de papel existentes do body
-    document.body.classList.remove('role-admin', 'role-user', 'role-guest');
-    
-    // Adicionar a classe correspondente ao papel do usuário
-    if (userRole === 'admin') {
-        document.body.classList.add('role-admin');
-    } else if (userRole === 'user') {
-        document.body.classList.add('role-user');
+        // Mostrar alerta para o usuário
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Problema de Navegação Detectado',
+                html: `
+                    <div class="text-start">
+                        <strong>Diagnóstico:</strong><br>
+                        ${missingElements.length > 0 ? `• Elementos ausentes: ${missingElements.join(', ')}<br>` : ''}
+                        ${inactiveLinks.length > 0 ? `• Links inativos: ${inactiveLinks.join(', ')}<br>` : ''}
+                        <br>
+                        <strong>Soluções alternativas:</strong><br>
+                        • Use Alt+3 para ir aos Abastecimentos<br>
+                        • Use Alt+1 para voltar ao Dashboard<br>
+                        • Recarregue a página (F5)<br>
+                    </div>
+                `,
+                width: '500px',
+                confirmButtonText: 'Entendi'
+            });
+        }
     } else {
-        // Usuário não autenticado (convidado)
-        document.body.classList.add('role-guest');
+        console.log('✅ Navegação funcionando corretamente');
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'success',
+                title: 'Navegação OK',
+                text: 'Todos os elementos de navegação estão funcionando corretamente.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
     }
     
-    console.log('[APP] Visibilidade aplicada. Classes do body:', document.body.className);
-};
+    return report;
+}
+
+// Sistema de captura de erros de navegação
+window.navigationErrors = [];
+
+// Capturar erros JavaScript
+window.addEventListener('error', function(e) {
+    const error = {
+        timestamp: new Date().toISOString(),
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        stack: e.error ? e.error.stack : null
+    };
+    
+    console.error('[ERROR CAPTURE]', error);
+    window.navigationErrors.push(error);
+});
+
+// Capturar erros de promises rejeitadas
+window.addEventListener('unhandledrejection', function(e) {
+    const error = {
+        timestamp: new Date().toISOString(),
+        type: 'unhandledrejection',
+        reason: e.reason,
+        stack: e.reason && e.reason.stack ? e.reason.stack : null
+    };
+    
+    console.error('[PROMISE ERROR]', error);
+    window.navigationErrors.push(error);
+});
