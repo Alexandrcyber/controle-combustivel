@@ -1771,6 +1771,7 @@ async function testarMapeamentoCampos() {
         await window.dbApi.excluirAbastecimento(abastecimentoSalvo.id);
         console.log('[TESTE MAPEAMENTO] ✅ Dados de teste removidos');
         
+        
         // 8. Resultado final
         const resultadoFinal = {
             sucesso: true,
@@ -1883,16 +1884,22 @@ async function loadDespesas() {
         
         despesas = await window.dbApi.buscarDespesas();
         console.log('[APP] Despesas carregadas:', despesas);
-        
+        if (!Array.isArray(despesas)) {
+            console.error('[APP] ERRO: Resposta inesperada da API de despesas:', despesas);
+            AlertError.show('Erro de API', 'A resposta da API de despesas não é um array.');
+            AlertUtils.close();
+            return;
+        }
+        if (despesas.length === 0) {
+            console.warn('[APP] Nenhuma despesa retornada pela API!');
+            AlertInfo.show('Sem despesas', 'Nenhuma despesa foi encontrada no banco de dados.');
+        }
         // Atualizar referências globais
         window.despesas = despesas;
-        
         // Renderizar na interface
         renderDespesas();
-        
         // Fechar loading
         AlertUtils.close();
-        
         console.log('[APP] Despesas carregadas com sucesso!');
     } catch (error) {
         console.error('[APP] Erro ao carregar despesas:', error);
@@ -2188,12 +2195,6 @@ function resetDespesaForm() {
     document.getElementById('categoriaDespesa').value = '';
     document.getElementById('valorDespesa').value = '';
     document.getElementById('observacoesDespesa').value = '';
-    
-    // Resetar título do modal para criação
-    const modalTitle = document.querySelector('#addDespesaModal .modal-title');
-    if (modalTitle) {
-        modalTitle.textContent = 'Registrar Despesa';
-    }
 }
 
 // ===== FUNÇÃO DO DASHBOARD =====
