@@ -375,11 +375,12 @@ function updateGlobalReferences() {
 
 // Configurar navegação entre seções
 function setupNavigation() {
-    document.getElementById('dashboardLink').addEventListener('click', () => showSection('dashboardSection'));
-    document.getElementById('caminhaoLink').addEventListener('click', () => showSection('caminhaoSection'));
-    document.getElementById('abastecimentoLink').addEventListener('click', () => showSection('abastecimentoSection'));
-    document.getElementById('despesasLink').addEventListener('click', () => showSection('despesasSection'));
-    document.getElementById('relatoriosLink').addEventListener('click', () => showSection('relatoriosSection'));
+    console.log('[NAV] Registrando listeners do navbar...');
+    document.getElementById('dashboardLink').addEventListener('click', () => { console.log('[NAV] Dashboard clicado'); showSection('dashboardSection'); });
+    document.getElementById('caminhaoLink').addEventListener('click', () => { console.log('[NAV] Caminhões clicado'); showSection('caminhaoSection'); });
+    document.getElementById('abastecimentoLink').addEventListener('click', () => { console.log('[NAV] Abastecimentos clicado'); showSection('abastecimentoSection'); });
+    document.getElementById('despesasLink').addEventListener('click', () => { console.log('[NAV] Despesas clicado'); showSection('despesasSection'); });
+    document.getElementById('relatoriosLink').addEventListener('click', () => { console.log('[NAV] Relatórios clicado'); showSection('relatoriosSection'); });
 }
 
 // Mostrar seção específica e ocultar as demais
